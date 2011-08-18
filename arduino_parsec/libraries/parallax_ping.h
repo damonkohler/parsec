@@ -32,6 +32,7 @@ class Ultrasonic {
   // Sends a 5 us trigger pulse. You must connect this sensor to the pulse pin
   // before calling this function, and maintain the connection until IsReady()
   // returns true again, e.g., only change connections when triggering pulses.
+  // The new data is returned after IsReady() returned true.
   void SendTriggerPulse();
 
   // Queries the last reading in us.
@@ -44,17 +45,22 @@ class Ultrasonic {
   // TODO(whess): Remove.
   int DebugTime();
 
-  // TODO(whess): Add timeout handling if a sensor doesn't answer.
-
  private:
+  static const char kStateReady = 0;
+  static const char kStateTriggered = 1;
+  static const char kStateReceiving = 2;
+
   static void HandleInputChange();
-  inline void HandleInputChangeInternal();
+  inline void UpdateValue();
 
-  volatile unsigned long last_micros_;
-  volatile int value_;
+  unsigned long last_micros_;
+  int value_;
 
-  static volatile Ultrasonic* measuring_;
-  static bool last_level_;
+  static Ultrasonic* measuring_;
+  static volatile char state_;
+  static unsigned long triggered_micros_;
+  static unsigned long receiving_micros_;
+  static unsigned long done_micros_;
 };
 
 #endif  // PARSECLIB_PARALLAX_PING_

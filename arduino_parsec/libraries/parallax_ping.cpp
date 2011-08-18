@@ -19,39 +19,47 @@
 
 void Check(bool assertion, const char *format, ...);  // TODO(whess): Move this.
 
-volatile Ultrasonic* Ultrasonic::measuring_ = NULL;
-bool Ultrasonic::last_level_ = false;
+Ultrasonic* Ultrasonic::measuring_ = NULL;
+volatile char Ultrasonic::state_ = Ultrasonic::kStateReady;
+unsigned long Ultrasonic::triggered_micros_ = 0;
+unsigned long Ultrasonic::receiving_micros_ = 0;
+unsigned long Ultrasonic::done_micros_ = 0;
 
 Ultrasonic::Ultrasonic()
     : last_micros_(0), value_(32767) {}
 
 bool Ultrasonic::IsReady() {
-  noInterrupts();
-  bool ready = (measuring_ == NULL &&
-                micros() - last_micros_ > 200);
-  interrupts();
-  return ready;
+  if (state_ != kStateReady) {
+    // Still measuring, so we check for timeout.
+    Check(micros() - triggered_micros_ < 30000,
+          "US: timeout");
+    return false;
+  }
+  if (measuring_ != NULL) {
+    // A measurement completed, so compute and store a new value.
+    measuring_->UpdateValue();
+    measuring_ = NULL;
+  }
+  return micros() - last_micros_ > 200;
 }
 
 void Ultrasonic::SendTriggerPulse() {
-  delayMicroseconds(5);
   Check(measuring_ == NULL, "US: meas != NULL");
-  Check(micros() - last_micros_ >= 200, "US: delta < 200");
+  Check(state_ == kStateReady, "US: not ready");
+  Check(micros() - done_micros_ >= 200, "US: delta < 200");
   measuring_ = this;
   digitalWrite(kPulsePin, HIGH);
   pinMode(kPulsePin, OUTPUT);
   delayMicroseconds(5);
   pinMode(kPulsePin, INPUT);
   digitalWrite(kPulsePin, LOW);
-  last_micros_ = micros();
+  triggered_micros_ = micros();
+  state_ = kStateTriggered;
   attachInterrupt(kPulsePinInterrupt, &Ultrasonic::HandleInputChange, CHANGE);
 }
 
 int Ultrasonic::QueryValue() {
-  noInterrupts();
-  int value = value_;
-  interrupts();
-  return value;
+  return value_;
 }
 
 float Ultrasonic::QueryDistance() {
@@ -59,28 +67,30 @@ float Ultrasonic::QueryDistance() {
 }
 
 int Ultrasonic::DebugTime() {
-  noInterrupts();
-  int value = last_micros_ / 1000000;
-  interrupts();
-  return value;
+  return last_micros_ / 1000000;
 }
 
 void Ultrasonic::HandleInputChange() {
-  Check(measuring_ != NULL, "US: meas == NULL");
-  unsigned long delta_micros = micros() - measuring_->last_micros_;
-  measuring_->last_micros_ += delta_micros;
+  unsigned long current_micros = micros();
   if (digitalRead(kPulsePin) == HIGH) {
-    // The sensors answer is expected after 750 us.
-    Check(delta_micros > 700 && delta_micros < 800,
-          "US: at %lu", delta_micros);
-    last_level_ = true;
-  } else if (last_level_) {
-    // Answer should be between 115 us and 18500 us.
-    Check(delta_micros > 100 && delta_micros < 25000,
-          "US: is %lu", delta_micros);
-    measuring_->value_ = delta_micros;
-    measuring_ = NULL;
+    // State is kStateTriggered.
+    receiving_micros_ = current_micros;
+    state_ = kStateReceiving;
+  } else if (state_ == kStateReceiving) {
     detachInterrupt(kPulsePinInterrupt);
-    last_level_ = false;
+    done_micros_ = current_micros;
+    state_ = kStateReady;
   }
+}
+
+void Ultrasonic::UpdateValue() {
+  unsigned long delta_micros = receiving_micros_ - triggered_micros_;
+  // Answer is expected after 750 us.
+  Check(delta_micros > 700 && delta_micros < 800,
+        "US: at %lu", delta_micros);
+  value_ = done_micros_ - receiving_micros_;
+  // Answer should be between 115 us and 18500 us.
+  Check(value_ > 100 && value_ < 25000,
+        "US: is %lu", value_);
+  last_micros_ = done_micros_;
 }

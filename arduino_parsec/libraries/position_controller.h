@@ -21,6 +21,24 @@ class PositionController {
  public:
   // Constructs a position controller object. Communication is done by
   // receiving and sending bytes via the given functions.
+  //
+  // Since bytes are transmitted and received over the same wire, changing
+  // back from transmitting to receiving is critical, both for ourselves and the
+  // position controller we talk to, to make sure we do not miss any bytes.
+  //
+  // After reading, we wait 150 microseconds before writing to give the
+  // position controller enough time to set RXEN, even when currently
+  // handling its interrupts.
+  //
+  // Writing is not an issue. Assume that writing a byte takes about 50 us,
+  // e.g., 19200 baud, and is done when the write function returns. This means
+  // it takes about 150 microseconds to send three bytes. Therefore, if the
+  // interrupts of the position controller are faster, we will not overflow the
+  // receive buffer (2 bytes in the receive FIFO and one in the shift register).
+  //
+  // Setting RXEN after transmitting also has to happen on our side. We set the
+  // transmit delay of the position controller to 300 microseconds, so all
+  // interrupts running here have to be faster.
   PositionController(
       unsigned char (*read)(), void (*write)(unsigned char),
       unsigned char address, float wheel_radius);

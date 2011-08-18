@@ -29,8 +29,9 @@ void PositionController::Initialize(bool reverse) {
   ClearPosition();
   ClearPosition();
   ClearPosition();
-  // Shortest possible transmit delay of 40 us doesn't work.
-  SetTXDelay(50);
+  // We choose this long delay, so that we have time to set RXEN, even
+  // when we are interrupted immediately after sending a query command.
+  SetTXDelay(300);
   if (reverse) {
     SetOrientationAsReversed();
   }
@@ -54,9 +55,12 @@ void PositionController::UpdateVelocity(float velocity) {
 
 void PositionController::SoftwareEmergencyStop(void (*write)(unsigned char)) {
   const unsigned char CLRP = 0x28;
-  write(CLRP);  // CLRP broadcast.
-  write(CLRP);
-  write(CLRP);
+  // We do not wait before the first CLRP broadcast to stop as soon as possible.
+  // We wait for the following 3 CLRPs to make sure they are received.
+  for (int i = 0; i != 4; ++i) {
+    write(CLRP);
+    delayMicroseconds(150);
+  }
 }
 
 void PositionController::ClearPosition() {
@@ -74,7 +78,7 @@ void PositionController::SetTXDelay(int usec) {
 
 void PositionController::SetOrientationAsReversed() {
   const unsigned char SREV = 0x30;
-    write_(SREV | address_);
+  write_(SREV | address_);
 }
 
 void PositionController::SetSpeedRampRate(unsigned char rate) {
@@ -102,9 +106,9 @@ unsigned int PositionController::QueryPosition() {
   write_(QPOS | address_);
   unsigned char msb = read_();
   unsigned char lsb = read_();
-  // We wait 250 us for the position controller to RXEN, so that it receives
-  // the next command.
-  delayMicroseconds(250);
+  // We wait 150 microseconds for the position controller to set RXEN, so that
+  // it can receive the next command.
+  delayMicroseconds(150);
   return msb << 8 | lsb;
 }
 

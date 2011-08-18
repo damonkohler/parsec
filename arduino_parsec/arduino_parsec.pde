@@ -60,8 +60,7 @@ static void printf_row(char row, const char *format, ...) {
   static char message[18];
   va_list ap;
   va_start(ap, format);
-  int message_size = vsnprintf(message, 17, format, ap);
-  message[18] = '\0';
+  vsnprintf(message, 18, format, ap);
   va_end(ap);
   display.WriteString(0, row, message);
 }
@@ -75,10 +74,9 @@ void Check(bool assertion, const char *format, ...) {
     static char error_message[18];
     va_list ap;
     va_start(ap, format);
-    int message_size = vsnprintf(error_message, 17, format, ap);
-    error_message[18] = '\0';
+    vsnprintf(error_message, 18, format, ap);
     va_end(ap);
-    display.WriteString(8 - message_size / 2, 4, error_message);
+    display.WriteString(8 - strlen(error_message) / 2, 4, error_message);
     for (;;) {
       digitalWrite(8, HIGH);
       for (int i = 0; i != 500; ++i) delayMicroseconds(1000);
@@ -343,5 +341,4 @@ void loop() {
   LoopPositionController();
   LoopUltrasonic();
   LoopShiftBrite();
-  delayMicroseconds(5);
 }
