@@ -1,0 +1,16 @@
+<launch>
+
+  <!--- Run Robot Pose EKF -->
+  <include file="$(find parsec_bringup)/base.launch" />
+
+  <!-- Run the map server (to be changed to use correct map)-->
+  <arg name="map_file" default="$(find parsec_navigation)/maps/willow-2010-02-18-0.10.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!--- Run AMCL -->
+  <include file="$(find parsec_navigation)/config/amcl_parsec.launch" />
+
+  <!--- Run Move Base -->
+  <include file="$(find parsec_navigation)/config/move_base_parsec.launch" />
+
+</launch>
