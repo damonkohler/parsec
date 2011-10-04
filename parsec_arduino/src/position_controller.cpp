@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <position_controller.h>
+#include "position_controller.h"
 
 #include <WProgram.h>
 
@@ -40,17 +40,19 @@ void PositionController::Initialize(bool reverse) {
   SetSpeedRampRate(255);
 }
 
-void PositionController::UpdateVelocity(float velocity) {
+float PositionController::UpdateVelocity(float velocity) {
   float speed = 2.864788975f /* $9/\pi$ */ * velocity / wheel_radius_;
+  int delta;
   if (speed < 0) {
-    TravelFromHere(-100);
+    delta = TravelFromHere(-100);
     speed = -speed;
   } else if (speed > 0) {
-    TravelFromHere(100);
+    delta = TravelFromHere(100);
   } else if (speed == 0) {
-    TravelFromHere(0);
+    delta = TravelFromHere(0);
   }
   SetSpeedMaximum(speed < kMaximumSpeed ? floor(speed + .5f) : kMaximumSpeed);
+  return 1.745329252f /* \pi/18 */ * wheel_radius_ * delta;
 }
 
 void PositionController::SoftwareEmergencyStop(void (*write)(unsigned char)) {
@@ -118,11 +120,13 @@ unsigned int PositionController::QueryPositionDelta() {
   return delta;
 }
 
-void PositionController::TravelFromHere(int distance_from_here) {
-  travel_goal_ -= QueryPositionDelta();
+int PositionController::TravelFromHere(int distance_from_here) {
+  int delta = QueryPositionDelta();
+  travel_goal_ -= delta;
   int distance_change = distance_from_here - travel_goal_;
   if (distance_change != 0) {
     TravelNumberOfPositions(distance_change);
     travel_goal_ += distance_change;
   }
+  return delta;
 }

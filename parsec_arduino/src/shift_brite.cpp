@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <shift_brite.h>
+#include "shift_brite.h"
 
 #include <SPI.h>
 #include <WProgram.h>
@@ -35,7 +35,7 @@ void ShiftBrite::Initialize(int n) {
 
 void ShiftBrite::Enable(int enable_pin) {
   pinMode(enable_pin, OUTPUT);
-  digitalWrite(enable_pin, LOW);  
+  digitalWrite(enable_pin, LOW);
 }
 
 void ShiftBrite::UpdateColors(int n, int red[], int green[], int blue[]) {

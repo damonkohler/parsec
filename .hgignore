@@ -1,0 +1,6 @@
+parsec_arduino/src/ros_lib
+build
+msg_gen
+srv_gen
+./*.swp
+./*.pyc

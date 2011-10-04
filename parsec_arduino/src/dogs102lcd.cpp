@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <dogs102lcd.h>
+#include "dogs102lcd.h"
 
 #include <SPI.h>
 #include <WProgram.h>
@@ -184,7 +184,7 @@ void DOGS102LCD::Initialize() {
   SPI.transfer(0x0c);  // "
   SPI.transfer(0xFA);  // Temperature compensation
   SPI.transfer(0x93);  // "
-  SPI.transfer(0xAF);  // Display on  
+  SPI.transfer(0xAF);  // Display on
   digitalWrite(select_pin_, HIGH);
 }
 
@@ -204,6 +204,9 @@ void DOGS102LCD::WriteCharacter(char column, char row, char ascii) {
   SPI.transfer(font_6x8[ascii][5]);
   digitalWrite(data_pin_, LOW);
   digitalWrite(select_pin_, HIGH);
+  for (int i = 0; i != 40; ++i) {
+    SPI.transfer(0x00);
+  }
 }
 
 void DOGS102LCD::WriteString(char column, char row, const char* text) {

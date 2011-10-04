@@ -47,15 +47,17 @@ class PositionController {
   // It will stay reversed until power is lost, even across soft resets.
   void Initialize(bool reverse);
 
-  // Updates the velocity, given in m/s.
-  void UpdateVelocity(float velocity);
+  // Updates the velocity, given in m/s. Returns the travelled distance in m
+  // since the last call to UpdateVelocity() for odometry. This is combined to
+  // use a single position query for efficiency.
+  float UpdateVelocity(float velocity);
 
   // Tries to broadcast a software reset to all position controllers in the
   // hope they will stop the motors.
   static void SoftwareEmergencyStop(void (*write)(unsigned char));
 
  private:
-  static const unsigned int kMaximumSpeed = 30;  // TODO(whess): was: 60.
+  static const unsigned int kMaximumSpeed = 60;
 
   // Soft reset.
   inline void ClearPosition();
@@ -84,8 +86,8 @@ class PositionController {
   inline unsigned int QueryPositionDelta();
 
   // Set the travel destination to a distance relative from the current
-  // position.
-  inline void TravelFromHere(int distance_from_here);
+  // position. Returns the change in positions since the last call.
+  inline int TravelFromHere(int distance_from_here);
 
   unsigned char (*read_)();
   void (*write_)(unsigned char);
