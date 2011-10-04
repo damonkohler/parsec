@@ -1,0 +1,49 @@
+<robot name="parsec">
+  <link name="base_link" />
+  <link name="left_wheel_link" />
+  <link name="right_wheel_link" />
+  <link name="front_stabilizer_link"/>
+  <link name="rear_stabilizer_link"/>
+  <link name="mast_link" />
+  <link name="base_laser_link" />
+
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <origin xyz="0 0.195 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <joint name="right_wheel_joint"
+         type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <origin xyz="0 -0.195 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <joint name="front_stabilizer_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_stabilizer_link"/>
+    <origin xyz="0.195 0 0"/>
+  </joint>
+
+  <joint name="rear_stabilizer_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rear_stabilizer_link"/>
+    <origin xyz="-0.195 0 0"/>
+  </joint>
+
+  <joint name="mast_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="mast_link"/>
+    <origin xyz="0 0 0.005"/>
+  </joint>
+
+  <joint name="base_laser_joint" type="fixed">
+    <parent link="mast_link"/>
+    <child link="base_laser_link"/>
+    <origin xyz="0 0 0.15"/>
+  </joint>
+      
+</robot>
