@@ -2,7 +2,7 @@
 define base_laser laser
 (
   range_max 5.0
-  fov 280
+  fov 270
   samples 670
   # generic model properties
   color "black"
@@ -38,13 +38,13 @@ define floorplan model
 # set the resolution of the underlying raytrace model in meters
 resolution 0.01
 
-interval_sim 10  # simulation timestep in milliseconds
+interval_sim 100  # simulation timestep in milliseconds
 
 window
 ( 
   size [ 745.000 448.000 ] 
 
-  rotate [ 0.000 -1.560 ]
+  rotate [ 0.000 0.000 ]
   scale 28.806 
 )
 
@@ -52,10 +52,10 @@ window
 floorplan
 ( 
   name "willow"
-  bitmap "willow-full.pgm"
+  bitmap "willow-2010-02-18-0.10.pgm"
   size [54.0 58.7 0.5]
-  pose [ -29.350 27.000 0 90.000 ]
+  pose [ 0.0 0.0 0 0.000 ]
 )
 
 # throw in a robot
-parsec( pose [ -11.277 23.266 0 180.000 ] name "era" color "blue")
+parsec( pose [ -12.0 -12.0 0 0 ] name "era" color "blue")
