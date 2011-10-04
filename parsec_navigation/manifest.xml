@@ -1,0 +1,15 @@
+<package>
+  <description brief="parsec_navigation">
+
+     parsec_navigation
+
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_navigation</url>
+  <depends package="navigation"/>
+  <depends package="gmapping"/>
+</package>
+
+
