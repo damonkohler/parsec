@@ -1,4 +1,5 @@
 parsec_arduino/src/ros_lib
+parsec_msgs/src
 build
 msg_gen
 srv_gen
