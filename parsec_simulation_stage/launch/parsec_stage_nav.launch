@@ -1,0 +1,6 @@
+<launch>
+  <include file="$(find parsec_navigation)/config/amcl_parsec.launch"/>
+
+  <include file="$(find parsec_simulation_stage)/launch/parsec_stage_willow.launch"/>
+  <include file="$(find parsec_simulation_stage)/launch/stage_nav.launch"/>
+</launch>
