@@ -19,18 +19,17 @@
 #include <SPI.h>
 #include <WProgram.h>
 
-#include <ros.h>
-#include <geometry_msgs/Twist.h>
-#include <rosgraph_msgs/Log.h>
-#include <sensor_msgs/Range.h>
-#include <parsec_msgs/Odometry.h>
-
 #include "dogs102lcd.h"
+#include "geometry_msgs/Twist.h"
+#include "odometry.h"
+#include "parallax_ping.h"
+#include "parsec_msgs/Odometry.h"
+#include "position_controller.h"
+#include "rosgraph_msgs/Log.h"
+#include "ros.h"
+#include "sensor_msgs/Range.h"
 #include "shift_brite.h"
 #include "simple_led.h"
-#include "parallax_ping.h"
-#include "position_controller.h"
-#include "odometry.h"
 
 inline float fminf(float x, float y) {
   return x < y ? x : y;

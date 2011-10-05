@@ -18,7 +18,8 @@
 
 #include <math.h>
 
-#include <parsec_msgs/Odometry.h>
+#include "ros.h"
+#include "parsec_msgs/Odometry.h"
 
 class Odometry {
  public:
