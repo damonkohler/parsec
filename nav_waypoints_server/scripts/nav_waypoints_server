@@ -1,0 +1,155 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('nav_waypoints_server')
+
+import rospy
+import actionlib
+
+import nav_waypoints_server.msg as nav_waypoints_server
+import nav_msgs.msg as nav_msgs
+import move_base_msgs.msg as move_base_msgs
+
+class PreempteRequested(Exception):
+    pass
+
+class WaypointFailed(Exception):
+    pass
+
+class NavWaypointsServer(object):
+    def __init__(self, action_name):
+        self.params = self.parse_params()
+        if self.params['global_planner_service']:
+            try:
+                rospy.wait_for_service(self.params['global_planner_service'], 2)
+            except rospy.ROSException, e:
+                rospy.logerr('Unable to find service `%s`. Ignoring' % self.params['global_planner_service'])
+            self.make_plan = rospy.ServiceProxy(self.params['global_planner_service'], nav_msgs.GetPlan)
+        else:
+            self.make_plan = None
+        self.execute_path = actionlib.SimpleActionServer(action_name, nav_waypoints_server.ExecutePathAction,
+                                                         self.execute_action)
+        self.move_base = actionlib.SimpleActionClient(
+            self.params['move_base_action'], move_base_msgs.MoveBaseAction)
+        if self.params['fallback_move_base_action']:
+            self.fallback_move_base = actionlib.SimpleActionClient(
+                self.params['fallback_move_base_action'], move_base_msgs.MoveBaseAction)
+        else:
+            self.fallback_move_base = None
+        
+    def parse_params(self):
+        """
+        Currently, we support the following parameters:
+
+        - base_frame: the name of the robot's base_link
+
+        - move_base_action: name of the primary move_base action
+            
+        - fallback_move_base_action: name of the fallback navigation action
+          which is used if no valid plan can be found for driving to a
+          waypoint
+            
+        - global_planner_service: service to be called in order to find out if
+          we need to use the fallback nav action. If empty, the fallback is
+          only called when the primary nav action fails.
+              
+        This function returns a dictionary of parameters
+        """
+        return {
+            'base_frame': rospy.get_param('~base_frame', 'base_link'),
+            'move_base_action': rospy.get_param('~move_base_action', '/move_base'),
+            'fallback_move_base_action': rospy.get_param('~fallback_move_base_action', None),
+            'global_planner_service': rospy.get_param('~global_planner_service', None)}
+    
+    def check_waypoint_plan(self, goal):
+        """
+        Checks if there is a plan from start to goal. If the parameter
+        'global_planner_service' is not set, we cannot check and therefore
+        return True.
+        """
+        if self.make_plan:
+            try:
+                # Start is the robot's current location, i.e. an
+                # identity pose in the base frame
+                start = geometry_msgs.PoseStamped()
+                start.header.frame_id = self.params['base_frame']
+                start.header.stamp = rospy.Time.now()
+                start.pose.orientation.w = 1
+                plan = self.make_plan(start, goal)
+                return len(plan.poses) > 0
+            except rospy.ServiceException, e:
+                return False
+        else:
+            return True
+
+    def move_base(self, action, goal, poll_timeout=0.1):
+        """
+        Executes the (move_base-)action and checks for cancellation of
+        our own server. In that case, raises an exception. If the goal
+        cannot be reached, returns False, otherwise True.
+        """
+        goal_msg = move_base_msgs.MoveBaseGoal(target_pose=goal)
+        action.send_goal(goal_msg)
+
+        while not action.wait_for_result(poll_timeout):
+            if self.execute_path.is_preempt_requested():
+                action.cancel_goal()
+                raise PreemtRequested()
+        action.get_result()
+        if action.get_state == actionlib.GoalStatus.SUCCEEDED:
+            return True
+        else:
+            return False
+        
+    def execute_action(self, goal):
+        visited = []
+        invalid = []
+        pending = goal.waypoints
+
+        try:
+            while(len(pending) > 0):
+                try:
+                    current = pending[0]
+                    pending = pending[1:]
+
+                    nav_waypoints_server.publish_feedback(
+                        nav_waypoints_server.ExecutePathFeedback(
+                            current = current,
+                            visited = visited,
+                            invalid = invalid,
+                            pending = pending))
+                            
+                    if self.check_waypoint_plan(current):
+                        if not move_base(self.move_base, current):
+                            if not move_base(self.fallback_move_base):
+                                raise WaypointFailed()
+                    elif not move_base(self.fallback_move_base, current):
+                        raise WaypointFailed()
+                    visited += [current]
+                    
+                except WaypointFailed, e:
+                    inavlid += [current]
+                    if not goal.continue_on_error:
+                        raise e
+            self.execute_path.set_succeeded(
+                nav_waypoints_server.ExecutePathResult(
+                    visited = visited,
+                    invalid = invalid,
+                    pending = [current] + pending))                
+
+        except PreempteRequested, e:
+            self.execute_path.set_preempted(
+                nav_waypoints_server.ExecutePathResult(
+                    visited = visited,
+                    invalid = invalid,
+                    pending = [current] + pending))
+        except WaypointFailed, e:
+            self.execute_path.set_aborted(
+                nav_waypoints_server.ExecutePathResult(
+                    visited = visited,
+                    invalid = invalid,
+                    pending = [current] + pending))            
+
+if __name__ == '__main__':
+    rospy.init_node('nav_waypoints_server')
+    waypoints_server = NavWaypointsServer('execute_path')
+    rospy.spin()
