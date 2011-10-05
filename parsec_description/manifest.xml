@@ -1,0 +1,15 @@
+<package>
+  <description brief="parsec_description">
+
+     parsec_description
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_description</url>
+  <depend package="urdf"/>
+
+</package>
+
+
