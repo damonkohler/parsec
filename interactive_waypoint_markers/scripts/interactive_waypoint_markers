@@ -5,6 +5,8 @@ import roslib; roslib.load_manifest("interactive_waypoint_markers")
 import rospy
 import actionlib
 
+from threading import RLock
+
 import nav_waypoints_server.msg
 import nav_waypoints_server.srv
 
@@ -24,6 +26,8 @@ class InteractiveWaypointMarkers(object):
     # instead of deleting waypoints, we move them to the end of the
     # list
     closed_path = False
+
+    lock = RLock()
     
     def __init__(self):
         self.server = InteractiveMarkerServer("waypoint_markers")
@@ -108,28 +112,31 @@ class InteractiveWaypointMarkers(object):
             self.update_waypoint(feedback.marker_name, feedback.pose, False)
 
     def add_waypoint(self, name, pose):
-        self.waypoints += [name]
-        self.waypoint_poses[name] = pose
-        self.update_navigation()
+        with self.lock:
+            self.waypoints += [name]
+            self.waypoint_poses[name] = pose
+            self.update_navigation()
 
     def update_waypoint(self, name, new_pose, update_server=True):
         # Note: new_pose is not a PoseStamped but a Pose. We want to
         # keep the header
-        self.waypoint_poses[name].pose = new_pose
-        if update_server:
-            if self.waypoints[0] == name:
-                self.update_navigation(True)
-            else:
-                self.update_navigation(False)
+        with self.lock:
+            self.waypoint_poses[name].pose = new_pose
+            if update_server:
+                if self.waypoints[0] == name:
+                    self.update_navigation(True)
+                else:
+                    self.update_navigation(False)
             
     def remove_waypoint(self, name):
-        del(self.waypoint_poses[name])
-        if self.waypoints[0] == name:
-            self.waypoints = self.waypoints[1:]
-            self.update_navigation(True)
-        else:
-            self.waypoints.remove(name)
-            self.update_navigation(False)
+        with self.lock:
+            del(self.waypoint_poses[name])
+            if self.waypoints[0] == name:
+                self.waypoints = self.waypoints[1:]
+                self.update_navigation(True)
+            else:
+                self.waypoints.remove(name)
+                self.update_navigation(False)
 
     def erase_waypoint_marker(self, name):
         # _very_ ugly hack. It seems like interactive_markers has a
@@ -148,50 +155,53 @@ class InteractiveWaypointMarkers(object):
         waypoints by using the update_waypoints service. If
         cancel_action is True, cancels and re-starts the action.
         """
-        if self.execute_path.simple_state != actionlib.SimpleGoalState.DONE \
-                and (cancel_action or len(self.waypoints) == 0):
-            self.execute_path.cancel_goal()
-            # We need to wait until the goal was really canceled
-            if not self.execute_path.wait_for_result(rospy.Duration(2)):
-                rospy.logwarn('Cancellation of goal took more than 2 seconds. Continuing anyway.')
-        if len(self.waypoints) > 0:
-            # No action running
-            if self.execute_path.simple_state == actionlib.SimpleGoalState.DONE:
-                self.execute_path.send_goal(
-                    nav_waypoints_server.msg.ExecutePathGoal(
-                        waypoints=[self.waypoint_poses[wp] for wp in self.waypoints],
-                        continue_on_error=True),
-                    done_cb=self.navigation_done,
-                    feedback_cb=self.navigation_feedback)
-            else:
-                # Update all but the first waypoints
-                self.update_waypoints_srv(waypoints=[self.waypoint_poses[wp] for wp in self.waypoints[1:]])
+        with self.lock:
+            if self.execute_path.simple_state != actionlib.SimpleGoalState.DONE \
+                    and (cancel_action or len(self.waypoints) == 0):
+                self.execute_path.cancel_goal()
+                # We need to wait until the goal was really canceled
+                if not self.execute_path.wait_for_result(rospy.Duration(2)):
+                    rospy.logwarn('Cancellation of goal took more than 2 seconds. Continuing anyway.')
+            if len(self.waypoints) > 0:
+                # No action running
+                if self.execute_path.simple_state == actionlib.SimpleGoalState.DONE:
+                    self.execute_path.send_goal(
+                        nav_waypoints_server.msg.ExecutePathGoal(
+                            waypoints=[self.waypoint_poses[wp] for wp in self.waypoints],
+                            continue_on_error=True),
+                        done_cb=self.navigation_done,
+                        feedback_cb=self.navigation_feedback)
+                else:
+                    # Update all but the first waypoints
+                    self.update_waypoints_srv(waypoints=[self.waypoint_poses[wp] for wp in self.waypoints[1:]])
     
     def navigation_done(self, state, result):
         if state != actionlib.GoalStatus.PREEMPTED:
-            for wp in self.waypoints:
-                self.erase_waypoint_marker(wp)
-            self.waypoints = []
-            self.waypoint_poses = {}
+            with self.lock:
+                for wp in self.waypoints:
+                    self.erase_waypoint_marker(wp)
+                self.waypoints = []
+                self.waypoint_poses = {}
 
     def navigation_feedback(self, feedback):
-        current_index = -1
-        for i, wp in zip(range(len(self.waypoints)), self.waypoints):
-            if poses_eq(feedback.current.pose, self.waypoint_poses[wp].pose):
-                current_index = i
-                break
-        if current_index == -1:
-            rospy.logwarn('Current waypoint unknown.')
-            return
-        if not self.closed_path:
-            for done_wp in self.waypoints[:current_index]:
-                self.erase_waypoint_marker(done_wp)
-                del(self.waypoint_poses[done_wp])
-            self.waypoints = self.waypoints[current_index:]
-        else:
-            done_waypoints = self.waypoints[:current_index]
-            self.waypoints = self.waypoints[current_index:] + done_waypoints
-            self.update_navigation()
+        with self.lock:
+            current_index = -1
+            for i, wp in zip(range(len(self.waypoints)), self.waypoints):
+                if poses_eq(feedback.current.pose, self.waypoint_poses[wp].pose):
+                    current_index = i
+                    break
+            if current_index == -1:
+                rospy.logwarn('Current waypoint unknown.')
+                return
+            if not self.closed_path:
+                for done_wp in self.waypoints[:current_index]:
+                    self.erase_waypoint_marker(done_wp)
+                    del(self.waypoint_poses[done_wp])
+                self.waypoints = self.waypoints[current_index:]
+            else:
+                done_waypoints = self.waypoints[:current_index]
+                self.waypoints = self.waypoints[current_index:] + done_waypoints
+                self.update_navigation()
 
 def poses_eq(p1, p2):
     return p1.position.x == p2.position.x and \
