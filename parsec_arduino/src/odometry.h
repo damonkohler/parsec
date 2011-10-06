@@ -46,17 +46,13 @@ class Odometry {
   void ToMessage(const ros::NodeHandle& node_handle, parsec_msgs::Odometry *message) {
     message->header.stamp = const_cast<ros::NodeHandle&>(node_handle).now();
     message->header.frame_id = const_cast<char*>("odom");
-    message->pose.position.x = x;
-    message->pose.position.y = y;
-    message->pose.position.z = 0.0f;
-    message->pose.orientation.x = 0.0f;
-    message->pose.orientation.y = sin(0.5f * phi);
-    message->pose.orientation.z = 0.0f;
-    message->pose.orientation.w = cos(0.5f * phi);
-    message->child_frame_id = const_cast<char*>("base_link");
-    message->twist.linear.x = x_dot;
-    message->twist.linear.y = y_dot;
-    message->twist.angular.z = phi_dot;
+    message->position_x = x;
+    message->position_y = y;
+    message->orientation_y = sin(0.5f * phi);
+    message->orientation_w = cos(0.5f * phi);
+    message->linear_x = x_dot;
+    message->linear_y = y_dot;
+    message->angular_z = phi_dot;
   }
 
  private:
