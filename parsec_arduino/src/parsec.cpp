@@ -279,7 +279,7 @@ static void UpdateOdometry(float left_odometry, float right_odometry) {
   last_odometry_update = odometry_micros;
   if (odometry_micros - last_odometry_message > 100000ul) {
     odometry.ToMessage(node_handle, &odometry_message);
-    //odometry_publisher.publish(&odometry_message);
+    odometry_publisher.publish(&odometry_message);
     last_odometry_message = odometry_micros;
   }
 }
@@ -327,28 +327,10 @@ void VelocityCallback(const geometry_msgs::Twist& velocity_message) {
 ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
-/* Currently not used. Requires modification to rosserial.
-void fx_open() {
-  Serial.begin(115200);
-}
-
-int fx_putc(char c) {
-  Serial.write(c);
-  printf_row(4, "Wrote byte: %d", c);
-  return 0;
-}
-
-int fx_getc() {
-  int c = Serial.read();
-  printf_row(3, "Read byte: %d", c);
-  return c;
-}
-*/
-
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
-  //node_handle.advertise(odometry_publisher);
+  node_handle.advertise(odometry_publisher);
 }
 
 static void LoopROSSerial() {
