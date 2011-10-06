@@ -19,6 +19,11 @@ class InteractiveWaypointMarkers(object):
 
     # sequence number of goals
     curr_nr = 0
+
+    # Flag to indicate if we are following a closed path, i.e. that
+    # instead of deleting waypoints, we move them to the end of the
+    # list
+    closed_path = False
     
     def __init__(self):
         self.server = InteractiveMarkerServer("waypoint_markers")
@@ -36,6 +41,8 @@ class InteractiveWaypointMarkers(object):
         # set up menu
         self.menu_handler = MenuHandler()
         self.menu_handler.insert("Delete", callback=self.delete_waypoint_cb)
+        self.menu_handler.setCheckState(self.menu_handler.insert("Closed path", callback=self.toggle_closed_path),
+                                        MenuHandler.UNCHECKED)
 
     def add_waypoint_cb(self, pose):
         name = "waypoint_%d" % self.curr_nr
@@ -81,6 +88,18 @@ class InteractiveWaypointMarkers(object):
     def delete_waypoint_cb(self, feedback):
         self.remove_waypoint(feedback.marker_name)
         self.erase_waypoint_marker(feedback.marker_name)
+
+    def toggle_closed_path(self, feedback):
+        state = self.menu_handler.getCheckState(feedback.menu_entry_id)
+        if state == MenuHandler.CHECKED:
+            self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.UNCHECKED)
+            self.closed_path = False
+        else:
+            self.closed_path = True
+            self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.CHECKED)
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
+            
 
     def feedback_cb(self, feedback):
         if feedback.event_type == feedback.MOUSE_UP:
@@ -164,10 +183,15 @@ class InteractiveWaypointMarkers(object):
         if current_index == -1:
             rospy.logwarn('Current waypoint unknown.')
             return
-        for done_wp in self.waypoints[:current_index]:
-            self.erase_waypoint_marker(done_wp)
-            del(self.waypoint_poses[done_wp])
-        self.waypoints = self.waypoints[current_index:]
+        if not self.closed_path:
+            for done_wp in self.waypoints[:current_index]:
+                self.erase_waypoint_marker(done_wp)
+                del(self.waypoint_poses[done_wp])
+            self.waypoints = self.waypoints[current_index:]
+        else:
+            done_waypoints = self.waypoints[:current_index]
+            self.waypoints = self.waypoints[current_index:] + done_waypoints
+            self.update_navigation()
 
 def poses_eq(p1, p2):
     return p1.position.x == p2.position.x and \
