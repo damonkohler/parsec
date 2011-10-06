@@ -45,7 +45,7 @@ class Odometry {
   // Puts the current odometry state into a message.
   void ToMessage(const ros::NodeHandle& node_handle, parsec_msgs::Odometry *message) {
     message->header.stamp = const_cast<ros::NodeHandle&>(node_handle).now();
-    message->header.frame_id = "odom";
+    message->header.frame_id = const_cast<char*>("odom");
     message->pose.position.x = x;
     message->pose.position.y = y;
     message->pose.position.z = 0.0f;
@@ -53,7 +53,7 @@ class Odometry {
     message->pose.orientation.y = sin(0.5f * phi);
     message->pose.orientation.z = 0.0f;
     message->pose.orientation.w = cos(0.5f * phi);
-    message->child_frame_id = "base_link";
+    message->child_frame_id = const_cast<char*>("base_link");
     message->twist.linear.x = x_dot;
     message->twist.linear.y = y_dot;
     message->twist.angular.z = phi_dot;
