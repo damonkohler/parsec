@@ -48,7 +48,7 @@ class Odometry {
     message->header.frame_id = const_cast<char*>("odom");
     message->position_x = x;
     message->position_y = y;
-    message->orientation_y = sin(0.5f * phi);
+    message->orientation_z = sin(0.5f * phi);
     message->orientation_w = cos(0.5f * phi);
     message->linear_x = x_dot;
     message->linear_y = y_dot;
