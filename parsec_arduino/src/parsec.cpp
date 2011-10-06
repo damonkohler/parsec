@@ -335,6 +335,7 @@ static void SetupROSSerial() {
 
 static void LoopROSSerial() {
   node_handle.spinOnce();
+  printf_row(3, "ErrorCount %d", node_handle.getErrorCount());
 }
 
 // ----------------------------------------------------------------------
