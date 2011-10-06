@@ -4,13 +4,16 @@ import roslib; roslib.load_manifest('nav_waypoints_server')
 
 import rospy
 import actionlib
+import tf
 
 from threading import Lock
 
 import nav_waypoints_server.msg
 import nav_waypoints_server.srv
-import nav_msgs.msg as nav_msgs
+import nav_msgs.msg
+import nav_msgs.srv
 import move_base_msgs.msg as move_base_msgs
+import geometry_msgs.msg as geometry_msgs
 
 class PreemptRequested(Exception):
     pass
@@ -19,20 +22,22 @@ class WaypointFailed(Exception):
     pass
 
 class NavWaypointsServer(object):
-    # list of pending waypoints. Required to be a member variable
-    # because we need to be able to change it while executing the path
-    # without preempting the action.
-    pending = []
-    lock = Lock()
-    
     def __init__(self, action_name):
+        # list of pending waypoints. Required to be a member variable
+        # because we need to be able to change it while executing the path
+        # without preempting the action.
+        self.pending = []
+        self.lock = Lock()
+        self.tf = tf.TransformListener()
+
         self.params = self.parse_params()
+        
         if self.params['global_planner_service']:
             try:
                 rospy.wait_for_service(self.params['global_planner_service'], 2)
             except rospy.ROSException, e:
                 rospy.logerr('Unable to find service `%s`. Ignoring' % self.params['global_planner_service'])
-            self.make_plan = rospy.ServiceProxy(self.params['global_planner_service'], nav_msgs.GetPlan)
+            self.make_plan = rospy.ServiceProxy(self.params['global_planner_service'], nav_msgs.srv.GetPlan)
         else:
             self.make_plan = None
         self.execute_path = actionlib.SimpleActionServer(action_name, nav_waypoints_server.msg.ExecutePathAction,
@@ -54,6 +59,8 @@ class NavWaypointsServer(object):
 
         - base_frame: the name of the robot's base_link
 
+        - map_frame: the name of the fixed frame, i.e. map
+
         - move_base_action: name of the primary move_base action
             
         - fallback_move_base_action: name of the fallback navigation action
@@ -68,6 +75,7 @@ class NavWaypointsServer(object):
         """
         return {
             'base_frame': rospy.get_param('~base_frame', 'base_link'),
+            'map_frame':  rospy.get_param('~map_frame', '/map'),
             'move_base_action': rospy.get_param('~move_base_action', '/move_base'),
             'fallback_move_base_action': rospy.get_param('~fallback_move_base_action', None),
             'global_planner_service': rospy.get_param('~global_planner_service', None)}
@@ -79,16 +87,29 @@ class NavWaypointsServer(object):
         return True.
         """
         if self.make_plan:
+            print 'checking plan'
+            try:
+                trans, rot = self.tf.lookupTransform(
+                    self.params['base_frame'], self.params['map_frame'], rospy.Time(0))
+                start = geometry_msgs.PoseStamped()
+                start.header.frame_id = self.params['map_frame']
+                start.header.stamp = rospy.Time.now()
+                start.pose.position = geometry_msgs.Vector3(*trans)
+                start.pose.orientation = geometry_msgs.Quaternion(*rot)
+            except (tf.LookupException, tf.ConnectivityException):
+                rospy.logwarn('Could not get current robot pose')
+                return False
             try:
                 # Start is the robot's current location, i.e. an
                 # identity pose in the base frame
-                start = geometry_msgs.PoseStamped()
-                start.header.frame_id = self.params['base_frame']
-                start.header.stamp = rospy.Time.now()
-                start.pose.orientation.w = 1
-                plan = self.make_plan(start, goal)
-                return len(plan.poses) > 0
+                plan = self.make_plan(start=start, goal=goal, tolerance=0.1)
+                if len(plan.plan.poses) > 0:
+                    print 'yep'
+                else:
+                    print 'nope', plan
+                return len(plan.plan.poses) > 0
             except rospy.ServiceException, e:
+                print 'nope, err'
                 return False
         else:
             return True
