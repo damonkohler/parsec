@@ -216,7 +216,7 @@ const float kWheelRadius = .0762f;  // 6 inch wheels.
 float forward_velocity = 0.0;
 float angular_velocity = 0.0;
 unsigned long last_update = 0;
-const unsigned long kTimeoutMicros = 150000ul;
+const unsigned long kTimeoutMicros = 500000ul;
 unsigned long last_moving = 0;
 const unsigned long kMotorShutoffDelayMicros = 5000000ul;
 const int kMotorPowerPin = 9;
@@ -225,7 +225,7 @@ Odometry odometry;
 unsigned long last_odometry_update = 0;
 unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
-ros::Publisher odometry_publisher("odom", &odometry_message);
+ros::Publisher odometry_publisher("odom_simple", &odometry_message);
 
 static void SetMotorPower(bool enable) {
   digitalWrite(kMotorPowerPin, enable ? HIGH : LOW);
