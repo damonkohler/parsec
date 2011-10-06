@@ -5,3 +5,11 @@ msg_gen
 srv_gen
 ./*.swp
 ./*.pyc
+nav_waypoints_server/msg/ExecutePathAction.msg
+nav_waypoints_server/msg/ExecutePathActionFeedback.msg
+nav_waypoints_server/msg/ExecutePathActionGoal.msg
+nav_waypoints_server/msg/ExecutePathActionResult.msg
+nav_waypoints_server/msg/ExecutePathFeedback.msg
+nav_waypoints_server/msg/ExecutePathGoal.msg
+nav_waypoints_server/msg/ExecutePathResult.ms
+nav_waypoints_server/src/nav_waypoints_server/*
