@@ -1,0 +1,18 @@
+<package>
+  <description brief="interactive_waypoint_markers">
+
+     interactive_waypoint_markers
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/interactive_waypoint_markers</url>
+  <depend package="rospy"/>
+  <depend package="nav_waypoints_server"/>
+  <depend package="interactive_markers"/>
+  <depend package="actionlib"/>
+
+</package>
+
+
