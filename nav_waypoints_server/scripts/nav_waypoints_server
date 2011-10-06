@@ -5,6 +5,8 @@ import roslib; roslib.load_manifest('nav_waypoints_server')
 import rospy
 import actionlib
 
+from threading import Lock
+
 import nav_waypoints_server.msg
 import nav_waypoints_server.srv
 import nav_msgs.msg as nav_msgs
@@ -21,6 +23,7 @@ class NavWaypointsServer(object):
     # because we need to be able to change it while executing the path
     # without preempting the action.
     pending = []
+    lock = Lock()
     
     def __init__(self, action_name):
         self.params = self.parse_params()
@@ -112,13 +115,15 @@ class NavWaypointsServer(object):
     def execute_action(self, goal):
         visited = []
         invalid = []
-        self.pending = goal.waypoints
+        with self.lock:
+            self.pending = goal.waypoints
 
         try:
             while(len(self.pending) > 0):
                 try:
-                    current = self.pending[0]
-                    self.pending = self.pending[1:]
+                    with self.lock:
+                        current = self.pending[0]
+                        self.pending = self.pending[1:]
 
                     self.execute_path.publish_feedback(
                         nav_waypoints_server.msg.ExecutePathFeedback(
@@ -161,9 +166,9 @@ class NavWaypointsServer(object):
                     pending = self.pending))
 
     def update_waypoints(self, request):
-        # TODO: we actually need a lock on self.pending here
-        self.pending = request.waypoints
-        return []
+        with self.lock:
+            self.pending = request.waypoints
+            return []
 
 if __name__ == '__main__':
     rospy.init_node('nav_waypoints_server')
