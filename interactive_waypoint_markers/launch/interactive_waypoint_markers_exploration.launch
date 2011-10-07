@@ -4,7 +4,7 @@
     <rosparam>
       move_base_action: /move_base
       fallback_move_base_action: /move_base_dynamic
-      global_planner_service: /move_base/NavfnROS/make_plan
+      global_planner_service: /move_base/make_plan
     </rosparam>
   </node>
 </launch>
