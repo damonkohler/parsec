@@ -4,7 +4,6 @@ import roslib; roslib.load_manifest('nav_waypoints_server')
 
 import rospy
 import actionlib
-import tf
 
 from threading import Lock
 
@@ -28,7 +27,6 @@ class NavWaypointsServer(object):
         # without preempting the action.
         self.pending = []
         self.lock = Lock()
-        self.tf = tf.TransformListener()
 
         self.params = self.parse_params()
         
@@ -87,22 +85,11 @@ class NavWaypointsServer(object):
         return True.
         """
         if self.make_plan:
-            print 'checking plan'
-            try:
-                trans, rot = self.tf.lookupTransform(
-                    self.params['base_frame'], self.params['map_frame'], rospy.Time(0))
-                start = geometry_msgs.PoseStamped()
-                start.header.frame_id = self.params['map_frame']
-                start.header.stamp = rospy.Time.now()
-                start.pose.position = geometry_msgs.Vector3(*trans)
-                start.pose.orientation = geometry_msgs.Quaternion(*rot)
-            except (tf.LookupException, tf.ConnectivityException):
-                rospy.logwarn('Could not get current robot pose')
-                return False
             try:
                 # Start is the robot's current location, i.e. an
                 # identity pose in the base frame
-                plan = self.make_plan(start=start, goal=goal, tolerance=0.1)
+                plan = self.make_plan(start=geometry_msgs.PoseStamped(), goal=goal,
+                                      tolerance=0.0)
                 if len(plan.plan.poses) > 0:
                     print 'yep'
                 else:
@@ -152,7 +139,7 @@ class NavWaypointsServer(object):
                             visited = visited,
                             invalid = invalid,
                             pending = self.pending))
-                            
+
                     if self.check_waypoint_plan(current):
                         if not self.call_move_base(self.move_base, current):
                             if not self.fallback_move_base:
