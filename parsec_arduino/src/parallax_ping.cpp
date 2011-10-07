@@ -24,6 +24,7 @@ volatile char Ultrasonic::state_ = Ultrasonic::kStateReady;
 unsigned long Ultrasonic::triggered_micros_ = 0;
 unsigned long Ultrasonic::receiving_micros_ = 0;
 unsigned long Ultrasonic::done_micros_ = 0;
+int Ultrasonic::debug_id_ = -1;
 
 Ultrasonic::Ultrasonic()
     : last_micros_(0), value_(32767) {}
@@ -32,7 +33,7 @@ bool Ultrasonic::IsReady() {
   if (state_ != kStateReady) {
     // Still measuring, so we check for timeout.
     Check(micros() - triggered_micros_ < 30000,
-          "US: timeout");
+          "Ping%d timeout", debug_id_);
     return false;
   }
   if (measuring_ != NULL) {
@@ -43,10 +44,11 @@ bool Ultrasonic::IsReady() {
   return micros() - last_micros_ > 200;
 }
 
-void Ultrasonic::SendTriggerPulse() {
-  Check(measuring_ == NULL, "US: meas != NULL");
-  Check(state_ == kStateReady, "US: not ready");
-  Check(micros() - done_micros_ >= 200, "US: delta < 200");
+void Ultrasonic::SendTriggerPulse(int debug_id) {
+  Check(measuring_ == NULL, "Ping%d measuring", debug_id_);
+  Check(state_ == kStateReady, "Ping%d busy", debug_id_);
+  Check(micros() - done_micros_ >= 200, "Ping%d+1 lowdelta", debug_id_);
+  debug_id_ = debug_id;
   measuring_ = this;
   digitalWrite(kPulsePin, HIGH);
   pinMode(kPulsePin, OUTPUT);
@@ -87,10 +89,10 @@ void Ultrasonic::UpdateValue() {
   unsigned long delta_micros = receiving_micros_ - triggered_micros_;
   // Answer is expected after 750 us.
   Check(delta_micros > 700 && delta_micros < 800,
-        "US: at %lu", delta_micros);
+        "Ping%d at %lu", debug_id_, delta_micros);
   value_ = done_micros_ - receiving_micros_;
   // Answer should be between 115 us and 18500 us.
   Check(value_ > 100 && value_ < 25000,
-        "US: is %lu", value_);
+        "Ping%d is %lu", debug_id_, value_);
   last_micros_ = done_micros_;
 }

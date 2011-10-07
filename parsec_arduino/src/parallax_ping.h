@@ -33,7 +33,7 @@ class Ultrasonic {
   // before calling this function, and maintain the connection until IsReady()
   // returns true again, e.g., only change connections when triggering pulses.
   // The new data is returned after IsReady() returned true.
-  void SendTriggerPulse();
+  void SendTriggerPulse(int debug_id);
 
   // Queries the last reading in us.
   int QueryValue();
@@ -61,6 +61,7 @@ class Ultrasonic {
   static unsigned long triggered_micros_;
   static unsigned long receiving_micros_;
   static unsigned long done_micros_;
+  static int debug_id_;
 };
 
 #endif  // PARSECLIB_PARALLAX_PING_

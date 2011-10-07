@@ -31,7 +31,14 @@ class Odometry {
       float left, float right, float wheel_distance, float time_delta) {
     // Assuming constant velocity and $sin x \approx x$.
     float phi_delta = (right - left) / wheel_distance;
+    static const float two_pi = 6.283185307f;
     phi += phi_delta;
+    while (phi < 0.0f) {
+      phi += two_pi;
+    }
+    while (phi >= two_pi) {
+      phi -= two_pi;
+    }
     phi_dot = phi_delta / time_delta;
     float position_delta = (left + right) / 2.0f;
     float x_delta = cos(phi) * position_delta;
@@ -43,9 +50,10 @@ class Odometry {
   }
 
   // Puts the current odometry state into a message.
-  void ToMessage(const ros::NodeHandle& node_handle, parsec_msgs::Odometry *message) {
-    message->header.stamp = const_cast<ros::NodeHandle&>(node_handle).now();
-    message->header.frame_id = const_cast<char*>("odom");
+  void ToMessage(const ros::NodeHandle &node_handle, parsec_msgs::Odometry *message) {
+    message->header.stamp = node_handle.now();
+    static char frame_id[] = "odom";
+    message->header.frame_id = frame_id;
     message->position_x = x;
     message->position_y = y;
     message->orientation_z = sin(0.5f * phi);
