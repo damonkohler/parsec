@@ -20,7 +20,8 @@
 class PositionController {
  public:
   // Constructs a position controller object. Communication is done by
-  // receiving and sending bytes via the given functions.
+  // receiving and sending bytes via the given functions. Reads may return -1
+  // on error, or an unsigned char.
   //
   // Since bytes are transmitted and received over the same wire, changing
   // back from transmitting to receiving is critical, both for ourselves and the
@@ -40,16 +41,16 @@ class PositionController {
   // transmit delay of the position controller to 300 microseconds, so all
   // interrupts running here have to be faster.
   PositionController(
-      unsigned char (*read)(), void (*write)(unsigned char),
+      int (*read)(), void (*write)(unsigned char),
       unsigned char address, float wheel_radius);
 
   // Initializes a position controller, possibly reversing its orientation.
   // It will stay reversed until power is lost, even across soft resets.
   void Initialize(bool reverse);
 
-  // Updates the velocity, given in m/s. Returns the travelled distance in m
-  // since the last call to UpdateVelocity() for odometry. This is combined to
-  // use a single position query for efficiency.
+  // Updates the velocity, given in m/s. Returns the travelled distance in
+  // positions since the last call to UpdateVelocity() for odometry. This is
+  // combined to use a single position query for efficiency.
   float UpdateVelocity(float velocity);
 
   // Tries to broadcast a software reset to all position controllers in the
@@ -58,6 +59,9 @@ class PositionController {
 
  private:
   static const unsigned int kMaximumSpeed = 60;
+
+  // Read successfully or crash.
+  inline unsigned char ReadSafely();
 
   // Soft reset.
   inline void ClearPosition();
@@ -89,7 +93,7 @@ class PositionController {
   // position. Returns the change in positions since the last call.
   inline int TravelFromHere(int distance_from_here);
 
-  unsigned char (*read_)();
+  int (*read_)();
   void (*write_)(unsigned char);
   unsigned char address_;
   float wheel_radius_;

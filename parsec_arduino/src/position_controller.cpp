@@ -17,8 +17,10 @@
 
 #include <WProgram.h>
 
+void Check(bool assertion, const char *format, ...);  // TODO(whess): Move this.
+
 PositionController::PositionController(
-    unsigned char (*read)(), void (*write)(unsigned char),
+    int (*read)(), void (*write)(unsigned char),
     unsigned char address, float wheel_radius)
     : read_(read), write_(write), address_(address),
       wheel_radius_(wheel_radius), last_position_(0), travel_goal_(0) {}
@@ -52,7 +54,7 @@ float PositionController::UpdateVelocity(float velocity) {
     delta = TravelFromHere(0);
   }
   SetSpeedMaximum(speed < kMaximumSpeed ? floor(speed + .5f) : kMaximumSpeed);
-  return 1.745329252f /* \pi/18 */ * wheel_radius_ * delta;
+  return 1.745329252e-1f /* \pi/18 */ * wheel_radius_ * delta;
 }
 
 void PositionController::SoftwareEmergencyStop(void (*write)(unsigned char)) {
@@ -63,6 +65,13 @@ void PositionController::SoftwareEmergencyStop(void (*write)(unsigned char)) {
     write(CLRP);
     delayMicroseconds(150);
   }
+}
+
+unsigned char PositionController::ReadSafely() {
+  int result = read_();
+  Check(result != -1, "Posctrl %d failed", int(address_));
+  unsigned char data = result;
+  return data;
 }
 
 void PositionController::ClearPosition() {
@@ -106,8 +115,8 @@ void PositionController::TravelNumberOfPositions(int distance) {
 unsigned int PositionController::QueryPosition() {
   const unsigned char QPOS = 0x08;
   write_(QPOS | address_);
-  unsigned char msb = read_();
-  unsigned char lsb = read_();
+  unsigned char msb = ReadSafely();
+  unsigned char lsb = ReadSafely();
   // We wait 150 microseconds for the position controller to set RXEN, so that
   // it can receive the next command.
   delayMicroseconds(150);

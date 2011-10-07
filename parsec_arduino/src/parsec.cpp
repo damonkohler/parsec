@@ -25,6 +25,7 @@
 #include "parallax_ping.h"
 #include "parsec_msgs/Odometry.h"
 #include "position_controller.h"
+#include "profiler.h"
 #include "rosgraph_msgs/Log.h"
 #include "ros.h"
 #include "sensor_msgs/Range.h"
@@ -67,6 +68,10 @@ static void printf_row(char row, const char *format, ...) {
   display.WriteString(0, row, message);
 }
 
+static void DumpProfiler(char row, const Profiler &profiler) {
+  printf_row(row, "%6lu %s", profiler.GetElapsedMicros(), profiler.GetName());
+}
+
 static void SetMotorPower(bool enable);
 
 // Endless loop flashing the LCD to show that we have crashed.
@@ -105,6 +110,12 @@ static void LoopDisplay() {
     last_heartbeat = now;
     display.WritePixels(93, 0, last_heart_large ? small_heart : large_heart, 9);
     last_heart_large = !last_heart_large;
+  }
+  static int last_second = -1;
+  int current_second = now / 1000000lu;
+  if (current_second != last_second) {    
+    printf_row(0, "Uptime %d", current_second);
+    last_second = current_second;
   }
 }
 
@@ -175,10 +186,8 @@ static void LoopUltrasonic() {
 
     // Continue with the next ultrasonic sensor.
     current_ping = next_ping;
-    printf_row(2, "Pinger %d", current_ping);
-    printf_row(0, "%d", pings[current_ping].DebugTime());
     PORTK = current_ping;
-    pings[current_ping].SendTriggerPulse();
+    pings[current_ping].SendTriggerPulse(current_ping);
     next_ping = kPingSuccessor[current_ping];
   }
 }
@@ -222,6 +231,8 @@ const unsigned long kMotorShutoffDelayMicros = 5000000ul;
 const int kMotorPowerPin = 9;
 
 Odometry odometry;
+float left_averaged_odometry = 0.0f;
+float right_averaged_odometry = 0.0f;
 unsigned long last_odometry_update = 0;
 unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
@@ -235,16 +246,19 @@ static bool IsUART1Available() {
   return UCSR1A & (1 << RXC1);
 }
 
-static unsigned char ReadUART1() {
+static int ReadUART1() {
   long delay = 0;
   const int delay_step = 100;
   while (!IsUART1Available() && delay < 50000l) {
     delayMicroseconds(delay_step);
     delay += delay_step;
   }
-  Check(IsUART1Available(), "read failed");
-  unsigned char data = UDR1;
-  return data;
+  if (IsUART1Available()) {
+    unsigned char data = UDR1;
+    return data;
+  } else {
+    return -1;
+  }
 }
 
 static void WriteUART1(unsigned char byte) {
@@ -273,11 +287,17 @@ static void SetupPositionController() {
 
 static void UpdateOdometry(float left_odometry, float right_odometry) {
   unsigned long odometry_micros = micros();
-  odometry.UpdateFromWheels(
-      left_odometry, right_odometry,
-      1e-6f * (odometry_micros - last_odometry_update), 2 * kBaseRadius);
-  last_odometry_update = odometry_micros;
-  if (odometry_micros - last_odometry_message > 100000ul) {
+  left_averaged_odometry += left_odometry;
+  right_averaged_odometry += right_odometry;
+  if (odometry_micros - last_odometry_update > 10000ul) {
+    odometry.UpdateFromWheels(
+        left_averaged_odometry, right_averaged_odometry,
+        2 * kBaseRadius, 1e-6f * (odometry_micros - last_odometry_update));
+    left_averaged_odometry = 0.0f;
+    right_averaged_odometry = 0.0f;
+    last_odometry_update = odometry_micros;
+  }
+  if (odometry_micros - last_odometry_message > 30000ul) {
     odometry.ToMessage(node_handle, &odometry_message);
     odometry_publisher.publish(&odometry_message);
     last_odometry_message = odometry_micros;
@@ -290,20 +310,13 @@ static void LoopPositionController() {
     angular_velocity = 0.0f;
     last_update = micros();
   }
-  /*if (micros() - last_update > 3000000ul) {
-    forward_velocity = ((last_update / 3000000ul) & 1) ? 1.0f : -1.0f;
-    angular_velocity = 0.0f;
-    last_update = micros();
-  }*/
   float safe_velocity = forward_velocity;
   MakeUltrasonicSafe(&safe_velocity);
   float left_velocity = safe_velocity - kBaseRadius * angular_velocity;
   float right_velocity = safe_velocity + kBaseRadius * angular_velocity;
-  printf_row(1, "Posctrl %d", 1);
   float left_odometry = left_controller.UpdateVelocity(-left_velocity);
-  printf_row(1, "Posctrl %d", 2);
   float right_odometry = right_controller.UpdateVelocity(-right_velocity);
-  UpdateOdometry(left_odometry, right_odometry);
+  UpdateOdometry(-left_odometry, -right_odometry);
   // Only power the motors if we want to maintain velocity.
   if (left_velocity || right_velocity) {
     last_moving = micros();
@@ -335,7 +348,11 @@ static void SetupROSSerial() {
 
 static void LoopROSSerial() {
   node_handle.spinOnce();
-  printf_row(3, "ErrorCount %d", node_handle.getErrorCount());
+  static int last_error_count = -1;
+  if (node_handle.getErrorCount() != last_error_count) {
+    printf_row(1, "ErrorCount %d", node_handle.getErrorCount());
+    last_error_count = node_handle.getErrorCount();
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -352,20 +369,31 @@ static void SetupShiftBrite() {
 }
 
 static void LoopShiftBrite() {
-  int red[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  int green[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  int blue[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  // Static saves about 20 us.
+  static int red[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static int green[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static int blue[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   for (int i = 0; i != 10; ++i) {
     if (ping_state[i] == kGreen) {
+      red[i] = 0;
       green[i] = 1023;
     } else if (ping_state[i] == kYellow) {
       red[i] = 1023;
       green[i] = 1023;
     } else {
       red[i] = 1023;
+      green[i] = 0;
     }
   }
-  shift_brite.Initialize(10);
+  // Only initialize every so often to double performance, cutting time from
+  // 1276 us to 700 us.
+  static int initialize_next_at = 0;
+  if (initialize_next_at == 0) {
+    shift_brite.Initialize(10);
+    initialize_next_at = 10;
+  } else {
+    --initialize_next_at;
+  }
   shift_brite.UpdateColors(10, red, green, blue);
 }
 
