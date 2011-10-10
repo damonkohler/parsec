@@ -113,7 +113,7 @@ static void LoopDisplay() {
   }
   static int last_second = -1;
   int current_second = now / 1000000lu;
-  if (current_second != last_second) {    
+  if (current_second != last_second) {
     printf_row(0, "Uptime %d", current_second);
     last_second = current_second;
   }
@@ -297,7 +297,7 @@ static void UpdateOdometry(float left_odometry, float right_odometry) {
     right_averaged_odometry = 0.0f;
     last_odometry_update = odometry_micros;
   }
-  if (odometry_micros - last_odometry_message > 30000ul) {
+  if (odometry_micros - last_odometry_message > 60000ul) {
     odometry.ToMessage(node_handle, &odometry_message);
     odometry_publisher.publish(&odometry_message);
     last_odometry_message = odometry_micros;
