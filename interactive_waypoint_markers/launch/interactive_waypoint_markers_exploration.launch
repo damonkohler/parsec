@@ -5,6 +5,7 @@
       move_base_action: /move_base
       fallback_move_base_action: /move_base_dynamic
       global_planner_service: /move_base/make_plan
+      base_frame: base_footprint
     </rosparam>
   </node>
 </launch>
