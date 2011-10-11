@@ -31,6 +31,8 @@
         llsamplestep: 0.01
         lasamplerange: 0.005
         lasamplestep: 0.005
+
+        base_frame: base_footprint
       </rosparam>
       <remap from="/scan" to="/base_scan"/>
     </node>
