@@ -37,6 +37,8 @@ def relay(data):
 
 def listener():
   rospy.init_node('parsec_odometry_relay')
+  odom.child_frame_id = rospy.get_param('~base_frame_id', 'base_link')
+  rospy.loginfo('Using base frame %s' % odom.child_frame_id)
   rospy.Subscriber('odom_simple', ParsecOdometry, relay)
   rospy.spin()
 
