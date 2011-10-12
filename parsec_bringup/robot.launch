@@ -1,0 +1,15 @@
+<launch>
+  <include file="$(find parsec_description)/launch/upload_parsec.launch"/>
+  
+  <rosparam>
+    android_hokuyo_node:
+      laser_frame: base_laser
+      laser_topic: base_scan
+    parsec_odometry_relay:
+      base_frame_id: base_footprint
+  </rosparam>
+
+  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay" />
+  <node name="parsec_state_publisher" type="state_publisher" pkg="robot_state_publisher" />
+  <node name="wall_clock_publisher" type="wall_clock_publisher" pkg="wall_clock_publisher" />
+</launch>
