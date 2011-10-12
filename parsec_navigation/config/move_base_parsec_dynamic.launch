@@ -1,0 +1,27 @@
+<launch>
+ 
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="cmd_vel" to="/base_controller/command"/>
+    <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find parsec_navigation)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find parsec_navigation)/config/base_local_planner_params.yaml" command="load" />
+
+    <param name="global_costmap/static_map" value="true"/>
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base_dynamic" output="screen">
+    <remap from="cmd_vel" to="/base_controller/command"/>
+    <remap from="/move_base" to="/move_base_dynamic"/>
+    
+    <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find parsec_navigation)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find parsec_navigation)/config/base_local_planner_params.yaml" command="load" />
+
+    <param name="global_costmap/static_map" value="false"/>
+  </node>
+
+</launch>

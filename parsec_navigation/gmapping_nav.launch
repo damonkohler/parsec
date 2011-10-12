@@ -1,0 +1,15 @@
+<launch>
+
+  <!--- Run Robot Pose EKF -->
+  <include file="$(find parsec_bringup)/base.launch" />
+
+  <!--- Run gmapping -->
+  <include file="$(find parsec_navigation)/config/gmapping_parsec.launch" />
+
+  <!--- Run Move Base -->
+  <include file="$(find parsec_navigation)/config/move_base_parsec.launch" />
+  
+  <!--- Run the kinect -->
+  <include file="$(find parsec_bringup)/kinect.launch" />
+
+</launch>
