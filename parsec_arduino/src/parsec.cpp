@@ -289,7 +289,7 @@ static void UpdateOdometry(float left_odometry, float right_odometry) {
   unsigned long odometry_micros = micros();
   left_averaged_odometry += left_odometry;
   right_averaged_odometry += right_odometry;
-  if (odometry_micros - last_odometry_update > 10000ul) {
+  if (odometry_micros - last_odometry_update > 12000ul) {
     odometry.UpdateFromWheels(
         left_averaged_odometry, right_averaged_odometry,
         2 * kBaseRadius, 1e-6f * (odometry_micros - last_odometry_update));
