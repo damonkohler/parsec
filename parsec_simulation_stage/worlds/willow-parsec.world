@@ -11,7 +11,7 @@ define base_laser laser
 
 define parsec position
 (
-  size [0.4 0.4 0.17]
+  size [0.2 0.2 0.17]
   origin [0 0 0 0]
   gui_nose 1
   drive "diff"
