@@ -101,9 +101,14 @@ class InteractiveWaypointMarkers(object):
         else:
             self.closed_path = True
             self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.CHECKED)
-        self.menu_handler.reApply(self.server)
+        try:
+            self.menu_handler.reApply(self.server)
+        except RuntimeError:
+            # reApply has a bug. It tries to remove elements from a
+            # set it iterates over. Catch and ignore the error. This
+            # is ugly since we might lose some deletions for a while.
+            pass
         self.server.applyChanges()
-            
 
     def feedback_cb(self, feedback):
         if feedback.event_type == feedback.MOUSE_UP:
@@ -147,6 +152,13 @@ class InteractiveWaypointMarkers(object):
         self.server.insert(marker)
         self.server.pending_updates[name].update_type = UpdateContext.ERASE
         self.server.applyChanges()
+        try:
+            self.menu_handler.reApply(self.server)
+        except RuntimeError:
+            # reApply has a bug. It tries to remove elements from a
+            # set it iterates over. Catch and ignore the error. This
+            # is ugly since we might lose some deletions for a while.
+            pass
 
     def update_navigation(self, cancel_action=False):
         """
