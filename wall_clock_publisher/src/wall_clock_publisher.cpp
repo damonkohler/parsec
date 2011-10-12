@@ -17,19 +17,35 @@
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
 
+/**
+ * Make sure that each client gets the current time as soon as it
+ * connects. Updates are then sent in the main thread at the specified
+ * rate.
+ */
+void onClientConnect(const ros::SingleSubscriberPublisher &client_pub)
+{
+  std_msgs::Time time;
+  time.data = ros::Time::now();
+  client_pub.publish(time);
+}
+
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "wall_time_publisher");
   ros::NodeHandle nh("~");
+  ros::AsyncSpinner spinners(1);
 
-  double publishRate;
-  nh.param("publish_rate", publishRate, 1.0);
-  ros::Rate rate(publishRate);
+  double publish_rate;
+  // Per default, we publish only once every 5 minutes
+  nh.param("publish_rate", publish_rate, 1.0/300.0);
+  ros::Rate rate(publish_rate);
 
-  ros::Publisher wall_clock_pub = nh.advertise<std_msgs::Time>("/wall_clock", 1);
+  ros::Publisher wall_clock_pub = nh.advertise<std_msgs::Time>("/wall_clock", 1,
+    static_cast<const ros::SubscriberStatusCallback &>(onClientConnect));
   
   std_msgs::Time time;
 
+  spinners.start();
   while(nh.ok())
   {
     time.data = ros::Time::now();
