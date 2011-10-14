@@ -4,6 +4,5 @@
   <include file="$(find parsec_description)/launch/upload_parsec.launch"/>
   <node name="stage" type="stageros" pkg="stage"
         args="$(find parsec_simulation_stage)/worlds/willow-parsec.world">
-    <remap from="/cmd_vel" to="/base_controller/command"/>
   </node>
 </launch>
