@@ -246,6 +246,7 @@ unsigned long last_joint_state_message = 0;
 sensor_msgs::JointState joint_state_message;
 ros::Publisher joint_state_publisher("joint_states", &joint_state_message);
 
+#ifdef PUBLISH_BASE_CONTROLLER_INFO
 unsigned long last_controller_message = 0;
 std_msgs::Float32 left_velocity_command;
 ros::Publisher left_velocity_cmd_publisher("base_controller/left_command", &left_velocity_command);
@@ -255,6 +256,7 @@ std_msgs::Float32 right_velocity_command;
 ros::Publisher right_velocity_cmd_publisher("base_controller/right_command", &right_velocity_command);
 std_msgs::Float32 right_velocity_error;
 ros::Publisher right_velocity_error_publisher("base_controller/right_error", &right_velocity_error);
+#endif
 
 static void SetMotorPower(bool enable) {
   digitalWrite(kMotorPowerPin, enable ? HIGH : LOW);
@@ -380,15 +382,16 @@ static void PublishJointState() {
     joint_state_publisher.publish(&joint_state_message);
     last_joint_state_message = micros();
 
+#ifdef PUBLISH_BASE_CONTROLLER_INFO    
     left_velocity_command.data = left_controller.GetLastVelocityCmd();
     left_velocity_cmd_publisher.publish(&left_velocity_command);
     left_velocity_error.data = left_velocity_pid.error();
     left_velocity_error_publisher.publish(&left_velocity_error);
-
     right_velocity_command.data = right_controller.GetLastVelocityCmd();
     right_velocity_cmd_publisher.publish(&right_velocity_command);
     right_velocity_error.data = right_velocity_pid.error();
     right_velocity_error_publisher.publish(&right_velocity_error);
+#endif
   }
 }
 
@@ -410,10 +413,12 @@ static void SetupROSSerial() {
   node_handle.subscribe(velocity_subscriber);
   node_handle.advertise(odometry_publisher);
   node_handle.advertise(joint_state_publisher);
+#ifdef PUBLISH_BASE_CONTROLLER_INFO  
   node_handle.advertise(left_velocity_cmd_publisher);
   node_handle.advertise(left_velocity_error_publisher);
   node_handle.advertise(right_velocity_cmd_publisher);
   node_handle.advertise(right_velocity_error_publisher);
+#endif
 }
 
 static void LoopROSSerial() {
