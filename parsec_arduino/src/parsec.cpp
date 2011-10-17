@@ -31,6 +31,10 @@
 #include "sensor_msgs/Range.h"
 #include "shift_brite.h"
 #include "simple_led.h"
+#include "pid.h"
+#include "sensor_msgs/JointState.h"
+#include "std_msgs/Float32.h"
+
 
 inline float fminf(float x, float y) {
   return x < y ? x : y;
@@ -238,6 +242,20 @@ unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
 ros::Publisher odometry_publisher("odom_simple", &odometry_message);
 
+unsigned long last_joint_state_message = 0;
+sensor_msgs::JointState joint_state_message;
+ros::Publisher joint_state_publisher("joint_states", &joint_state_message);
+
+unsigned long last_controller_message = 0;
+std_msgs::Float32 left_velocity_command;
+ros::Publisher left_velocity_cmd_publisher("base_controller/left_command", &left_velocity_command);
+std_msgs::Float32 left_velocity_error;
+ros::Publisher left_velocity_error_publisher("base_controller/left_error", &left_velocity_error);
+std_msgs::Float32 right_velocity_command;
+ros::Publisher right_velocity_cmd_publisher("base_controller/right_command", &right_velocity_command);
+std_msgs::Float32 right_velocity_error;
+ros::Publisher right_velocity_error_publisher("base_controller/right_error", &right_velocity_error);
+
 static void SetMotorPower(bool enable) {
   digitalWrite(kMotorPowerPin, enable ? HIGH : LOW);
 }
@@ -272,8 +290,15 @@ static void WriteUART1(unsigned char byte) {
   UCSR1B |= (1 << RXEN1);
 }
 
-PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius);
-PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius);
+#define P_GAIN 0.07f
+#define I_GAIN 0.0f
+#define D_GAIN 0.0f
+#define I_CLAMP 1.0f
+
+Pid left_velocity_pid(P_GAIN, I_GAIN, D_GAIN, I_CLAMP);
+Pid right_velocity_pid(P_GAIN, I_GAIN, D_GAIN, I_CLAMP);
+PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius, &left_velocity_pid);
+PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius, &right_velocity_pid);
 
 static void SetupPositionController() {
   // Position Controller Device serial port. Pins 19 (RX) and 18 (TX).
@@ -327,6 +352,46 @@ static void LoopPositionController() {
   }
 }
 
+static void PublishJointState() {
+  // Note: these names need to match the URDF to have the
+  // robot_state_publisher work correctly.
+  static char left_name[] = "left_wheel_joint";
+  static char right_name[] = "right_wheel_joint";
+  // We need to solve this 'the ugly way' to prevent a compiler
+  // warning where the compiler complains that we use a deprecated
+  // conversion from const char * to char*.
+  static char *names[] = {left_name, right_name};
+  // TODO: reduce publish reate agian!
+  if(micros() - last_joint_state_message >  10000ul)
+  {
+    float position[] = { left_controller.GetLastPosition(),
+                         right_controller.GetLastPosition() };
+    float velocity[] = { left_controller.GetLastVelocity(),
+                         right_controller.GetLastVelocity() };
+    // Note: this is actually not correct. We needed to use the time of
+    // the last position/velocity measurements instead of current time.
+    joint_state_message.header.stamp = node_handle.now();
+    joint_state_message.name_length = 2;
+    joint_state_message.name = names;
+    joint_state_message.position_length = 2;
+    joint_state_message.position = position;
+    joint_state_message.velocity_length = 2;
+    joint_state_message.velocity = velocity;
+    joint_state_publisher.publish(&joint_state_message);
+    last_joint_state_message = micros();
+
+    left_velocity_command.data = left_controller.GetLastVelocityCmd();
+    left_velocity_cmd_publisher.publish(&left_velocity_command);
+    left_velocity_error.data = left_velocity_pid.error();
+    left_velocity_error_publisher.publish(&left_velocity_error);
+
+    right_velocity_command.data = right_controller.GetLastVelocityCmd();
+    right_velocity_cmd_publisher.publish(&right_velocity_command);
+    right_velocity_error.data = right_velocity_pid.error();
+    right_velocity_error_publisher.publish(&right_velocity_error);
+  }
+}
+
 // ----------------------------------------------------------------------
 // ROS serial communication
 // ----------------------------------------------------------------------
@@ -344,6 +409,11 @@ static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
   node_handle.advertise(odometry_publisher);
+  node_handle.advertise(joint_state_publisher);
+  node_handle.advertise(left_velocity_cmd_publisher);
+  node_handle.advertise(left_velocity_error_publisher);
+  node_handle.advertise(right_velocity_cmd_publisher);
+  node_handle.advertise(right_velocity_error_publisher);
 }
 
 static void LoopROSSerial() {
@@ -419,7 +489,8 @@ void setup() {
 void loop() {
   LoopDisplay();
   LoopROSSerial();
-  LoopPositionController();
+  LoopPositionController(); 
+  PublishJointState(); 
   LoopUltrasonic();
   LoopShiftBrite();
 }
