@@ -362,7 +362,7 @@ static void PublishJointState() {
   // conversion from const char * to char*.
   static char *names[] = {left_name, right_name};
   // TODO: reduce publish reate agian!
-  if(micros() - last_joint_state_message >  10000ul)
+  if(micros() - last_joint_state_message >  80000ul)
   {
     float position[] = { left_controller.GetLastPosition(),
                          right_controller.GetLastPosition() };
