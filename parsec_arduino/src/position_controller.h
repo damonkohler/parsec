@@ -16,6 +16,8 @@
 #ifndef PARSECLIB_POSITION_CONTROLLER_
 #define PARSECLIB_POSITION_CONTROLLER_
 
+#include "pid.h"
+
 // Class for the Parallax Position Controller Device.
 class PositionController {
  public:
@@ -42,7 +44,7 @@ class PositionController {
   // interrupts running here have to be faster.
   PositionController(
       int (*read)(), void (*write)(unsigned char),
-      unsigned char address, float wheel_radius);
+      unsigned char address, float wheel_radius, Pid *pid);
 
   // Initializes a position controller, possibly reversing its orientation.
   // It will stay reversed until power is lost, even across soft resets.
@@ -53,13 +55,22 @@ class PositionController {
   // combined to use a single position query for efficiency.
   float UpdateVelocity(float velocity);
 
+  // returns the last position reading
+  unsigned int GetLastPosition() { return last_position_; }
+
+  // returns the last velocity reading
+  float GetLastVelocity() { return last_velocity_; }
+
+  // returns the last velocity command sent to the controller
+  float GetLastVelocityCmd() { return last_velocity_cmd_; }
+  
   // Tries to broadcast a software reset to all position controllers in the
   // hope they will stop the motors.
   static void SoftwareEmergencyStop(void (*write)(unsigned char));
 
  private:
   static const unsigned int kMaximumSpeed = 60;
-
+  
   // Read successfully or crash.
   inline unsigned char ReadSafely();
 
@@ -89,15 +100,24 @@ class PositionController {
   // Queries the change in position since the last call.
   inline unsigned int QueryPositionDelta();
 
+  // Updates the current velocity
+  inline void RecalculateVelocity();
+
   // Set the travel destination to a distance relative from the current
   // position. Returns the change in positions since the last call.
   inline int TravelFromHere(int distance_from_here);
 
+  Pid *pid_;
   int (*read_)();
   void (*write_)(unsigned char);
   unsigned char address_;
   float wheel_radius_;
   unsigned int last_position_;
+  unsigned long last_position_time_;
+  unsigned long last_control_time_;
+  unsigned int last_velocity_position_;
+  float last_velocity_;
+  float last_velocity_cmd_;
   int travel_goal_;
 };
 

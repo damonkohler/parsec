@@ -11,6 +11,7 @@
 
   <depend package="rosserial_arduino"/>
   <depend package="parsec_msgs"/>
+  <depend package="sensor_msgs"/>
 
 </package>
 
