@@ -242,9 +242,9 @@ unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
 ros::Publisher odometry_publisher("odom_simple", &odometry_message);
 
-unsigned long last_joint_state_message = 0;
-sensor_msgs::JointState joint_state_message;
-ros::Publisher joint_state_publisher("joint_states", &joint_state_message);
+// unsigned long last_joint_state_message = 0;
+// sensor_msgs::JointState joint_state_message;
+// ros::Publisher joint_state_publisher("joint_states", &joint_state_message);
 
 #ifdef PUBLISH_BASE_CONTROLLER_INFO
 unsigned long last_controller_message = 0;
@@ -354,46 +354,46 @@ static void LoopPositionController() {
   }
 }
 
-static void PublishJointState() {
-  // Note: these names need to match the URDF to have the
-  // robot_state_publisher work correctly.
-  static char left_name[] = "left_wheel_joint";
-  static char right_name[] = "right_wheel_joint";
-  // We need to solve this 'the ugly way' to prevent a compiler
-  // warning where the compiler complains that we use a deprecated
-  // conversion from const char * to char*.
-  static char *names[] = {left_name, right_name};
-  // TODO: reduce publish reate agian!
-  if(micros() - last_joint_state_message >  80000ul)
-  {
-    float position[] = { left_controller.GetLastPosition(),
-                         right_controller.GetLastPosition() };
-    float velocity[] = { left_controller.GetLastVelocity(),
-                         right_controller.GetLastVelocity() };
-    // Note: this is actually not correct. We needed to use the time of
-    // the last position/velocity measurements instead of current time.
-    joint_state_message.header.stamp = node_handle.now();
-    joint_state_message.name_length = 2;
-    joint_state_message.name = names;
-    joint_state_message.position_length = 2;
-    joint_state_message.position = position;
-    joint_state_message.velocity_length = 2;
-    joint_state_message.velocity = velocity;
-    joint_state_publisher.publish(&joint_state_message);
-    last_joint_state_message = micros();
+// static void PublishJointState() {
+//   // Note: these names need to match the URDF to have the
+//   // robot_state_publisher work correctly.
+//   static char left_name[] = "left_wheel_joint";
+//   static char right_name[] = "right_wheel_joint";
+//   // We need to solve this 'the ugly way' to prevent a compiler
+//   // warning where the compiler complains that we use a deprecated
+//   // conversion from const char * to char*.
+//   static char *names[] = {left_name, right_name};
+//   // TODO: reduce publish reate agian!
+//   if(micros() - last_joint_state_message >  80000ul)
+//   {
+//     float position[] = { left_controller.GetLastPosition(),
+//                          right_controller.GetLastPosition() };
+//     float velocity[] = { left_controller.GetLastVelocity(),
+//                          right_controller.GetLastVelocity() };
+//     // Note: this is actually not correct. We needed to use the time of
+//     // the last position/velocity measurements instead of current time.
+//     joint_state_message.header.stamp = node_handle.now();
+//     joint_state_message.name_length = 2;
+//     joint_state_message.name = names;
+//     joint_state_message.position_length = 2;
+//     joint_state_message.position = position;
+//     joint_state_message.velocity_length = 2;
+//     joint_state_message.velocity = velocity;
+//     joint_state_publisher.publish(&joint_state_message);
+//     last_joint_state_message = micros();
 
-#ifdef PUBLISH_BASE_CONTROLLER_INFO    
-    left_velocity_command.data = left_controller.GetLastVelocityCmd();
-    left_velocity_cmd_publisher.publish(&left_velocity_command);
-    left_velocity_error.data = left_velocity_pid.error();
-    left_velocity_error_publisher.publish(&left_velocity_error);
-    right_velocity_command.data = right_controller.GetLastVelocityCmd();
-    right_velocity_cmd_publisher.publish(&right_velocity_command);
-    right_velocity_error.data = right_velocity_pid.error();
-    right_velocity_error_publisher.publish(&right_velocity_error);
-#endif
-  }
-}
+// #ifdef PUBLISH_BASE_CONTROLLER_INFO
+//     left_velocity_command.data = left_controller.GetLastVelocityCmd();
+//     left_velocity_cmd_publisher.publish(&left_velocity_command);
+//     left_velocity_error.data = left_velocity_pid.error();
+//     left_velocity_error_publisher.publish(&left_velocity_error);
+//     right_velocity_command.data = right_controller.GetLastVelocityCmd();
+//     right_velocity_cmd_publisher.publish(&right_velocity_command);
+//     right_velocity_error.data = right_velocity_pid.error();
+//     right_velocity_error_publisher.publish(&right_velocity_error);
+// #endif
+//   }
+// }
 
 // ----------------------------------------------------------------------
 // ROS serial communication
@@ -412,7 +412,7 @@ static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
   node_handle.advertise(odometry_publisher);
-  node_handle.advertise(joint_state_publisher);
+  //node_handle.advertise(joint_state_publisher);
 #ifdef PUBLISH_BASE_CONTROLLER_INFO  
   node_handle.advertise(left_velocity_cmd_publisher);
   node_handle.advertise(left_velocity_error_publisher);
@@ -495,7 +495,7 @@ void loop() {
   LoopDisplay();
   LoopROSSerial();
   LoopPositionController(); 
-  PublishJointState(); 
+  //PublishJointState();
   LoopUltrasonic();
   LoopShiftBrite();
 }
