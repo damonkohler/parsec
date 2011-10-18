@@ -292,7 +292,7 @@ static void WriteUART1(unsigned char byte) {
   UCSR1B |= (1 << RXEN1);
 }
 
-#define P_GAIN 0.07f
+#define P_GAIN 0.04f
 #define I_GAIN 0.0f
 #define D_GAIN 0.0f
 #define I_CLAMP 1.0f
