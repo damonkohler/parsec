@@ -14,3 +14,4 @@ nav_waypoints_server/msg/ExecutePathGoal.msg
 nav_waypoints_server/msg/ExecutePathResult.ms
 nav_waypoints_server/src/nav_waypoints_server/*
 wall_clock_publisher/bin/wall_clock_publisher
+parsec_pinger/bin/parsec_pinger
