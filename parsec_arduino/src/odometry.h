@@ -23,7 +23,9 @@
 
 class Odometry {
  public:
-  Odometry() : phi(0.0f), x(0.0f), y(0.0f) {}
+  Odometry()
+    : phi(0.0f), x(0.0f), y(0.0f), x_dot_t(0.0f),
+      velocity_measurement_interval(0.0f) {}
 
   // Updates the odometry by a left and right wheel movement, separated by
   // a known distance. All distances in meters.
@@ -39,14 +41,14 @@ class Odometry {
     while (phi >= two_pi) {
       phi -= two_pi;
     }
-    phi_dot = phi_delta / time_delta;
+    phi_dot_t += phi_delta;
     float position_delta = (left + right) / 2.0f;
     float x_delta = cos(phi) * position_delta;
     float y_delta = sin(phi) * position_delta;
     x += x_delta;
     y += y_delta;
-    x_dot = x_delta / time_delta;
-    y_dot = y_delta / time_delta;
+    x_dot_t += position_delta;
+    velocity_measurement_interval += time_delta;
   }
 
   // Puts the current odometry state into a message.
@@ -58,18 +60,22 @@ class Odometry {
     message->position_y = y;
     message->orientation_z = sin(0.5f * phi);
     message->orientation_w = cos(0.5f * phi);
-    message->linear_x = x_dot;
-    message->linear_y = y_dot;
-    message->angular_z = phi_dot;
+    message->linear_x = x_dot_t / velocity_measurement_interval;
+    message->linear_y = 0.0f;
+    message->angular_z = phi_dot_t / velocity_measurement_interval;
+
+    // reset for new velocity measurement
+    x_dot_t = phi_dot_t = velocity_measurement_interval = 0.0f;
   }
 
  private:
   float phi;
   float x;
   float y;
-  float phi_dot;
-  float x_dot;
-  float y_dot;
+  
+  float phi_dot_t;
+  float x_dot_t;
+  float velocity_measurement_interval;
 };
 
 #endif  // PARSECLIB_ODOMETRY_
