@@ -9,10 +9,24 @@
       base_frame_id: base_footprint
   </rosparam>
 
-  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay" />
+  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay" >
+    <param name="publish_tf" value="false"/>
+  </node>
+
   <node name="parsec_state_publisher" type="state_publisher" pkg="robot_state_publisher" />
   <node name="wall_clock_publisher" type="wall_clock_publisher" pkg="wall_clock_publisher" >
     <remap from="/wall_clock" to="/wall_clock_relay/wall_clock"/>
+  </node>
+
+  <node name="laser_odometry" type="laser_scan_matcher_node" pkg="laser_scan_matcher">
+    <remap from="scan" to="base_scan"/>
+    <remap from="pose2D" to="~pose"/>
+    <rosparam>
+      fixed_frame: odom
+      base_frame: base_footprint
+      use_imu: false
+      use_odom: true
+    </rosparam>
   </node>
 
 </launch>
