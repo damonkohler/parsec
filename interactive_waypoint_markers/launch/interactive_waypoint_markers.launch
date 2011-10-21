@@ -1,0 +1,8 @@
+<launch>
+  <node name="interactive_waypoint_markers" type="interactive_waypoint_markers" pkg="interactive_waypoint_markers"/>
+  <node name="nav_waypoints_server" type="nav_waypoints_server" pkg="nav_waypoints_server">
+    <rosparam>
+      base_frame: base_footprint
+    </rosparam>
+  </node>
+</launch>

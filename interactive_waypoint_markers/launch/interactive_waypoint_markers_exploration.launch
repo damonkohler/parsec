@@ -1,0 +1,11 @@
+<launch>
+  <node name="interactive_waypoint_markers" type="interactive_waypoint_markers" pkg="interactive_waypoint_markers"/>
+  <node name="nav_waypoints_server" type="nav_waypoints_server" pkg="nav_waypoints_server" output="screen">
+    <rosparam>
+      move_base_action: /move_base
+      fallback_move_base_action: /move_base_dynamic
+      global_planner_service: /move_base/make_plan
+      base_frame: base_footprint
+    </rosparam>
+  </node>
+</launch>

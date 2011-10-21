@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- Run the map server (to be changed to use correct map)-->
+  <arg name="map_file" default="$(find parsec_navigation)/maps/google-m-alt-2011-10-13.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!--- Run AMCL -->
+  <include file="$(find parsec_navigation)/config/amcl_parsec.launch" />
+
+  <!--- Run Move Base -->
+  <include file="$(find parsec_navigation)/config/move_base_parsec.launch" />
+
+</launch>
