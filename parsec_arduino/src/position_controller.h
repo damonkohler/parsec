@@ -50,9 +50,9 @@ class PositionController {
   // It will stay reversed until power is lost, even across soft resets.
   void Initialize(bool reverse);
 
-  // Updates the velocity, given in m/s. Returns the travelled distance in
-  // positions since the last call to UpdateVelocity() for odometry. This is
-  // combined to use a single position query for efficiency.
+  // Updates the velocity, given in m/s. Returns the travelled distance in m
+  // since the last call to UpdateVelocity() for odometry. This is combined to
+  // use a single position query for efficiency.
   float UpdateVelocity(float velocity);
 
   // returns the last position reading
