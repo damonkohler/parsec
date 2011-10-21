@@ -329,7 +329,7 @@ static void UpdateOdometry(float left_odometry, float right_odometry) {
     right_averaged_odometry = 0.0f;
     last_odometry_update = odometry_micros;
   }
-  if (odometry_micros - last_odometry_message > 60000ul) {
+  if (odometry_micros - last_odometry_message > 70000ul) {
     odometry.ToMessage(node_handle, &odometry_message);
     odometry_publisher.publish(&odometry_message);
     last_odometry_message = odometry_micros;
