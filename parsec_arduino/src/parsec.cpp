@@ -159,9 +159,12 @@ const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
 // >>> print ', '.join(map(str, (
 // ... math.cos(2 * math.pi * i / 12)
 // ... for i in (4, 5, 6, 7, 8, 10, 11, 0, 1, 2))))
+// const float kPingerDirection[kNumPingers] = {
+//     0.5f, 0.8660254f, 1.0f, 0.8660254f, 0.5f,
+//     -0.5f, -0.8660254f, -1.0f, -0.8660254f, -0.5f};
 const float kPingerDirection[kNumPingers] = {
-    0.5f, 0.8660254f, 1.0f, 0.8660254f, 0.5f,
-    -0.5f, -0.8660254f, -1.0f, -0.8660254f, -0.5f};
+    0.25f, 0.5f, 1.0f, 0.5f, 0.25f,
+    -0.25f, -0.5f, -1.0f, -0.5f, -0.25f};
 
 // Put an ultrasonic sensor reading in a ROS sensor_msgs::Range message.
 void UltrasonicToMessage(float range, sensor_msgs::Range *range_message) {
