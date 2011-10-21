@@ -243,8 +243,6 @@ const unsigned long kMotorShutoffDelayMicros = 5000000ul;
 const int kMotorPowerPin = 9;
 
 Odometry odometry;
-float left_averaged_odometry = 0.0f;
-float right_averaged_odometry = 0.0f;
 unsigned long last_odometry_update = 0;
 unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
@@ -322,16 +320,10 @@ static void SetupPositionController() {
 
 static void UpdateOdometry(float left_odometry, float right_odometry) {
   unsigned long odometry_micros = micros();
-  left_averaged_odometry += left_odometry;
-  right_averaged_odometry += right_odometry;
-  if (odometry_micros - last_odometry_update > 12000ul) {
-    odometry.UpdateFromWheels(
-        left_averaged_odometry, right_averaged_odometry,
-        2 * kBaseRadius, 1e-6f * (odometry_micros - last_odometry_update));
-    left_averaged_odometry = 0.0f;
-    right_averaged_odometry = 0.0f;
-    last_odometry_update = odometry_micros;
-  }
+  odometry.UpdateFromWheels(
+      left_odometry, right_odometry,
+      2 * kBaseRadius, 1e-6f * (odometry_micros - last_odometry_update));
+  last_odometry_update = odometry_micros;
   if (odometry_micros - last_odometry_message > 70000ul) {
     odometry.ToMessage(node_handle, &odometry_message);
     odometry_publisher.publish(&odometry_message);
