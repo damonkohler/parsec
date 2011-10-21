@@ -53,7 +53,7 @@ public class WallclockRelay implements NodeMain {
         clockRepublisher = node.newPublisher("/wall_clock", "std_msgs/Time");
 
         // Update once per minute per default
-        Duration republishPeriod = new Duration(node.newParameterTree().getDouble("~publish_period", 60));
+        Duration republishPeriod = new Duration(node.newParameterTree().getDouble("~publish_period", 10));
         Duration pollPeriod = new Duration(0.1);
 
         int numSubscribers = clockRepublisher.getNumberOfSubscribers();
