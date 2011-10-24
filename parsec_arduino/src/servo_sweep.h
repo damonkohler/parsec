@@ -23,9 +23,11 @@ class ServoSweep {
  public:
   ServoSweep(int servo_pin);
 
+  void Init();
   void Update();
 
  private:
+  int servo_pin_;
   Servo servo_;
 };
 

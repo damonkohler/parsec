@@ -490,7 +490,7 @@ static void LoopShiftBrite() {
 // Servo sweep
 // ----------------------------------------------------------------------
 
-ServoSweep servo_sweep(7);  // Pin 7.
+ServoSweep servo_sweep(10);  // PWM pin
 
 // ----------------------------------------------------------------------
 
@@ -509,6 +509,7 @@ void setup() {
   SetupUltrasonic();
   SetupPositionController();
   SetupShiftBrite();
+  //servo_sweep.Init();
 }
 
 void loop() {
@@ -518,6 +519,5 @@ void loop() {
   //PublishJointState();
   LoopUltrasonic();
   LoopShiftBrite();
-//  servo_sweep.Update();
-//  delayMicroseconds(3000);
+  //servo_sweep.Update();
 }

@@ -15,18 +15,21 @@
 
 #include "servo_sweep.h"
 
-ServoSweep::ServoSweep(int servo_pin) : servo_() {
-  // For the HSR-5990TG servo, 1500 us is neutral, and
-  // +/- 400 us for +/- 90 degrees.
-  servo_.attach(servo_pin, 1100, 1900);
+ServoSweep::ServoSweep(int servo_pin)
+  : servo_(), servo_pin_(servo_pin) {}
+
+void ServoSweep::Init() {
+  servo_.attach(servo_pin_);
 }
 
 void ServoSweep::Update() {
   // About 2 seconds period.
   long position = micros() & ((1L << 21) - 1);
   if (position >= (1L << 20)) {
-    position = (1L << 21) - position;
+   position = (1L << 21) - position;
   }
   // We use writeMicroseconds for increased precision.
-  servo_.writeMicroseconds(1100 + position / 1311);
+  // For the HSR-5990TG servo, 1500 us is neutral, and
+  // +/- 900 us for +/- 90 degrees.
+  servo_.writeMicroseconds(600 + ((position * 1800) >> 20));
 }
