@@ -409,22 +409,9 @@ void VelocityCallback(const geometry_msgs::Twist& velocity_message) {
 ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
-std_msgs::Time pong_time_msg;
-ros::Publisher pong_publisher("pong", &pong_time_msg);
-
-void PingCallback(const std_msgs::Time &time_message) {
-  pong_time_msg.data = time_message.data;
-  pong_publisher.publish(&pong_time_msg);
-}
-
-ros::Subscriber<std_msgs::Time> ping_subscriber(
-    "ping", &PingCallback);
-
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
-  node_handle.subscribe(ping_subscriber);
-  node_handle.advertise(pong_publisher);
   node_handle.advertise(odometry_publisher);
   //node_handle.advertise(joint_state_publisher);
 #ifdef PUBLISH_BASE_CONTROLLER_INFO  
