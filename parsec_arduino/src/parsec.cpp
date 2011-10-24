@@ -19,6 +19,7 @@
 #include <SPI.h>
 #include <WProgram.h>
 
+#include "servo_sweep.h"
 #include "dogs102lcd.h"
 #include "geometry_msgs/Twist.h"
 #include "odometry.h"
@@ -486,6 +487,12 @@ static void LoopShiftBrite() {
 }
 
 // ----------------------------------------------------------------------
+// Servo sweep
+// ----------------------------------------------------------------------
+
+ServoSweep servo_sweep(7);  // Pin 7.
+
+// ----------------------------------------------------------------------
 
 void setup() {
   {
@@ -511,4 +518,6 @@ void loop() {
   //PublishJointState();
   LoopUltrasonic();
   LoopShiftBrite();
+//  servo_sweep.Update();
+//  delayMicroseconds(3000);
 }
