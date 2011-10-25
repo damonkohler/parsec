@@ -35,6 +35,7 @@
 #include "pid.h"
 //#include "sensor_msgs/JointState.h"
 #include "std_msgs/Time.h"
+#include "parsec_msgs/LaserTiltProfile.h"
 
 #ifdef PUBLISH_BASE_CONTROLLER_INFO
 #include "std_msgs/Float32.h"
@@ -397,6 +398,27 @@ static void LoopPositionController() {
 // }
 
 // ----------------------------------------------------------------------
+// Tilting servo
+// ----------------------------------------------------------------------
+
+ServoSweep servo_sweep(10);  // PWM pin
+
+void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) {
+  servo_sweep.SetProfile(tilt_profile_msg.min_angle, tilt_profile_msg.max_angle, tilt_profile_msg.period);
+}
+
+ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
+  "laser_tilt_profile", &TiltProfileCallback);
+
+void SetupServoSweep() {
+  servo_sweep.Init();
+}
+
+void LoopServoSweep() {
+  servo_sweep.Update();
+}
+
+// ----------------------------------------------------------------------
 // ROS serial communication
 // ----------------------------------------------------------------------
 
@@ -412,6 +434,7 @@ ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
+  node_handle.subscribe(tilt_profile_subscriber);
   node_handle.advertise(odometry_publisher);
   //node_handle.advertise(joint_state_publisher);
 #ifdef PUBLISH_BASE_CONTROLLER_INFO  
@@ -474,12 +497,6 @@ static void LoopShiftBrite() {
 }
 
 // ----------------------------------------------------------------------
-// Servo sweep
-// ----------------------------------------------------------------------
-
-ServoSweep servo_sweep(10);  // PWM pin
-
-// ----------------------------------------------------------------------
 
 void setup() {
   {
@@ -496,15 +513,15 @@ void setup() {
   SetupUltrasonic();
   SetupPositionController();
   SetupShiftBrite();
-  //servo_sweep.Init();
+  SetupServoSweep();
 }
 
 void loop() {
   LoopDisplay();
   LoopROSSerial();
-  LoopPositionController(); 
+  LoopPositionController();
   //PublishJointState();
   LoopUltrasonic();
   LoopShiftBrite();
-  //servo_sweep.Update();
+  LoopServoSweep();
 }
