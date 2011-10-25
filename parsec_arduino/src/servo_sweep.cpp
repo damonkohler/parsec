@@ -17,8 +17,6 @@
 
 #include "servo_sweep.h"
 
-extern ros::NodeHandle node_handle;
-
 ServoSweep::ServoSweep(int servo_pin)
   : servo_(), servo_pin_(servo_pin),
     period_(0),
