@@ -19,9 +19,13 @@
 #include <Servo.h>
 #include <WProgram.h>
 
+#include "ros.h"
+
 class ServoSweep {
  public:
-  ServoSweep(int servo_pin, ros::Publisher &publisher);
+  typedef void(*OnSignalCallback)(int);
+  
+  ServoSweep(int servo_pin, OnSignalCallback callback=NULL);
 
   void Init();
 
@@ -43,6 +47,8 @@ class ServoSweep {
   unsigned min_pwm_period_;   // minimal period in microseconds
   unsigned max_pwm_period_;   // maximal period in microseconds
   Servo servo_;
+  unsigned short direction_;   // 0 for going up, 1 for going down
+  OnSignalCallback on_signal_;
 };
 
 #endif  // PARSECLIB_SERVO_SWEEP_

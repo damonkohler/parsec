@@ -36,6 +36,7 @@
 //#include "sensor_msgs/JointState.h"
 #include "std_msgs/Time.h"
 #include "parsec_msgs/LaserTiltProfile.h"
+#include "parsec_msgs/LaserTiltSignal.h"
 
 #ifdef PUBLISH_BASE_CONTROLLER_INFO
 #include "std_msgs/Float32.h"
@@ -401,14 +402,23 @@ static void LoopPositionController() {
 // Tilting servo
 // ----------------------------------------------------------------------
 
-ServoSweep servo_sweep(10);  // PWM pin
+parsec_msgs::LaserTiltSignal tilt_signal;
+ros::Publisher tilt_signal_pub("laser_tilt_controller/signal", &tilt_signal);
+
+void PublishLaserSignal(int signal) {
+  tilt_signal.header.stamp = node_handle.now();
+  tilt_signal.signal = signal;
+  tilt_signal_pub.publish(&tilt_signal);
+}
+
+ServoSweep servo_sweep(10, &PublishLaserSignal);  // PWM pin
 
 void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) {
   servo_sweep.SetProfile(tilt_profile_msg.min_angle, tilt_profile_msg.max_angle, tilt_profile_msg.period);
 }
 
 ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
-  "laser_tilt_profile", &TiltProfileCallback);
+  "laser_tilt_controller/profile", &TiltProfileCallback);
 
 void SetupServoSweep() {
   servo_sweep.Init();
@@ -435,6 +445,7 @@ static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
   node_handle.subscribe(tilt_profile_subscriber);
+  node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
   //node_handle.advertise(joint_state_publisher);
 #ifdef PUBLISH_BASE_CONTROLLER_INFO  
