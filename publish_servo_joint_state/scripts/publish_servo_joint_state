@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('publish_servo_joint_state')
+
+import rospy
+from sensor_msgs.msg import JointState
+from parsec_msgs.msg import LaserTiltSignal, LaserTiltProfile
+
+class PublishServoJointState(object):
+
+    def __init__(self):
+        # initialize parameters
+        self.publish_rate = rospy.Rate(rospy.get_param('~publish_rate', 20.0))
+        self.joint_name = rospy.get_param('~joint_name', 'tilt_laser_joint')
+        self.joint_states_pub = rospy.Publisher('/joint_states', JointState)
+        self.profile = None
+        self.signal = None
+        self.velocity = 0
+        self.signal_sub = rospy.Subscriber('~signal', LaserTiltSignal, self.onLaserTiltSignal)
+        self.profile_sub = rospy.Subscriber('~profile', LaserTiltProfile, self.onLaserProfile)
+
+    def run(self):
+        while not rospy.is_shutdown():
+            self.publish_rate.sleep()
+            # If didn't receive a signal or the current configuration
+            # yet, do nothing.
+            if not self.profile or self.velocity == 0 or not self.signal:
+                continue
+            now = rospy.Time.now()
+            if self.signal.signal == 0:
+                pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
+                vel = self.velocity
+            elif self.signal.signal == 1:
+                pos = self.profile.max_angle - self.velocity * (now - self.signal.header.stamp).to_sec()
+                vel = -self.velocity
+            else:
+                rospy.logerr('Unknown singal %d' % self.signal.signal)
+                self.signal = None
+
+            if pos < self.profile.min_angle or pos > self.profile.max_angle:
+                rospy.logerr('Ran out of bounds. That probably means we are missing a signal')
+                self.signal = None
+
+            joint_state = JointState()
+            joint_state.header.stamp = now
+            joint_state.name = [self.joint_name]
+            joint_state.position = [pos]
+            joint_state.velocity = [-vel]
+            joint_state.effort = [0.0]
+            self.joint_states_pub.publish(joint_state)
+
+    def onLaserTiltSignal(self, signal):
+        self.signal = signal
+
+    def onLaserProfile(self, profile):
+        self.profile = profile
+        if profile.period > 0:
+            self.velocity = (profile.max_angle - profile.min_angle) / (profile.period/2)
+        else:
+            self.velocity = 0
+
+def main():
+    rospy.init_node('publish_servo_joint_state')
+    PublishServoJointState().run()
+
+if __name__ == '__main__':
+    main()
+
