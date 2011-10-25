@@ -88,7 +88,7 @@ void Ultrasonic::HandleInputChange() {
 void Ultrasonic::UpdateValue() {
   unsigned long delta_micros = receiving_micros_ - triggered_micros_;
   // Answer is expected after 750 us.
-  Check(delta_micros > 700 && delta_micros < 800,
+  Check(delta_micros > 650 && delta_micros < 850,
         "Ping%d at %lu", debug_id_, delta_micros);
   value_ = done_micros_ - receiving_micros_;
   // Answer should be between 115 us and 18500 us.
