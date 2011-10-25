@@ -28,11 +28,11 @@ class PublishServoJointState(object):
                 continue
             now = rospy.Time.now()
             if self.signal.signal == 0:
-                pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
-                vel = self.velocity
-            elif self.signal.signal == 1:
                 pos = self.profile.max_angle - self.velocity * (now - self.signal.header.stamp).to_sec()
                 vel = -self.velocity
+            elif self.signal.signal == 1:
+                pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
+                vel = self.velocity
             else:
                 rospy.logerr('Unknown singal %d' % self.signal.signal)
                 self.signal = None
