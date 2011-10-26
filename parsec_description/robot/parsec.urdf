@@ -232,7 +232,7 @@
   <joint name="base_laser_joint" type="fixed">
     <parent link="mast_link"/>
     <child link="base_laser"/>
-    <origin xyz="0.045 0 -0.68"/>
+    <origin xyz="0.045 -0.015 -0.68"/>
   </joint>
 
   <joint name="tilt_laser_mount_joint" type="fixed">
