@@ -22,15 +22,15 @@ class PublishServoJointState(object):
     def run(self):
         while not rospy.is_shutdown():
             self.publish_rate.sleep()
-            # If didn't receive a signal or the current configuration
+            # If we didn't receive a signal or the current configuration
             # yet, do nothing.
             if not self.profile or self.velocity == 0 or not self.signal:
                 continue
             now = rospy.Time.now()
-            if self.signal.signal == 0:
+            if self.signal.signal == LaserTiltSignal.DIRECTION_DOWN:
                 pos = self.profile.max_angle - self.velocity * (now - self.signal.header.stamp).to_sec()
                 vel = -self.velocity
-            elif self.signal.signal == 1:
+            elif self.signal.signal == LaserTiltSignal.DIRECTION_UP:
                 pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
                 vel = self.velocity
             else:
