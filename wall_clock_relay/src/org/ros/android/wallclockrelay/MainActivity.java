@@ -27,25 +27,24 @@ import org.ros.android.R;
  */
 public class MainActivity extends RosActivity {
 
-    private WallclockRelay relay;
+  private WallclockRelay relay;
 
-    public MainActivity() {
-        super("Wallclock relay", "Wallclock relay");
-    }
+  public MainActivity() {
+    super("Wallclock relay", "Wallclock relay");
+  }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-    }
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.main);
+  }
 
-    @Override
-    protected void init() {
-        NodeConfiguration nodeConfiguration =
-                NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostName(),
-                        getMasterUri());
-        relay = new WallclockRelay();
-        getNodeRunner().run(relay, nodeConfiguration);   	
-    }
+  @Override
+  protected void init() {
+    NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(
+        InetAddressFactory.newNonLoopback().getHostName(), getMasterUri());
+    relay = new WallclockRelay();
+    getNodeRunner().run(relay, nodeConfiguration);
+  }
 
 }
