@@ -8,7 +8,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/parsec_description</url>
-  <depend package="urdf"/>
+  <depend package="urdf" />
 
 </package>
 
