@@ -4,12 +4,15 @@
      parsec_navigation
 
   </description>
-  <author>Tully Foote</author>
+  <author>Lorenz Moesenlechner</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/parsec_navigation</url>
-  <depends package="navigation"/>
-  <depends package="gmapping"/>
+  <depend package="move_base" />
+  <depend package="base_local_planner" />
+  <depend package="navfn" />
+  <depend package="gmapping" />
+  <depend package="amcl" />
 </package>
 
 
