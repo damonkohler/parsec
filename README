@@ -25,9 +25,9 @@
     gmapping based navigation for exploration and map building and
     amcl based navigation. Execute only one of the two commands.
 
-     - roslaunch parsec_navigation gmapping_nav.launch
+     - roslaunch parsec_navigation gmapping_navigation.launch
 
-     - roslaunch parsec_navigation amcl_parsec.launch.
+     - roslaunch parsec_navigation amcl_navigation.launch.
 
   - If you want to navigate between waypoints, proceed to the section
     'Waypoint navigation' below.
