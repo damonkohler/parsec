@@ -26,6 +26,7 @@ from tf.msg import tfMessage
 from geometry_msgs.msg import TransformStamped
 
 class OdometryRelay(object):
+
   def __init__(self):
     self.odom_publisher = rospy.Publisher('odom', Odometry)
     self.tf_publisher = rospy.Publisher('/tf', tfMessage)
@@ -33,7 +34,6 @@ class OdometryRelay(object):
     self.publish_tf = rospy.get_param('~publish_tf', True)
     rospy.loginfo('Using base frame %s' % self.child_frame_id)
     self.odom_subscriber = rospy.Subscriber('odom_simple', ParsecOdometry, self.relay)
-
 
   def relay(self, data):
     odom = Odometry()
