@@ -26,7 +26,7 @@ PositionController::PositionController(
       read_(read), write_(write), address_(address),
       wheel_radius_(wheel_radius), last_position_(0), travel_goal_(0),
       last_position_time_(0), last_velocity_position_(0), last_velocity_(0.0f),
-      last_velocity_cmd_(0.0f), last_control_time_(0.0f) { }
+      last_velocity_cmd_(0.0f), last_control_time_(0.0f) {}
 
 void PositionController::Initialize(bool reverse) {
   // Three CLRPs are kind of a soft reset to ensure all position
@@ -142,8 +142,7 @@ void PositionController::RecalculateVelocity() {
   long time_delta = current_time - last_position_time_;
   // Only recalculate when enough time since the last measurement has
   // passed.
-  if(time_delta > 20000)
-  {
+  if (time_delta > 20000) {
     last_velocity_ = 1.745329252e-1f /* \pi/18 */ * wheel_radius_
       * int(last_position_ - last_velocity_position_)
       / (time_delta * 1e-6);
