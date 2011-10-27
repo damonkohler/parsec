@@ -162,7 +162,7 @@
     </collision>
   </link>
 
-  <link name="tilt_laser_mount">
+  <link name="tilting_laser_mount">
     <inertial>
       <mass value="0.001" />
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -235,16 +235,16 @@
     <origin xyz="0.045 -0.015 -0.68"/>
   </joint>
 
-  <joint name="tilt_laser_mount_joint" type="fixed">
+  <joint name="tilting_laser_mount_joint" type="fixed">
     <parent link="mast_link"/>
-    <child link="tilt_laser_mount"/>
+    <child link="tilting_laser_mount"/>
     <!-- laser is 0.775m above the base, i.e. 0.05m below the center
     of the mast.-->
     <origin xyz="0.065 0 -0.05"/>
   </joint>
 
   <joint name="tilt_laser_joint" type="revolute">
-    <parent link="tilt_laser_mount"/>
+    <parent link="tilting_laser_mount"/>
     <child link="tilt_laser"/>
     <origin xyz="0.0 -0.045 0.033" rpy="0.02 0.215 0"/>
     <axis xyz="0 1 0"/>
