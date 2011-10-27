@@ -17,7 +17,7 @@
 #define PID_CONTROLLER_
 
 class Pid {
-public:
+ public:
   // Constructs a PID controller. i_clamp is the maximal i term that
   // is used for the controller.
   Pid(float p, float i, float d, float i_clamp)
@@ -54,10 +54,11 @@ public:
     p_error_ = goal - curr_pos;
 
     i_error_ += dt * p_error_;
-    if( i_error_ > i_clamp_ )
+    if ( i_error_ > i_clamp_ ) {
       i_error_ = i_clamp_;
-    else if( i_error_ < -i_clamp_ )
+    } else if ( i_error_ < -i_clamp_ ) {
       i_error_ = -i_clamp_;
+    }
 
     d_error_ = (p_error_ - p_error_last_) / dt;
 
@@ -72,7 +73,7 @@ public:
   // passed to the update method.
   float error() { return p_error_; }
 
-private:
+ private:
   float p_;
   float i_;
   float d_;

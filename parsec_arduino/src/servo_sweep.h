@@ -30,24 +30,26 @@ class ServoSweep {
   void Init();
 
   /**
-   * min_angle and max_angle must be between -PI/2 and +PI/2. period
-   * is the length of a complete period in seconds.
+   * min_angle and max_angle must be between -PI/2 and +PI/2.
+   *
+   * \param period the length of a complete period in seconds
    */
   void SetProfile(float min_angle, float max_angle, float period);
   void Update();
 
  private:
+  typedef enum {DIRECTION_UP=0, DIRECTION_DOWN=1} ServoDirection;
   // For the HSR-5990TG servo, 1500 us is neutral, and
   // +/- 900 us for +/- 90 degrees.
   static const unsigned SERVO_MIN_PWM_PERIOD = 600;
   static const unsigned SERVO_MAX_PWM_PERIOD = 2400;
   
   int servo_pin_;
-  unsigned long period_;               // period in microseconds
+  unsigned long period_;      // period in microseconds
   unsigned min_pwm_period_;   // minimal period in microseconds
   unsigned max_pwm_period_;   // maximal period in microseconds
   Servo servo_;
-  unsigned short direction_;   // 0 for going up, 1 for going down
+  unsigned short direction_;  // 0 for going up, 1 for going down
   OnSignalCallback on_signal_;
 };
 
