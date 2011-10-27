@@ -8,10 +8,10 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/parsec_bringup</url>
-  <depend package="parsec_description"/>
-  <depend package="wall_clock_publisher"/>
-  <depend package="parsec_odometry_relay"/>
-  <depend package="robot_state_publisher"/>
+  <depend package="parsec_description" />
+  <depend package="wall_clock_publisher" />
+  <depend package="parsec_odometry_relay" />
+  <depend package="robot_state_publisher" />
 
 </package>
 

@@ -8,8 +8,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/parsec_simulation_stage</url>
-  <depend package="stage"/>
-  <depend package="parsec_navigation"/>
+  <depend package="stage" />
+  <depend package="parsec_navigation" />
 
 </package>
 
