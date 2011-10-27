@@ -17,27 +17,21 @@
 #include <ros/ros.h>
 #include <std_msgs/Time.h>
 
-void PongCallback(const std_msgs::Time::ConstPtr &time_msg)
-{
+void PongCallback(const std_msgs::Time::ConstPtr &time_msg) {
   ROS_INFO("Received pong %lf", (ros::Time::now() - time_msg->data).toSec());
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   ros::init(argc, argv, "parsec_pinger");
   ros::NodeHandle nh;
-
   ros::Publisher pinger = nh.advertise<std_msgs::Time>("ping", 10);
   ros::Subscriber pong = nh.subscribe<std_msgs::Time>("pong", 10, &PongCallback);
-  
   std_msgs::Time time_msg;
   ros::Rate ping_rate(1);
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
-
-  while(ros::ok())
-  {
+  while (ros::ok()) {
     time_msg.data = ros::Time::now();
     pinger.publish(time_msg);
     ping_rate.sleep();
