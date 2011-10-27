@@ -28,58 +28,63 @@ import org.ros.message.MessageListener;
 
 public class WallclockRelay implements NodeMain {
 
-    Node node;
-    Subscriber<org.ros.message.std_msgs.Time> referenceClock;
-    Publisher<org.ros.message.std_msgs.Time> clockRepublisher;
-    Duration timeOffset;
-    Time lastPublishTime;
+  Node node;
+  Subscriber<org.ros.message.std_msgs.Time> referenceClock;
+  Publisher<org.ros.message.std_msgs.Time> clockRepublisher;
+  Duration timeOffset;
+  Time lastPublishTime;
 
-    public WallclockRelay() {
-        lastPublishTime = new Time();
-        timeOffset = new Duration(0.0);
+  public WallclockRelay() {
+    lastPublishTime = new Time();
+    timeOffset = new Duration(0.0);
+  }
+
+  @Override
+  public void main(NodeConfiguration configuration) throws Exception {
+    node = new DefaultNodeFactory().newNode("wall_clock_relay", configuration);
+
+    referenceClock = node.newSubscriber("~wall_clock", "std_msgs/Time",
+        new MessageListener<org.ros.message.std_msgs.Time>() {
+          @Override
+          public void onNewMessage(org.ros.message.std_msgs.Time message) {
+            timeOffset = message.data.subtract(node.getCurrentTime());
+            publishTime();
+          }
+        });
+    clockRepublisher = node.newPublisher("/wall_clock", "std_msgs/Time");
+
+    // Update once per minute per default
+    Duration republishPeriod = new Duration(node.newParameterTree().getDouble(
+        "~publish_period", 10));
+    Duration pollPeriod = new Duration(0.1);
+
+    int numSubscribers = clockRepublisher.getNumberOfSubscribers();
+    while (true) {
+      if (clockRepublisher.getNumberOfSubscribers() != numSubscribers) {
+        // Whenever the number of subscribers increased, re-publish the current
+        // time to make sure everyone
+        // gets the newest time asap
+        if (clockRepublisher.getNumberOfSubscribers() > numSubscribers)
+          publishTime();
+        numSubscribers = clockRepublisher.getNumberOfSubscribers();
+      } else if (republishPeriod.compareTo(node.getCurrentTime().subtract(
+          lastPublishTime)) < 0) {
+        publishTime();
+      }
+      Thread.sleep(pollPeriod.totalNsecs() / 1000000);
     }
+  }
 
-    @Override
-    public void main(NodeConfiguration configuration) throws Exception {
-        node = new DefaultNodeFactory().newNode("wall_clock_relay", configuration);
+  @Override
+  public void shutdown() {
+    node.shutdown();
+  }
 
-        referenceClock = node.newSubscriber("~wall_clock", "std_msgs/Time", 
-                new MessageListener<org.ros.message.std_msgs.Time>() {
-            @Override
-            public void onNewMessage(org.ros.message.std_msgs.Time message) {
-                timeOffset = message.data.subtract(node.getCurrentTime());
-                publishTime();
-            }});
-        clockRepublisher = node.newPublisher("/wall_clock", "std_msgs/Time");
-
-        // Update once per minute per default
-        Duration republishPeriod = new Duration(node.newParameterTree().getDouble("~publish_period", 10));
-        Duration pollPeriod = new Duration(0.1);
-
-        int numSubscribers = clockRepublisher.getNumberOfSubscribers();
-        while(true) {
-            if(clockRepublisher.getNumberOfSubscribers() != numSubscribers) {
-                // Whenever the number of subscribers increased, re-publish the current time to make sure everyone 
-                // gets the newest time asap
-                if(clockRepublisher.getNumberOfSubscribers() > numSubscribers)
-                    publishTime();
-                numSubscribers = clockRepublisher.getNumberOfSubscribers();
-            } else if(republishPeriod.compareTo(node.getCurrentTime().subtract(lastPublishTime))  < 0) {
-                publishTime();
-            }
-            Thread.sleep(pollPeriod.totalNsecs() / 1000000);
-        }
-    }
-
-    @Override
-    public void shutdown() {
-        node.shutdown();
-    }
-
-    private void publishTime() {
-        org.ros.message.std_msgs.Time msg = node.getMessageFactory().newMessage("std_msgs/Time");
-        msg.data = node.getCurrentTime().add(timeOffset);
-        clockRepublisher.publish(msg);
-        lastPublishTime = node.getCurrentTime();
-    }
+  private void publishTime() {
+    org.ros.message.std_msgs.Time msg = node.getMessageFactory().newMessage(
+        "std_msgs/Time");
+    msg.data = node.getCurrentTime().add(timeOffset);
+    clockRepublisher.publish(msg);
+    lastPublishTime = node.getCurrentTime();
+  }
 }
