@@ -28,6 +28,11 @@ import org.ros.message.MessageListener;
 
 public class WallclockRelay implements NodeMain {
 
+  /**
+   * The default period to re-publish the current time in seconds.
+   */
+  private static final int DEFAULT_PUBLISH_PERIOD = 10;
+
   Node node;
   Subscriber<org.ros.message.std_msgs.Time> referenceClock;
   Publisher<org.ros.message.std_msgs.Time> clockRepublisher;
@@ -53,17 +58,15 @@ public class WallclockRelay implements NodeMain {
         });
     clockRepublisher = node.newPublisher("/wall_clock", "std_msgs/Time");
 
-    // Update once per minute per default
     Duration republishPeriod = new Duration(node.newParameterTree().getDouble(
-        "~publish_period", 10));
+        "~publish_period", DEFAULT_PUBLISH_PERIOD));
     Duration pollPeriod = new Duration(0.1);
 
     int numSubscribers = clockRepublisher.getNumberOfSubscribers();
     while (true) {
       if (clockRepublisher.getNumberOfSubscribers() != numSubscribers) {
         // Whenever the number of subscribers increased, re-publish the current
-        // time to make sure everyone
-        // gets the newest time asap
+        // time to make sure everyone gets the newest time as soon as possible.
         if (clockRepublisher.getNumberOfSubscribers() > numSubscribers)
           publishTime();
         numSubscribers = clockRepublisher.getNumberOfSubscribers();
