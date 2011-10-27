@@ -25,44 +25,39 @@ from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 from geometry_msgs.msg import TransformStamped
 
-odom_publisher = rospy.Publisher('odom', Odometry)
-tf_publisher = rospy.Publisher('/tf', tfMessage)
-
-odom = Odometry()
-odom.child_frame_id = 'base_link'
-
-publish_tf = True
-
-def relay(data):
-  odom.header = data.header
-  odom.pose.pose.position.x = data.position_x
-  odom.pose.pose.position.y = data.position_y
-  odom.pose.pose.orientation.z = data.orientation_z
-  odom.pose.pose.orientation.w = data.orientation_w
-  odom.twist.twist.linear.x = data.linear_x
-  odom.twist.twist.linear.y = data.linear_y
-  odom.twist.twist.angular.z = data.angular_z
-  odom_publisher.publish(odom)
-
-  if publish_tf:
-    transform = TransformStamped()
-    transform.header = data.header
-    transform.child_frame_id = odom.child_frame_id
-    transform.transform.translation = odom.pose.pose.position
-    transform.transform.rotation = odom.pose.pose.orientation
-    tf_publisher.publish(tfMessage(transforms=[transform]))
+class OdometryRelay(object):
+  def __init__(self):
+    self.odom_publisher = rospy.Publisher('odom', Odometry)
+    self.tf_publisher = rospy.Publisher('/tf', tfMessage)
+    self.child_frame_id = rospy.get_param('~base_frame_id', 'base_link')
+    self.publish_tf = rospy.get_param('~publish_tf', True)
+    rospy.loginfo('Using base frame %s' % self.child_frame_id)
+    self.odom_subscriber = rospy.Subscriber('odom_simple', ParsecOdometry, self.relay)
 
 
-def listener():
-  global publish_tf
-  
-  rospy.init_node('parsec_odometry_relay')
-  odom.child_frame_id = rospy.get_param('~base_frame_id', 'base_link')
-  publish_tf = rospy.get_param('~publish_tf', True)
-  rospy.loginfo('Using base frame %s' % odom.child_frame_id)
-  rospy.Subscriber('odom_simple', ParsecOdometry, relay)
-  rospy.spin()
+  def relay(self, data):
+    odom = Odometry()
+    odom.header = data.header
+    odom.child_frame_id = self.child_frame_id
+    odom.pose.pose.position.x = data.position_x
+    odom.pose.pose.position.y = data.position_y
+    odom.pose.pose.orientation.z = data.orientation_z
+    odom.pose.pose.orientation.w = data.orientation_w
+    odom.twist.twist.linear.x = data.linear_x
+    odom.twist.twist.linear.y = data.linear_y
+    odom.twist.twist.angular.z = data.angular_z
+    self.odom_publisher.publish(odom)
+
+    if self.publish_tf:
+      transform = TransformStamped()
+      transform.header = data.header
+      transform.child_frame_id = odom.child_frame_id
+      transform.transform.translation = odom.pose.pose.position
+      transform.transform.rotation = odom.pose.pose.orientation
+      self.tf_publisher.publish(tfMessage(transforms=[transform]))
 
 
 if __name__ == '__main__':
-  listener()
+  rospy.init_node('parsec_odometry_relay')
+  relay = OdometryRelay()
+  rospy.spin()
