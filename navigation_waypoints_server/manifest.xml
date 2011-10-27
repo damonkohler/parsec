@@ -1,13 +1,13 @@
 <package>
-  <description brief="nav_waypoints_server">
+  <description brief="navigation_waypoints_server">
 
-     nav_waypoints_server
+     navigation_waypoints_server
 
   </description>
   <author>Lorenz Moesenlechner</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/nav_waypoints_server</url>
+  <url>http://ros.org/wiki/navigation_waypoints_server</url>
   <depend package="rospy" />
   <depend package="actionlib" />
   <depend package="actionlib_msgs" />

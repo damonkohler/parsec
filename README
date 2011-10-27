@@ -54,24 +54,24 @@
 * Waypoint navigation
 
   Waypoint following is provided by the package
-  `nav_waypoints_server`. It provides an action to send a sequence of
+  `navigation_waypoints_server`. It provides an action to send a sequence of
   waypoints to the nav stack. In addition in can check if one move
   base can find a valid path by calling its global planner and use a
   fallback move_base if not. The reasoning behind that is that for
   sending the robot into unknown space while doing gmapping, we need a
   configuration of move base that doesn't use a static map.
 
-  In addition to the package `nav_waypoints_server`, we provide the
+  In addition to the package `navigation_waypoints_server`, we provide the
   package `interactive_waypoint_markers`.It provides an interface
-  between nav_waypoints_server and rviz using interactive markers. The
+  between navigation_waypoints_server and rviz using interactive markers. The
   package provides two launch files:
 
    - interactive_waypoint_markers.launch: starts up
-     nav_waypoints_server and interactive_waypoint_markers configured
+     navigation_waypoints_server and interactive_waypoint_markers configured
      to use one move_base and no fallback.
 
    - interactive_waypoint_markers_exploration.launch: starts up
-     nav_waypoints_server and interactive_waypoint_markers configured
+     navigation_waypoints_server and interactive_waypoint_markers configured
      to work for exploration, i.e. to work with gmapping and move_base
      by using a move_base fallback.
      

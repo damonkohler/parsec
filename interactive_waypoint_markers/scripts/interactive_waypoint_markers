@@ -7,8 +7,8 @@ import actionlib
 
 from threading import RLock
 
-import nav_waypoints_server.msg
-import nav_waypoints_server.srv
+import navigation_waypoints_server.msg
+import navigation_waypoints_server.srv
 
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
@@ -37,10 +37,10 @@ class InteractiveWaypointMarkers(object):
             '~add_waypoint', geometry_msgs.msg.PoseStamped, self.add_waypoint_cb)
 
         self.execute_path = actionlib.SimpleActionClient(
-            '/nav_waypoints_server/execute_path', nav_waypoints_server.msg.ExecutePathAction)
+            '/navigation_waypoints_server/execute_path', navigation_waypoints_server.msg.ExecutePathAction)
 
         self.update_waypoints_srv = rospy.ServiceProxy(
-            '/nav_waypoints_server/update_waypoints', nav_waypoints_server.srv.UpdateWaypoints)
+            '/navigation_waypoints_server/update_waypoints', navigation_waypoints_server.srv.UpdateWaypoints)
 
         # set up menu
         self.menu_handler = MenuHandler()
@@ -178,7 +178,7 @@ class InteractiveWaypointMarkers(object):
                 # No action running
                 if self.execute_path.simple_state == actionlib.SimpleGoalState.DONE:
                     self.execute_path.send_goal(
-                        nav_waypoints_server.msg.ExecutePathGoal(
+                        navigation_waypoints_server.msg.ExecutePathGoal(
                             waypoints=[self.waypoint_poses[wp] for wp in self.waypoints],
                             continue_on_error=True),
                         done_cb=self.navigation_done,
