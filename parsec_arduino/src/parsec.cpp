@@ -312,13 +312,21 @@ static void WriteUART1(unsigned char byte) {
   UCSR1B |= (1 << RXEN1);
 }
 
-#define P_GAIN 0.04f
-#define I_GAIN 0.0f
-#define D_GAIN 0.0f
-#define I_CLAMP 1.0f
+// Finding good PID gains is sort of hard. At the moment we only use a
+// P controller, i.e. we set the I and D gains to 0 which already
+// gives us a reasonable stable controller. By using rxplot to
+// visualize how the velocities of the right and left position
+// controllers behave, it is easy to incrementally adjust the gains so
+// that we get stable behavior.
+const float kPositionControllerPGain = 0.04f;
+const float kPositionControllerIGain = 0.0f;
+const float kPositionControllerDGain = 0.0f;
+const float kPositionControllerIClamp = 1.0f;
 
-Pid left_velocity_pid(P_GAIN, I_GAIN, D_GAIN, I_CLAMP);
-Pid right_velocity_pid(P_GAIN, I_GAIN, D_GAIN, I_CLAMP);
+Pid left_velocity_pid(kPositionControllerPGain, kPositionControllerIClamp,
+  kPositionControllerDGain, kPositionControllerIClamp);
+Pid right_velocity_pid(kPositionControllerPGain, kPositionControllerIClamp,
+  kPositionControllerDGain, kPositionControllerIClamp);
 PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius, &left_velocity_pid);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius, &right_velocity_pid);
 
