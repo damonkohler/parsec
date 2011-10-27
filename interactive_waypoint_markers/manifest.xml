@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/interactive_waypoint_markers</url>
   <depend package="rospy" />
-  <depend package="nav_waypoints_server" />
+  <depend package="navigation_waypoints_server" />
   <depend package="interactive_markers" />
   <depend package="actionlib" />
 

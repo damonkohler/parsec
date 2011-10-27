@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-import roslib; roslib.load_manifest('nav_waypoints_server')
+import roslib; roslib.load_manifest('navigation_waypoints_server')
 
 import rospy
 import actionlib
 
 from threading import Lock
 
-import nav_waypoints_server.msg
-import nav_waypoints_server.srv
+import navigation_waypoints_server.msg
+import navigation_waypoints_server.srv
 import nav_msgs.msg
 import nav_msgs.srv
 import move_base_msgs.msg as move_base_msgs
@@ -38,7 +38,7 @@ class NavWaypointsServer(object):
             self.make_plan = rospy.ServiceProxy(self.params['global_planner_service'], nav_msgs.srv.GetPlan)
         else:
             self.make_plan = None
-        self.execute_path = actionlib.SimpleActionServer(action_name, nav_waypoints_server.msg.ExecutePathAction,
+        self.execute_path = actionlib.SimpleActionServer(action_name, navigation_waypoints_server.msg.ExecutePathAction,
                                                          self.execute_action)
         self.move_base = actionlib.SimpleActionClient(
             self.params['move_base_action'], move_base_msgs.MoveBaseAction)
@@ -49,7 +49,7 @@ class NavWaypointsServer(object):
             self.fallback_move_base = None
 
         self.update_waypoints_service = rospy.Service(
-            "~update_waypoints", nav_waypoints_server.srv.UpdateWaypoints, self.update_waypoints)
+            "~update_waypoints", navigation_waypoints_server.srv.UpdateWaypoints, self.update_waypoints)
         
     def parse_params(self):
         """
@@ -134,7 +134,7 @@ class NavWaypointsServer(object):
                         self.pending = self.pending[1:]
 
                     self.execute_path.publish_feedback(
-                        nav_waypoints_server.msg.ExecutePathFeedback(
+                        navigation_waypoints_server.msg.ExecutePathFeedback(
                             current = current,
                             visited = visited,
                             invalid = invalid,
@@ -155,20 +155,20 @@ class NavWaypointsServer(object):
                     if not goal.continue_on_error:
                         raise e
             self.execute_path.set_succeeded(
-                nav_waypoints_server.msg.ExecutePathResult(
+                navigation_waypoints_server.msg.ExecutePathResult(
                     visited = visited,
                     invalid = invalid,
                     pending = self.pending))                
 
         except PreemptRequested, e:
             self.execute_path.set_preempted(
-                nav_waypoints_server.msg.ExecutePathResult(
+                navigation_waypoints_server.msg.ExecutePathResult(
                     visited = visited,
                     invalid = invalid,
                     pending = [current] + self.pending))
         except WaypointFailed, e:
             self.execute_path.set_aborted(
-                nav_waypoints_server.msg.ExecutePathResult(
+                navigation_waypoints_server.msg.ExecutePathResult(
                     visited = visited,
                     invalid = invalid,
                     pending = self.pending))
@@ -179,6 +179,6 @@ class NavWaypointsServer(object):
             return []
 
 if __name__ == '__main__':
-    rospy.init_node('nav_waypoints_server')
+    rospy.init_node('navigation_waypoints_server')
     waypoints_server = NavWaypointsServer('~execute_path')
     rospy.spin()
