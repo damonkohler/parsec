@@ -171,6 +171,12 @@ const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
 // >>> print ', '.join(map(str, (
 // ... math.cos(2 * math.pi * i / 12)
 // ... for i in (4, 5, 6, 7, 8, 10, 11, 0, 1, 2))))
+//
+// The values that are actually used in the code below are just
+// hand-adjusted versions of the original values. The robot got very
+// slow when it saw obstacles on the side, so we reduced the
+// corresponding values.
+//
 // const float kPingerDirection[kNumPingers] = {
 //     0.5f, 0.8660254f, 1.0f, 0.8660254f, 0.5f,
 //     -0.5f, -0.8660254f, -1.0f, -0.8660254f, -0.5f};
