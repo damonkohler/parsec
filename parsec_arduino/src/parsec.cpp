@@ -545,6 +545,8 @@ void setup() {
     SetMotorPower(true);
     for (int i = 0; i != 1000; ++i) { delayMicroseconds(1000); }
   }
+  // (Lorenz) Why is SPI initialization actually necessary to get
+  // ROSSerial working?
   SPI.begin();
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE3);
