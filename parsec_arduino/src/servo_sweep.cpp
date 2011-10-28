@@ -23,7 +23,7 @@ ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
     period_(0),
     min_pwm_period_(SERVO_MIN_PWM_PERIOD),
     max_pwm_period_(SERVO_MAX_PWM_PERIOD),
-    direction_(0),
+    direction_(DIRECTION_UP),
     on_signal_(callback) {}
 
 void ServoSweep::Init() {

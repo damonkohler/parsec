@@ -6,6 +6,4 @@ uint8 DIRECTION_UP = 1
 
 Header header
 
-# 1 => joint reached top position
-# 0 => joint reached bottom position
 uint8 signal

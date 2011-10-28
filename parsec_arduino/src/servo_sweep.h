@@ -38,7 +38,9 @@ class ServoSweep {
   void Update();
 
  private:
-  typedef enum {DIRECTION_UP=0, DIRECTION_DOWN=1} ServoDirection;
+  // Set values in the enum here to match the signal in the
+  // corresponding ROS message parsec_msgs/LaserTiltSignal.
+  typedef enum {DIRECTION_DOWN=0, DIRECTION_UP=1} ServoDirection;
   // For the HSR-5990TG servo, 1500 us is neutral, and
   // +/- 900 us for +/- 90 degrees.
   static const unsigned SERVO_MIN_PWM_PERIOD = 600;
@@ -49,7 +51,7 @@ class ServoSweep {
   unsigned min_pwm_period_;   // minimal period in microseconds
   unsigned max_pwm_period_;   // maximal period in microseconds
   Servo servo_;
-  unsigned short direction_;  // 0 for going up, 1 for going down
+  ServoDirection direction_;  // 0 for going up, 1 for going down
   OnSignalCallback on_signal_;
 };
 
