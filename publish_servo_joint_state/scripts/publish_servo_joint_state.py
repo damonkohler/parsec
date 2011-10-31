@@ -15,13 +15,13 @@
 # the License.
 #
 # Author moesenle@google.com (Lorenz Moesenlechner)
-#
 
 import roslib; roslib.load_manifest('publish_servo_joint_state')
 
 import rospy
 from sensor_msgs.msg import JointState
 from parsec_msgs.msg import LaserTiltSignal, LaserTiltProfile
+
 
 class PublishServoJointState(object):
   """Class for extrapolating the current servo position
