@@ -18,9 +18,9 @@ package org.ros.android.wallclockrelay;
 
 import android.os.Bundle;
 import org.ros.address.InetAddressFactory;
+import org.ros.android.R;
 import org.ros.android.RosActivity;
 import org.ros.node.NodeConfiguration;
-import org.ros.android.R;
 
 /**
  * @author moesenle@google.com (Lorenz Moesenlechner)
@@ -43,6 +43,7 @@ public class MainActivity extends RosActivity {
   protected void init() {
     NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(
         InetAddressFactory.newNonLoopback().getHostName(), getMasterUri());
+    nodeConfiguration.setNodeName("wall_clock_relay");
     relay = new WallclockRelay();
     getNodeRunner().run(relay, nodeConfiguration);
   }
