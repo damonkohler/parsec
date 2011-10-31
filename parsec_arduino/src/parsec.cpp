@@ -327,9 +327,9 @@ const float kPositionControllerIGain = 0.0f;
 const float kPositionControllerDGain = 0.0f;
 const float kPositionControllerIClamp = 1.0f;
 
-Pid left_velocity_pid(kPositionControllerPGain, kPositionControllerIClamp,
+Pid left_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
   kPositionControllerDGain, kPositionControllerIClamp);
-Pid right_velocity_pid(kPositionControllerPGain, kPositionControllerIClamp,
+Pid right_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
   kPositionControllerDGain, kPositionControllerIClamp);
 PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius, &left_velocity_pid);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius, &right_velocity_pid);
