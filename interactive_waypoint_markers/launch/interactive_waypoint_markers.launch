@@ -1,6 +1,6 @@
 <launch>
   <node name="interactive_waypoint_markers" type="interactive_waypoint_markers.py" pkg="interactive_waypoint_markers"/>
-  <node name="navigation_waypoints_server" type="navigation_waypoints_server" pkg="navigation_waypoints_server">
+  <node name="navigation_waypoints_server" type="navigation_waypoints_server.py" pkg="navigation_waypoints_server">
     <rosparam>
       base_frame: base_footprint
     </rosparam>
