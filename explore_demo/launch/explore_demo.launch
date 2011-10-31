@@ -1,0 +1,4 @@
+<launch>
+  <master auto="start"/>
+  <node name="mux" pkg="explore_demo" type="priority_mux" args="/cmd_vel /joystick_vel /explore_vel"/>
+</launch>
