@@ -54,9 +54,9 @@ class Pid {
     p_error_ = goal - curr_pos;
 
     i_error_ += dt * p_error_;
-    if ( i_error_ > i_clamp_ ) {
+    if (i_error_ > i_clamp_) {
       i_error_ = i_clamp_;
-    } else if ( i_error_ < -i_clamp_ ) {
+    } else if (i_error_ < -i_clamp_) {
       i_error_ = -i_clamp_;
     }
 

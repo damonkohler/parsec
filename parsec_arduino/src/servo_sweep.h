@@ -47,11 +47,11 @@ class ServoSweep {
   static const unsigned SERVO_MAX_PWM_PERIOD = 2400;
   
   int servo_pin_;
-  unsigned long period_;      // period in microseconds
-  unsigned min_pwm_period_;   // minimal period in microseconds
-  unsigned max_pwm_period_;   // maximal period in microseconds
+  unsigned long period_;  // period in microseconds
+  unsigned min_pwm_period_;  // minimal period in microseconds
+  unsigned max_pwm_period_;  // maximal period in microseconds
   Servo servo_;
-  ServoDirection direction_;  // 0 for going up, 1 for going down
+  ServoDirection direction_;
   OnSignalCallback on_signal_;
 };
 
