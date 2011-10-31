@@ -13,7 +13,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-#
 
 import roslib
 roslib.load_manifest('parsec_odometry_relay')
@@ -25,7 +24,17 @@ from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 from geometry_msgs.msg import TransformStamped
 
+
 class OdometryRelay(object):
+  """Class for relaying /odom_simple to /odom, adding an empty
+  covarience matrix.
+
+  ROS Parameters:
+  
+    base_frame_id: name of the robot's base frame, default is 'base_link'
+    
+    publish_tf: when true, publishes the transform from /odom to
+    base_frame_id, default is true"""
 
   def __init__(self):
     self.odom_publisher = rospy.Publisher('odom', Odometry)
