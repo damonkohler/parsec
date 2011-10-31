@@ -16,15 +16,14 @@
 
 package org.ros.android.wallclockrelay;
 
-import org.ros.node.DefaultNodeFactory;
-import org.ros.node.Node;
-import org.ros.node.NodeConfiguration;
-import org.ros.node.NodeMain;
-import org.ros.node.topic.Publisher;
-import org.ros.node.topic.Subscriber;
-import org.ros.message.Time;
+import com.google.common.base.Preconditions;
+
 import org.ros.message.Duration;
 import org.ros.message.MessageListener;
+import org.ros.message.Time;
+import org.ros.node.Node;
+import org.ros.node.NodeMain;
+import org.ros.node.topic.Publisher;
 
 public class WallclockRelay implements NodeMain {
 
@@ -34,7 +33,6 @@ public class WallclockRelay implements NodeMain {
   private static final int DEFAULT_PUBLISH_PERIOD = 10;
 
   private Node node;
-  private Subscriber<org.ros.message.std_msgs.Time> referenceClock;
   private Publisher<org.ros.message.std_msgs.Time> clockRepublisher;
   private Duration timeOffset;
   private Time lastPublishTime;
@@ -45,10 +43,10 @@ public class WallclockRelay implements NodeMain {
   }
 
   @Override
-  public void main(NodeConfiguration configuration) throws Exception {
-    node = new DefaultNodeFactory().newNode("wall_clock_relay", configuration);
-
-    referenceClock = node.newSubscriber("~wall_clock", "std_msgs/Time",
+  public void main(final Node node) throws Exception {
+    Preconditions.checkState(this.node == null);
+    this.node = node;
+    node.newSubscriber("~wall_clock", "std_msgs/Time",
         new MessageListener<org.ros.message.std_msgs.Time>() {
           @Override
           public void onNewMessage(org.ros.message.std_msgs.Time message) {
@@ -80,7 +78,10 @@ public class WallclockRelay implements NodeMain {
 
   @Override
   public void shutdown() {
-    node.shutdown();
+    if (node != null) {
+      node.shutdown();
+      node = null;
+    }
   }
 
   private void publishTime() {
