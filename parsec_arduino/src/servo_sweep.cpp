@@ -41,7 +41,7 @@ void ServoSweep::SetProfile(float min_angle, float max_angle, float period) {
   
   // If min and max are swaped, re-swap. Specifying a min greater than
   // max doesn't need to lead to an error since it would just result
-  // in a motion delayed by period_/2
+  // in a motion delayed by period_/2.
   if (max_pwm_period_ < min_pwm_period_) {
     unsigned tmp = max_pwm_period_;
     max_pwm_period_ = min_pwm_period_;
@@ -57,11 +57,11 @@ void ServoSweep::SetProfile(float min_angle, float max_angle, float period) {
 }
 
 void ServoSweep::Update() {
-  // Do nothing if tilting is disabled
+  // Do nothing if tilting is disabled.
   if (period_ == 0)
     return;
 
-  // Map the current time into the interval [-period_/2, period/2)
+  // Map the current time into the interval [-period_/2, period/2).
   unsigned long position = micros() % period_;
 
   if (position > period_ / 2) {
@@ -79,7 +79,7 @@ void ServoSweep::Update() {
     }
   }
 
-  // Map the variable position into the interval [min_pwm_period_, max_pwm_period_)
+  // Map the variable position into the interval [min_pwm_period_, max_pwm_period_).
   position = min_pwm_period_ + position * (max_pwm_period_ - min_pwm_period_) / (period_ / 2);
   
   // We use writeMicroseconds for increased precision.

@@ -51,8 +51,6 @@
 #include "std_msgs/Float32.h"
 #endif
 
-
-
 inline float fminf(float x, float y) {
   return x < y ? x : y;
 }
