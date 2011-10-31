@@ -41,8 +41,7 @@ int main(int argc, char *argv[]) {
   std_msgs::Time time;
 
   spinners.start();
-  while(nh.ok())
-  {
+  while (nh.ok()) {
     time.data = ros::Time::now();
     wall_clock_pub.publish(time);
     rate.sleep();
