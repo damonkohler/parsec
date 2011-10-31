@@ -33,11 +33,11 @@ public class WallclockRelay implements NodeMain {
    */
   private static final int DEFAULT_PUBLISH_PERIOD = 10;
 
-  Node node;
-  Subscriber<org.ros.message.std_msgs.Time> referenceClock;
-  Publisher<org.ros.message.std_msgs.Time> clockRepublisher;
-  Duration timeOffset;
-  Time lastPublishTime;
+  private Node node;
+  private Subscriber<org.ros.message.std_msgs.Time> referenceClock;
+  private Publisher<org.ros.message.std_msgs.Time> clockRepublisher;
+  private Duration timeOffset;
+  private Time lastPublishTime;
 
   public WallclockRelay() {
     lastPublishTime = new Time();
