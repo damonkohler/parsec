@@ -5,11 +5,13 @@
     hokuyo_node:
       laser_frame: base_laser
       laser_topic: base_scan
-    parsec_odometry_relay:
-      base_frame_id: base_footprint
   </rosparam>
 
-  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay" />
+  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay">
+    <rosparam>
+      base_frame_id: base_footprint
+    </rosparam>
+  </node>
   <node name="parsec_state_publisher" type="state_publisher" pkg="robot_state_publisher" />
 
 </launch>
