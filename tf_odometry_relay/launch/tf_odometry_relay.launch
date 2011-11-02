@@ -1,0 +1,21 @@
+<launch>
+  <node name="base_scan_matcher" type="laser_scan_matcher_node" pkg="laser_scan_matcher">
+    <remap from="odom" to="parsec_odometry_relay/odom"/>
+    <remap from="scan" to="base_scan"/>
+    <rosparam>
+      fixed_frame: odom
+      base_frame: base_footprint
+      use_imu: false
+      use_odom: true
+      use_cloud_input: false
+      publish_tf: true
+    </rosparam>
+  </node>
+  <node name="tf_odometry_realy" type="tf_odometry_relay" pkg="tf_odometry_relay">
+    <remap from="~odom" to="/odom"/>
+    <rosparam>
+      odom_frame: odom
+      base_frame: base_footprint
+    </rosparam>
+  </node>
+</launch>
