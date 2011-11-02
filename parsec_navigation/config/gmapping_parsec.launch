@@ -2,7 +2,7 @@
     <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
       <rosparam>
         odom_frame: odom
-        map_update_interval: 5.0
+        map_update_interval: 1.0
         maxUrange: 16.0
         sigma: 0.05
         kernelSize: 1
@@ -26,7 +26,7 @@
         xmax: 1.0
         ymax: 1.0
 
-        delta: 0.05
+        delta: 0.025
         llsamplerange: 0.01
         llsamplestep: 0.01
         lasamplerange: 0.005
