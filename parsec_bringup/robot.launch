@@ -2,7 +2,7 @@
   <include file="$(find parsec_description)/launch/upload_parsec.launch"/>
   
   <rosparam>
-    android_hokuyo_node:
+    hokuyo_node:
       laser_frame: base_laser
       laser_topic: base_scan
     parsec_odometry_relay:
