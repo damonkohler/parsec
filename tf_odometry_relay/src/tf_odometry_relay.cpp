@@ -40,7 +40,21 @@ class TfOdometryRelay {
   std::string base_frame_;
   boost::thread odom_publisher_thread;
 
-  void odomPublisher();
+  void OdomPublisher();
+
+  /**
+   * Calculates the velocity of tracking_frame wrt reference_frame at
+   * the specified time using TF. The velocity is expressed in tracking_frame.
+   *
+   * @param time time at which to calculate the velocity
+   * @param averaging_interval interval used to calculate velocity
+   * @param reference_frame frame to calculate velocity relative to
+   * @param tracking_frame frame to track
+   * @param velocity output velocity
+   */
+  void CalculateVelocity(const ros::Time &time, const ros::Duration &averaging_interval,
+      const std::string &reference_frame, const std::string &tracking_frame,
+      geometry_msgs::Twist *velocity);
 };
 
 TfOdometryRelay::TfOdometryRelay(const ros::NodeHandle &nh)
@@ -60,19 +74,18 @@ TfOdometryRelay::TfOdometryRelay(const ros::NodeHandle &nh)
   nh_.param<std::string>("odom_frame", odom_frame_, "odom");
   nh_.param<std::string>("base_frame", base_frame_, "base_link");
   
-  odom_publisher_thread = boost::thread(boost::bind(&TfOdometryRelay::odomPublisher, this));
+  odom_publisher_thread = boost::thread(boost::bind(&TfOdometryRelay::OdomPublisher, this));
 }
 
-void TfOdometryRelay::odomPublisher() {
+void TfOdometryRelay::OdomPublisher() {
   while (nh_.ok()) {
     try {
       geometry_msgs::Twist twist;
-      tf::Point point(0, 0, 0);
       tf::StampedTransform odom_transform;
 
       tf_.lookupTransform(odom_frame_, base_frame_, ros::Time(0), odom_transform);
-      tf_.lookupTwist(base_frame_, odom_frame_, odom_frame_, point, base_frame_,
-        odom_transform.stamp_, velocity_averaging_interval_, twist);
+      CalculateVelocity(odom_transform.stamp_, velocity_averaging_interval_,
+                        odom_frame_, base_frame_, &twist);
 
       nav_msgs::Odometry odom;
       odom.header.stamp = odom_transform.stamp_;
@@ -95,6 +108,24 @@ void TfOdometryRelay::odomPublisher() {
       ROS_WARN("LookupException %s", e.what());
     }
   }
+}
+
+void TfOdometryRelay::CalculateVelocity(
+    const ros::Time &time, const ros::Duration &averaging_interval,
+    const std::string &reference_frame, const std::string &tracking_frame,
+    geometry_msgs::Twist *velocity) {
+  tf::StampedTransform tracking_frame_in_start_time;
+  tf_.lookupTransform(tracking_frame, time - averaging_interval, tracking_frame, time,
+                      reference_frame, tracking_frame_in_start_time);
+  velocity->linear.x = tracking_frame_in_start_time.getOrigin().x() / averaging_interval.toSec();
+  velocity->linear.y = tracking_frame_in_start_time.getOrigin().y() / averaging_interval.toSec();
+  velocity->linear.z = tracking_frame_in_start_time.getOrigin().z() / averaging_interval.toSec();
+
+  double roll, pitch, yaw;
+  tracking_frame_in_start_time.getBasis().getRPY(roll, pitch, yaw);
+  velocity->angular.x = roll / averaging_interval.toSec();
+  velocity->angular.y = pitch / averaging_interval.toSec();
+  velocity->angular.z = yaw / averaging_interval.toSec();
 }
 
 int main(int argc, char *argv[]) {
