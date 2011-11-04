@@ -1,0 +1,21 @@
+<package>
+  <description brief="floor_filter">
+
+     floor_filter
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/floor_filter</url>
+  <depend package="roscpp"/>
+  <depend package="laser_geometry"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="nodelet"/>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet.xml"/>
+  </export>
+</package>
+
