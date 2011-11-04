@@ -52,10 +52,10 @@ class PublishServoJointState(object):
         continue
       now = rospy.Time.now()
       if self.signal.signal == LaserTiltSignal.DIRECTION_DOWN:
-        pos = self.profile.max_angle - self.velocity * (now - self.signal.header.stamp).to_sec()
+        pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
         vel = -self.velocity
       elif self.signal.signal == LaserTiltSignal.DIRECTION_UP:
-        pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
+        pos = self.profile.max_angle - self.velocity * (now - self.signal.header.stamp).to_sec()
         vel = self.velocity
       else:
         rospy.logerr('Unknown singal %d' % self.signal.signal)
