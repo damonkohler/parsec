@@ -21,5 +21,4 @@
     <remap from="~signal" to="laser_tilt_controller/signal" />
     <remap from="~profile" to="laser_tilt_controller/profile" />
   </node>
-
 </launch>
