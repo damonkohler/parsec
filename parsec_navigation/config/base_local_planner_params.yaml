@@ -13,7 +13,7 @@ TrajectoryPlannerROS:
 
   holonomic_robot: false
 
-  # These are guessed tolerance values. yaw tolerance should be about
+  # These are guessed tolerance values. Yaw tolerance should be about
   # 45 degree and xy tolerance within a foot.
   yaw_goal_tolerance: 0.4 # radians
   xy_goal_tolerance: 0.5 # meters
