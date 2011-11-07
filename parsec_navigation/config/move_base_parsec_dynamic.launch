@@ -19,7 +19,7 @@
     <rosparam file="$(find parsec_navigation)/config/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find parsec_navigation)/config/base_local_planner_params.yaml" command="load" />
 
-    <param name="global_costmap/static_map" value="false"/>
+    <param name="global_costmap/static_map" value="false" />
   </node>
 
 </launch>

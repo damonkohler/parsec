@@ -1,9 +1,9 @@
 <launch>
-  <arg name="map_file" default="$(find parsec_navigation)/maps/willow-2010-02-18-0.10.yaml"/>
+  <arg name="map_file" default="$(find parsec_navigation)/maps/willow-2010-02-18-0.10.yaml" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <include file="$(find parsec_navigation)/config/amcl_parsec.launch"/>
 
-  <include file="$(find parsec_simulation_stage)/launch/parsec_stage_willow.launch"/>
+  <include file="$(find parsec_simulation_stage)/launch/parsec_stage_willow.launch" />
   <include file="$(find parsec_navigation)/config/move_base_parsec.launch" />  
 </launch>
