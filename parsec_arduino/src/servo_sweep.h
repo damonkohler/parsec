@@ -24,7 +24,7 @@
 class ServoSweep {
  public:
   typedef void(*OnSignalCallback)(int);
-  
+
   ServoSweep(int servo_pin, OnSignalCallback callback=NULL);
 
   void Init();
@@ -32,7 +32,7 @@ class ServoSweep {
   /**
    * min_angle and max_angle must be between -PI/2 and +PI/2.
    *
-   * \param period the length of a complete period in seconds
+   * @param period the length of a complete period in seconds
    */
   void SetProfile(float min_angle, float max_angle, float period);
   void Update();
@@ -41,15 +41,19 @@ class ServoSweep {
   // Set values in the enum here to match the signal in the
   // corresponding ROS message parsec_msgs/LaserTiltSignal.
   typedef enum {DIRECTION_DOWN=0, DIRECTION_UP=1} ServoDirection;
-  // For the HSR-5990TG servo, 1500 us is neutral, and
-  // +/- 900 us for +/- 90 degrees.
-  static const unsigned SERVO_MIN_PWM_PERIOD = 600;
-  static const unsigned SERVO_MAX_PWM_PERIOD = 2400;
-  
+
+  // These are constants are configured for the Modelcraft MC-621.
+  // kMinAngle and kMaxAngle should correspond to the servo's position at
+  // kMinPwmPeriod and kMaxPwmPeriod repsectively.
+  static const unsigned kServoMinPwmPeriod = 800;
+  static const unsigned kServoMinAngle = -1.5;
+  static const unsigned kServoMaxPwmPeriod = 2100;
+  static const unsigned kServoMaxAngle = 1.5;
+
   int servo_pin_;
   unsigned long period_;  // period in microseconds
-  unsigned min_pwm_period_;  // minimal period in microseconds
-  unsigned max_pwm_period_;  // maximal period in microseconds
+  unsigned int min_pwm_period_;  // minimal period in microseconds
+  unsigned int max_pwm_period_;  // maximal period in microseconds
   Servo servo_;
   ServoDirection direction_;
   OnSignalCallback on_signal_;
