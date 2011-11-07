@@ -26,15 +26,18 @@ from geometry_msgs.msg import TransformStamped
 
 
 class OdometryRelay(object):
-  """Class for relaying /odom_simple to /odom, adding an empty
-  covarience matrix.
+  """Class for relaying /odom_simple to /odom.
+
+  The resulting odometry message (currently) has an empty covarience
+  matrix.
 
   ROS Parameters:
   
     base_frame_id: name of the robot's base frame, default is 'base_link'
     
     publish_tf: when true, publishes the transform from /odom to
-    base_frame_id, default is true"""
+    base_frame_id, default is true
+  """
 
   def __init__(self):
     self.odom_publisher = rospy.Publisher('odom', Odometry)

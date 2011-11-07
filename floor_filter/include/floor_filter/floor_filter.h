@@ -179,4 +179,4 @@ class FloorFilter : public pcl_ros::PCLNodelet {
 
 }
 
-#endif
+#endif  // FLOOR_FILTER_H
