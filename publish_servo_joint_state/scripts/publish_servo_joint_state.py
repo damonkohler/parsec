@@ -13,8 +13,8 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-#
-# Author moesenle@google.com (Lorenz Moesenlechner)
+
+__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
 import roslib; roslib.load_manifest('publish_servo_joint_state')
 
@@ -34,59 +34,59 @@ class PublishServoJointState(object):
   """
 
   def __init__(self):
-    self.publish_rate = rospy.Rate(rospy.get_param('~publish_rate', 20.0))
-    self.joint_name = rospy.get_param('~joint_name', 'tilt_laser_joint')
-    self.joint_states_pub = rospy.Publisher('/joint_states', JointState)
-    self.profile = None
-    self.signal = None
-    self.velocity = 0
-    self.signal_sub = rospy.Subscriber('~signal', LaserTiltSignal, self.onLaserTiltSignal)
-    self.profile_sub = rospy.Subscriber('~profile', LaserTiltProfile, self.onLaserProfile)
+    self._publish_rate = rospy.Rate(rospy.get_param('~publish_rate', 20.0))
+    self._joint_name = rospy.get_param('~joint_name', 'tilt_laser_joint')
+    self._joint_states_pub = rospy.Publisher('joint_states', JointState)
+    self._profile = None
+    self._signal = None
+    self._velocity = 0
+    self._signal_subscriber = rospy.Subscriber('~signal', LaserTiltSignal, self.onLaserTiltSignal)
+    self._profile_subscriber = rospy.Subscriber('~profile', LaserTiltProfile, self.onLaserProfile)
 
   def run(self):
     while not rospy.is_shutdown():
-      self.publish_rate.sleep()
+      self._publish_rate.sleep()
       # If we didn't receive a signal or the current configuration
       # yet, do nothing.
-      if not self.profile or self.velocity == 0 or not self.signal:
+      if not self._profile or self._velocity == 0 or not self._signal:
         continue
       now = rospy.Time.now()
-      if self.signal.signal == LaserTiltSignal.DIRECTION_DOWN:
-        pos = self.profile.min_angle + self.velocity * (now - self.signal.header.stamp).to_sec()
-        vel = -self.velocity
-      elif self.signal.signal == LaserTiltSignal.DIRECTION_UP:
-        pos = self.profile.max_angle - self.velocity * (now - self.signal.header.stamp).to_sec()
-        vel = self.velocity
+      if self._signal.signal == LaserTiltSignal.DIRECTION_DOWN:
+        pos = self._profile.min_angle + self._velocity * (now - self._signal.header.stamp).to_sec()
+        vel = -self._velocity
+      elif self._signal.signal == LaserTiltSignal.DIRECTION_UP:
+        pos = self._profile.max_angle - self._velocity * (now - self._signal.header.stamp).to_sec()
+        vel = self._velocity
       else:
-        rospy.logerr('Unknown singal %d' % self.signal.signal)
-        self.signal = None
+        rospy.logerr('Unknown singal %d' % self._signal.signal)
+        self._signal = None
 
-      if pos < self.profile.min_angle or pos > self.profile.max_angle:
-        rospy.logerr('Ran out of bounds. That probably means we are missing a signal')
-        self.signal = None
+      if pos < self._profile.min_angle or pos > self._profile.max_angle:
+        rospy.logerr('Ran out of possible tilting range. That probably means we are missing a signal.')
+        self._signal = None
 
       joint_state = JointState()
       joint_state.header.stamp = now
-      joint_state.name = [self.joint_name]
+      joint_state.name = [self._joint_name]
       joint_state.position = [pos]
       joint_state.velocity = [-vel]
       joint_state.effort = [0.0]
-      self.joint_states_pub.publish(joint_state)
+      self._joint_states_pub.publish(joint_state)
 
   def onLaserTiltSignal(self, signal):
-    self.signal = signal
+    self._signal = signal
 
   def onLaserProfile(self, profile):
-    self.profile = profile
+    self._profile = profile
+    self._velocity = 0
     if profile.period > 0:
-      self.velocity = (profile.max_angle - profile.min_angle) / (profile.period/2)
-    else:
-      self.velocity = 0
+      self._velocity = (profile.max_angle - profile.min_angle) / (profile.period / 2)
 
 
 def main():
   rospy.init_node('publish_servo_joint_state')
   PublishServoJointState().run()
+
 
 if __name__ == '__main__':
   main()
