@@ -11,9 +11,6 @@
     (odom_relay), a wall clock publisher and the
     robot_state_publisher.
 
-  - Start the app WallClockRelay on the tablet to get time
-    synchronization running.
-
   - Plug in the USB devices one by one and start the corresponding
     apps on the tablet.
 
@@ -74,7 +71,7 @@
      navigation_waypoints_server and interactive_waypoint_markers configured
      to work for exploration, i.e. to work with gmapping and move_base
      by using a move_base fallback.
-     
+
   In rviz, add an interactive marker and change the 2D Nav Goal topic
   on the right hand side from /goal or /move_base_simple/goal to
   /interactive_waypoint_markers/add_waypoint.

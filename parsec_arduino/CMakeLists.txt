@@ -12,7 +12,4 @@ file(GLOB ${FIRMWARE_NAME}_HDRS src/*.h)
 file(GLOB ${FIRMWARE_NAME}_SRCS src/*.cpp)
 set(${FIRMWARE_NAME}_PORT /dev/ttyACM0)  # Serial upload port
 
-# Uncomment the following line if you want to have the debug info on
-# the base controller published
-#add_definitions(-DPUBLISH_BASE_CONTROLLER_INFO)
 generate_ros_firmware(${FIRMWARE_NAME})
