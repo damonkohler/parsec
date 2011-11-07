@@ -45,33 +45,38 @@ class WaypointFailed(Exception):
   i.e. when move_base reported a failure."""
   pass
 
+
 class MoveBaseProxy(object):
   """Proxy object for calling move_base
 
   It also provides the method check_motion_plan to find out if the
   corresponding move_base instance actually will be able to find a
-  valid motion plan.  """
+  valid motion plan.
+  """
 
   def __init__(self, action_name, check_motion_plan_service_name=None):
     self.interrupted = False
     self.check_motion_plan_service = None
     self.move_base_action = actionlib.SimpleActionClient(
         action_name, move_base_msgs.MoveBaseAction)
-    if check_motion_plan_service_name:
+    if check_motion_plan_service_name is not None:
       rospy.wait_for_service(check_motion_plan_service_name,
                              WAIT_FOR_MOTION_PLAN_SERVICE_TIMEOUT)
       self.check_motion_plan_service = rospy.ServiceProxy(
           check_motion_plan_service_name, nav_msgs.srv.GetPlan)
 
   def interrupt(self):
-    """Interrupts execution of the current goal, i.e. makes the
-    execute method terminate."""
+    """Interrupts execution of the current goal.
+
+    This triggers termination of the execute method.
+    """
     self.interrupted = True
     
   def execute(self, goal, interrupt_poll_timeout=MOVE_BASE_POLL_TIMEOUT):
-    """Executes the (move_base-)action and checks for cancellation of
-    our own server. In that case, raises an exception. If the goal
-    cannot be reached, returns False, otherwise True.
+    """Executes the (move_base-)action while checking for cancellation.
+
+    In case of cancellation, raises an exception. If the goal cannot
+    be reached, returns False, otherwise True.
     """
     self.interrupted = False
     goal_msg = move_base_msgs.MoveBaseGoal(target_pose=goal)
@@ -86,10 +91,11 @@ class MoveBaseProxy(object):
     return self.move_base_action.get_state == actionlib.GoalStatus.SUCCEEDED
 
   def maybe_check_plan(self, goal):
-    """Returns True if move_base will be able to find a global
-    plan. This method executes the service passed to the
-    constructor. If no service name has been passed, always returns
-    True."""
+    """Returns True if move_base will be able to find a global plan.
+
+    This method executes the service passed to the constructor. If no
+    service name has been passed, always returns True.
+    """
     if not self.check_motion_plan_service:
       return True
     else:
@@ -103,21 +109,22 @@ class MoveBaseProxy(object):
 
 
 class NavWaypointsServer(object):
-  """Server for sending a driving to a sequence of waypoints"""
+  """Server for sending a driving to a sequence of waypoints."""
 
   def __init__(self, action_name):
-
-    # list of pending waypoints. Required to be a member variable
+    # List of pending waypoints. Required to be a member variable
     # because we need to be able to change it while executing the path
     # without preempting the action.
     self.pending = []
     self.lock = Lock()
         
     self.params = self._parse_params()
-    self.execute_path = actionlib.SimpleActionServer(action_name, navigation_waypoints_server.msg.ExecutePathAction,
-                                                     self._execute_action)
+    self.execute_path = actionlib.SimpleActionServer(
+        action_name,
+        navigation_waypoints_server.msg.ExecutePathAction,
+        self._execute_action)
     self.update_waypoints_service = rospy.Service(
-        "~update_waypoints", navigation_waypoints_server.srv.UpdateWaypoints, self._update_waypoints)
+        '~update_waypoints', navigation_waypoints_server.srv.UpdateWaypoints, self._update_waypoints)
     self.move_base_proxies = [MoveBaseProxy(param['action'], param.get('check_plan'))
                               for param in self.params['move_base_actions']]
 
@@ -127,18 +134,16 @@ class NavWaypointsServer(object):
 
     - base_frame: the name of the robot's base_link
 
-    - map_frame: the name of the fixed frame, i.e. map
-
     - move_base_actions: A list of maps that describe which move_base
       actions to use and, if required, a nav_msgs/GetPlan service to
       check if we actually want to call this service. The check_plan
       parameter is optional, the acton parameter mandatory. Example:
       [{'action': 'move_base_1', 'check_plan': 'move_base_1/make_plan'}]
     
-    This function returns a dictionary of parameters."""
+    This function returns a dictionary of parameters.
+    """
     return {
       'base_frame': rospy.get_param('~base_frame', 'base_link'),
-      'map_frame':  rospy.get_param('~map_frame', '/map'),
       'move_base_actions': rospy.get_param('~move_base_actions', [{'action': '/move_base'}]),
       }
     
@@ -151,7 +156,7 @@ class NavWaypointsServer(object):
 
     visited = []
     invalid = []
-    # We cannot acquire the lock for the complete method.If we
+    # We cannot acquire the lock for the complete method. If we
     # acquired the lock at the method's top-level, we would be unable
     # to update teh waypoints while we are executing.
     with self.lock:
