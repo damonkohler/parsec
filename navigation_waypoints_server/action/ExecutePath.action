@@ -1,0 +1,15 @@
+# goal
+geometry_msgs/PoseStamped[] waypoints # sequence of waypoints
+bool continue_on_error                # continue if we cannot find a valid plan to the waypoint
+---
+# result: waypoints visited and invalid waypoints
+geometry_msgs/PoseStamped[] visited
+geometry_msgs/PoseStamped[] invalid
+geometry_msgs/PoseStamped[] pending
+---
+# feedback: waypoints visited, invalid waypoits and
+#  pending waypoints
+geometry_msgs/PoseStamped current
+geometry_msgs/PoseStamped[] visited
+geometry_msgs/PoseStamped[] invalid
+geometry_msgs/PoseStamped[] pending
