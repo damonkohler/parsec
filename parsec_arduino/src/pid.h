@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PID_CONTROLLER_
-#define PID_CONTROLLER_
+#ifndef PID_CONTROLLER_H
+#define PID_CONTROLLER_H
 
 class Pid {
  public:
@@ -47,11 +47,11 @@ class Pid {
     i_clamp_ = i_clamp;
   }
 
-  // Updates the controller based on the current position, the goal
-  // and a time step. Returns a new control command.
-  float update(float curr_pos, float goal, float dt) {
+  // Updates the controller based on the current value, the goal and a
+  // time step. Returns a new control command.
+  float update(float current_value, float goal, float dt) {
     p_error_last_ = p_error_;
-    p_error_ = goal - curr_pos;
+    p_error_ = goal - current_value;
 
     i_error_ += dt * p_error_;
     if (i_error_ > i_clamp_) {
@@ -86,4 +86,4 @@ class Pid {
   float i_error_;
 };
 
-#endif
+#endif  // PID_CONTROLLER_H
