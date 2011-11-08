@@ -17,15 +17,12 @@
 
 #include <math.h>
 
-#include "ros.h"
-#include "parsec_msgs/LaserTiltSignal.h"
-
 ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
   : servo_(), servo_pin_(servo_pin),
     period_(0),
     min_pwm_period_(kServoMinPwmPeriod),
     max_pwm_period_(kServoMaxPwmPeriod),
-    direction_(DIRECTION_UP),
+    direction_(ANGLE_INCREASING),
     on_signal_(callback) {}
 
 void ServoSweep::Init() {
@@ -56,27 +53,28 @@ void ServoSweep::Update() {
     return;
   }
 
-  // Map the current time into the interval [-period_/2, period/2).
-  unsigned long position = micros() % period_;
+  // Map the current time into the interval [0, period_).
+  unsigned long long position = micros() % period_;
 
   if (position > period_ / 2) {
     position = period_ - position;
-    if (direction_ == DIRECTION_UP) {
-      direction_ = DIRECTION_DOWN;
-      if (on_signal_) {
-        on_signal_(direction_);
-      }
-    }
-  } else if (direction_ == DIRECTION_DOWN) {
-    direction_ = DIRECTION_UP;
+    SetDirection(ANGLE_DECREASING);
+  } else {
+    SetDirection(ANGLE_INCREASING);
+  }
+
+  // Map the variable position into the interval [min_pwm_period_, max_pwm_period_).
+  unsigned int pwm_period = min_pwm_period_ + position * (max_pwm_period_ - min_pwm_period_) / (period_ / 2);
+
+  // We use writeMicroseconds for increased precision.
+  servo_.writeMicroseconds(pwm_period);
+}
+
+void ServoSweep::SetDirection(ServoDirection new_direction) {
+  if (new_direction != direction_) {
+    direction_ = new_direction;
     if (on_signal_) {
       on_signal_(direction_);
     }
   }
-
-  // Map the variable position into the interval [min_pwm_period_, max_pwm_period_).
-  position = min_pwm_period_ + position * (max_pwm_period_ - min_pwm_period_) / (period_ / 2);
-
-  // We use writeMicroseconds for increased precision.
-  servo_.writeMicroseconds(position);
 }
