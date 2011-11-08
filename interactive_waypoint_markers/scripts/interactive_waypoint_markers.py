@@ -14,8 +14,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
-
 import roslib; roslib.load_manifest("interactive_waypoint_markers")
 import rospy
 import actionlib
@@ -28,6 +26,9 @@ import geometry_msgs.msg
 
 from interactive_markers import interactive_marker_server
 from interactive_markers import menu_handler
+
+
+__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
 
 class Waypoint(object):

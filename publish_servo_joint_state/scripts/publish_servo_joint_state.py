@@ -14,13 +14,14 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
-
 import roslib; roslib.load_manifest('publish_servo_joint_state')
 
 import rospy
 from sensor_msgs.msg import JointState
 from parsec_msgs.msg import LaserTiltSignal, LaserTiltProfile
+
+
+__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
 
 class PublishServoJointState(object):

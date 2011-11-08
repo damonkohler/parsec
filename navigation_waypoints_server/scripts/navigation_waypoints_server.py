@@ -30,6 +30,9 @@ import move_base_msgs.msg as move_base_msgs
 import geometry_msgs.msg as geometry_msgs
 
 
+__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
+
+
 MOVE_BASE_POLL_TIMEOUT = 0.1
 WAIT_FOR_MOTION_PLAN_SERVICE_TIMEOUT = 2.0
 PREEMPT_WAIT_FOR_TERMINATION_TIMEOUT = 2.0
