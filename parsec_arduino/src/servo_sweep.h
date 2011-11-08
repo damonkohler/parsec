@@ -40,15 +40,15 @@ class ServoSweep {
  private:
   // Set values in the enum here to match the signal in the
   // corresponding ROS message parsec_msgs/LaserTiltSignal.
-  typedef enum {DIRECTION_DOWN=0, DIRECTION_UP=1} ServoDirection;
+  typedef enum {ANGLE_DECREASING=0, ANGLE_INCREASING=1} ServoDirection;
 
   // These are constants are configured for the Modelcraft MC-621.
   // kMinAngle and kMaxAngle should correspond to the servo's position at
   // kMinPwmPeriod and kMaxPwmPeriod repsectively.
-  static const unsigned kServoMinPwmPeriod = 800;
-  static const unsigned kServoMinAngle = -1.5;
-  static const unsigned kServoMaxPwmPeriod = 2100;
-  static const unsigned kServoMaxAngle = 1.5;
+  static const unsigned int kServoMinPwmPeriod = 800;
+  static const float kServoMinAngle = -0.96;
+  static const unsigned int kServoMaxPwmPeriod = 2100;
+  static const float kServoMaxAngle = 1.13;
 
   int servo_pin_;
   unsigned long period_;  // period in microseconds
@@ -57,6 +57,8 @@ class ServoSweep {
   Servo servo_;
   ServoDirection direction_;
   OnSignalCallback on_signal_;
+
+  void SetDirection(ServoDirection new_direction);
 };
 
 #endif  // PARSECLIB_SERVO_SWEEP_
