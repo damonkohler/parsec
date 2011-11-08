@@ -65,12 +65,12 @@ class PublishServoJointState(object):
         rospy.logerr('The signal message is too old. Maybe clocks are out of sync.')
         self._signal = None
         continue
-      elif self._signal.signal == LaserTiltSignal.DIRECTION_UP:
+      elif self._signal.signal == LaserTiltSignal.ANGLE_INCREASING:
         extrapolated_position = self._profile.min_angle + self._velocity * max(delta_t, 0)
-        current_velocity = -self._velocity
-      elif self._signal.signal == LaserTiltSignal.DIRECTION_DOWN:
-        extrapolated_position = self._profile.max_angle - self._velocity * max(delta_t, 0)
         current_velocity = self._velocity
+      elif self._signal.signal == LaserTiltSignal.ANGLE_DECREASING:
+        extrapolated_position = self._profile.max_angle - self._velocity * max(delta_t, 0)
+        current_velocity = -self._velocity
       else:
         rospy.logerr('Unknown singal %d' % self._signal.signal)
         self._signal = None
@@ -85,7 +85,7 @@ class PublishServoJointState(object):
       joint_state.header.stamp = now
       joint_state.name = [self._joint_name]
       joint_state.position = [extrapolated_position]
-      joint_state.velocity = [-current_velocity]
+      joint_state.velocity = [current_velocity]
       joint_state.effort = [0.0]
       self._joint_states_publisher.publish(joint_state)
 
@@ -96,6 +96,7 @@ class PublishServoJointState(object):
     self._profile = profile
     self._velocity = 0
     if profile.period > 0:
+      # Calculate velocity in radians per second.
       self._velocity = (profile.max_angle - profile.min_angle) / (profile.period / 2)
 
 
