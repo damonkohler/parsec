@@ -1,5 +1,5 @@
 // Copyright 2011 Google Inc.
-// Author: whess@google.com (Wolfgang Hess)
+// Author: moesenle@google.com (Lorenz Moesenlechner)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 
-// Author: moesenle@google.com (Lorenz Moesenlechner)
 
-#include <math.h>
+#include <cmath>
 
 #include <algorithm>
 #include <iterator>
@@ -36,16 +34,25 @@
 
 namespace floor_filter {
 
+/**
+ * Intersects two planes and returns the intersecting line. If the
+ * calculation fails, i.e. if the two planes are paralle, return
+ * false.
+ */
 static bool IntersectPlanes(
     const Eigen::Hyperplane<float, 3> &plane1,
     const Eigen::Hyperplane<float, 3> &plane2,
     Eigen::ParametrizedLine<float, 3> *intersection) {
   Eigen::ParametrizedLine<float, 3>::VectorType direction =
       plane1.normal().cross(plane2.normal());
-  // When planes are parallel, i.e. the cross product close 0, fail
+  // When planes are parallel, i.e. the cross product is close to 0,
+  // return false.
   if (direction.norm() < 1e-6) {
     return false;
   }
+
+  // Calculate the intersection of two planes using the formulas as,
+  // for instance, found at http://paulbourke.net/geometry/planeplane/.
   Eigen::Hyperplane<float, 3>::Scalar n1_n1  =
       (plane1.normal() * plane1.normal().transpose())(0);
   Eigen::Hyperplane<float, 3>::Scalar n2_n2  =
@@ -72,7 +79,7 @@ void FloorFilter::onInit() {
     return;
   }
   pnh_->param("reference_frame", reference_frame_, std::string("odom"));
-  pnh_->param("floor_z_distance", floor_z_distance_, 0.05d);
+  pnh_->param("floor_z_distance", floor_z_distance_, 0.05);
   double max_slope_angle;
   pnh_->param("max_slope_angle", max_slope_angle,
               static_cast<double>(2.0 * M_PI/180.0));
@@ -124,8 +131,8 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
   std::vector<int> line_inlier_indices;
   if (!FindFloorLine(transformed_cloud, floor_candidate_indices, &line, &line_inlier_indices)) {
     Eigen::Hyperplane<float, 3> sensor_plane = GetSensorPlane(transformed_cloud->header.stamp);
-    // Guess the floor line by intersecting the sensor plane with the
-    // x-y-plane
+    // Use intersection of the x-y-plane and the sensor plane to
+    // generate an artificial floor line.
     if (!IntersectPlanes(sensor_plane,
                          Eigen::Hyperplane<float, 3>(
                              Eigen::Hyperplane<float, 3>::VectorType(0, 0, 1),
@@ -137,7 +144,7 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
       filtered_cloud_publisher_.publish(transformed_cloud);
       return;
     }
-    ROS_INFO("No floor line found. Guessed it.");
+    ROS_INFO("No floor line found. Using the intersection between the sensor plane and the x-y-plain.");
   }
   std::sort(line_inlier_indices.begin(), line_inlier_indices.end());
   

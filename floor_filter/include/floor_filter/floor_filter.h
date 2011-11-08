@@ -1,5 +1,5 @@
 // Copyright 2011 Google Inc.
-// Author: whess@google.com (Wolfgang Hess)
+// Author: moesenle@google.com (Lorenz Moesenlechner)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 
-// Author: moesenle@google.com (Lorenz Moesenlechner)
 
 #ifndef FLOOR_FILTER_H
 #define FLOOR_FILTER_H
@@ -74,7 +72,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   std::string sensor_frame_;
 
   /**
-   * The reference frame in which we perform our processing. Defaults: odom.
+   * The reference frame in which we perform our processing. Default: odom
    */
   std::string reference_frame_;
 
@@ -167,10 +165,10 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   Eigen::ParametrizedLine<float, 3> LineFromCoefficients(const pcl::ModelCoefficients &line_coefficients);
 
   /**
-   * Returns the plane in which all (laser-)sensor measurements are
-   * supposed to be, in at the sensor location at time. Returns the
-   * plane created by the sensor frame along its x- and y-axis in
-   * reference_frame_.
+   * Returns the plane in which all 2D sensor measurements
+   * (e.g. laser) are supposed to be in. Uses the time to look up the
+   * position of the sensor in TF and returns the plane created by the
+   * sensor frame along its x- and y-axis in reference_frame_.
    *
    * @param time indicates which sensor pose to use
    */ 
