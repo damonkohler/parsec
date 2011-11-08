@@ -35,14 +35,22 @@ class PublishServoJointState(object):
   """
 
   def __init__(self):
+    # The publish rate at which to publish joint states (default 20Hz)
     self._publish_rate = rospy.Rate(rospy.get_param('~publish_rate', 20.0))
+    # The name of the joint we are generating states for (default
+    # laser_tilt_joint)
     self._joint_name = rospy.get_param('~joint_name', 'tilt_laser_joint')
-    self._joint_states_pub = rospy.Publisher('joint_states', JointState)
+    # The maximal age a signal message can have before we consider it
+    # being too old. An old message here means that our clock and the
+    # clock used for generating the signal are probably out of
+    # sync. Default is 50ms.
+    self._max_signal_age = rospy.get_param('~max_signal_age', 0.05)
+    self._joint_states_publisher = rospy.Publisher('joint_states', JointState)
     self._profile = None
     self._signal = None
     self._velocity = 0
-    self._signal_subscriber = rospy.Subscriber('~signal', LaserTiltSignal, self.onLaserTiltSignal)
-    self._profile_subscriber = rospy.Subscriber('~profile', LaserTiltProfile, self.onLaserProfile)
+    self._signal_subscriber = rospy.Subscriber('~signal', LaserTiltSignal, self._onLaserTiltSignal)
+    self._profile_subscriber = rospy.Subscriber('~profile', LaserTiltProfile, self._onLaserProfile)
 
   def run(self):
     while not rospy.is_shutdown():
@@ -52,32 +60,39 @@ class PublishServoJointState(object):
       if not self._profile or self._velocity == 0 or not self._signal:
         continue
       now = rospy.Time.now()
-      if self._signal.signal == LaserTiltSignal.DIRECTION_DOWN:
-        pos = self._profile.min_angle + self._velocity * (now - self._signal.header.stamp).to_sec()
-        vel = -self._velocity
+      delta_t = (now - self._signal.header.stamp).to_sec()
+      if delta_t < -self._max_signal_age:
+        rospy.logerr('The signal message is too old. Maybe clocks are out of sync.')
+        self._signal = None
+        continue
       elif self._signal.signal == LaserTiltSignal.DIRECTION_UP:
-        pos = self._profile.max_angle - self._velocity * (now - self._signal.header.stamp).to_sec()
-        vel = self._velocity
+        extrapolated_position = self._profile.min_angle + self._velocity * max(delta_t, 0)
+        current_velocity = -self._velocity
+      elif self._signal.signal == LaserTiltSignal.DIRECTION_DOWN:
+        extrapolated_position = self._profile.max_angle - self._velocity * max(delta_t, 0)
+        current_velocity = self._velocity
       else:
         rospy.logerr('Unknown singal %d' % self._signal.signal)
         self._signal = None
+        continue
 
-      if pos < self._profile.min_angle or pos > self._profile.max_angle:
+      if extrapolated_position < self._profile.min_angle or extrapolated_position > self._profile.max_angle:
         rospy.logerr('Ran out of possible tilting range. That probably means we are missing a signal.')
         self._signal = None
+        continue
 
       joint_state = JointState()
       joint_state.header.stamp = now
       joint_state.name = [self._joint_name]
-      joint_state.position = [pos]
-      joint_state.velocity = [-vel]
+      joint_state.position = [extrapolated_position]
+      joint_state.velocity = [-current_velocity]
       joint_state.effort = [0.0]
-      self._joint_states_pub.publish(joint_state)
+      self._joint_states_publisher.publish(joint_state)
 
-  def onLaserTiltSignal(self, signal):
+  def _onLaserTiltSignal(self, signal):
     self._signal = signal
 
-  def onLaserProfile(self, profile):
+  def _onLaserProfile(self, profile):
     self._profile = profile
     self._velocity = 0
     if profile.period > 0:
