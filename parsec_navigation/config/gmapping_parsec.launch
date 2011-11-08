@@ -2,7 +2,12 @@
     <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
       <rosparam>
         odom_frame: odom
+
+        # Time between updates in the map. We keep it small for better
+        # user feedback during mapping. Increasing this will decrease CPU
+        # usage. However, map updates are single-CPU bound.
         map_update_interval: 1.0
+        
         maxUrange: 16.0
         sigma: 0.05
         kernelSize: 1
@@ -26,7 +31,10 @@
         xmax: 1.0
         ymax: 1.0
 
+        # The resolution of the map, i.e. the length of the edge of
+        # one pixel in meters.
         delta: 0.025
+        
         llsamplerange: 0.01
         llsamplestep: 0.01
         lasamplerange: 0.005
