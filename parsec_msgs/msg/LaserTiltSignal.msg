@@ -1,8 +1,8 @@
 # Message to signal that we either finished half a period or a full
 # tilting period.
 
-uint8 DIRECTION_DOWN = 0
-uint8 DIRECTION_UP = 1
+uint8 ANGLE_DECREASING = 0
+uint8 ANGLE_INCREASING = 1
 
 Header header
 
