@@ -60,11 +60,11 @@ class WaypointQueue(object):
 
   def __init__(self):
     self._waypoints = []
-    self.lock = threading.Lock()
+    self._lock = threading.Lock()
 
   def Add(self, name, pose):
     """Adds a waypoint to the end of the sequence of waypoints."""
-    with self.lock:
+    with self._lock:
       if not self._waypoints:
         new_waypoint = Waypoint(name, pose, active=True)
       else:
@@ -80,7 +80,7 @@ class WaypointQueue(object):
     """
     new_waypoints = []
     removed_waypoint = None
-    with self.lock:
+    with self._lock:
       for waypoint in self._waypoints:
         if waypoint.name != name:
           new_waypoints.append(waypoint)
@@ -92,13 +92,13 @@ class WaypointQueue(object):
     return removed_waypoint
 
   def Get(self, name):
-    with self.lock:
+    with self._lock:
       for waypoint in self._waypoints:
         if waypoint.name == name:
           return waypoint
 
   def GetByPoseStamped(self, pose):
-    with self.lock:
+    with self._lock:
       for waypoint in self._waypoints:
         if self._PoseStampedEqual(pose, waypoint.pose):
           return waypoint
@@ -108,7 +108,7 @@ class WaypointQueue(object):
 
     Returns: the list of removed waypoints
     """
-    with self.lock:
+    with self._lock:
       if not self._waypoints:
         return
       index = 0
@@ -128,6 +128,10 @@ class WaypointQueue(object):
     waypoint = self.Get(name)
     waypoint.pose = new_pose
     return waypoint
+
+  def GetWaypoints(self):
+    with self._lock:
+      return self._waypoints[:]
 
   def _PoseStampedEqual(self, p1, p2):
     return (p1.pose.position.x == p2.pose.position.x and
@@ -179,9 +183,9 @@ class InteractiveWaypointMarkers(object):
         navigation_waypoints_server.srv.UpdateWaypoints)
 
   def _AddWaypointCallback(self, pose):
-    name = 'waypoint_%d' % self.current_waypoint_index
-    description = 'waypoint %d' % self.current_waypoint_index
-    self.current_waypoint_index += 1
+    name = 'waypoint_%d' % self._current_waypoint_index
+    description = 'waypoint %d' % self._current_waypoint_index
+    self._current_waypoint_index += 1
     self._AddWaypoint(name, pose)
 
     waypoint_int_marker = interactive_marker_server.InteractiveMarker()
@@ -296,18 +300,18 @@ class InteractiveWaypointMarkers(object):
         rospy.logwarn('Cancellation of goal took more than 2 seconds. Continuing anyway.')
     self.execute_path.send_goal(
       navigation_waypoints_server.msg.ExecutePathGoal(
-        waypoints=[wp.pose for wp in self._waypoints.waypoints],
+        waypoints=[wp.pose for wp in self._waypoints.GetWaypoints()],
         continue_on_error=True),
       done_cb=self._NavigationDoneCallback,
       feedback_cb=self._NavigationFeedbackCallback)
 
   def _UpdateCurrentNavGoal(self):
     """Updates all waypoints on the server that are not active at the moment"""
-    self.update_waypoints_srv(waypoints=[wp.pose for wp in self._waypoints.waypoints if not wp.active])
-
+    self.update_waypoints_srv(waypoints=[wp.pose for wp in self._waypoints.GetWaypoints() if not wp.active])
+  
   def _NavigationDoneCallback(self, state, result):
     if state != actionlib.GoalStatus.PREEMPTED:
-      for wp in self._waypoints.waypoints:
+      for wp in self._waypoints.GetWaypoints():
         self._EraseWaypointMarker(wp.name)
         self._waypoints.Remove(wp.name)
 

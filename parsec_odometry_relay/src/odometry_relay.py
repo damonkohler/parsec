@@ -38,9 +38,8 @@ class OdometryRelay(object):
   ROS Parameters:
 
     base_frame_id: name of the robot's base frame, default is 'base_link'
-
     publish_tf: when true, publishes the transform from /odom to
-    base_frame_id, default is true
+        base_frame_id, default is true
   """
 
   def __init__(self):

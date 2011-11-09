@@ -25,6 +25,10 @@ from sensor_msgs.msg import JointState
 from parsec_msgs.msg import LaserTiltSignal, LaserTiltProfile
 
 
+class InvalidSignalError(Exception):
+  pass
+
+
 class PublishServoJointState(object):
   """Class for extrapolating the current servo position
 
@@ -73,9 +77,8 @@ class PublishServoJointState(object):
         extrapolated_position = self._profile.max_angle - self._velocity * max(delta_t, 0)
         current_velocity = -self._velocity
       else:
-        rospy.logerr('Unknown singal %d' % self._signal.signal)
-        self._signal = None
-        continue
+        rospy.logerr('Unknown singal: %d' % self._signal.signal)
+        raise InvalidSignalError()
 
       if extrapolated_position < self._profile.min_angle or extrapolated_position > self._profile.max_angle:
         rospy.logerr('Ran out of possible tilting range. That probably means we are missing a signal.')
@@ -96,6 +99,7 @@ class PublishServoJointState(object):
   def _onLaserProfile(self, profile):
     self._profile = profile
     self._velocity = 0
+    self._signal = None
     if profile.period > 0:
       # Calculate velocity in radians per second.
       self._velocity = (profile.max_angle - profile.min_angle) / (profile.period / 2)
