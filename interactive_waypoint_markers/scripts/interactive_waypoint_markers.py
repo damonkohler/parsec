@@ -1,18 +1,22 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2011 Google Inc.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
 # the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+
+"""Provides interactive markers to control navigation between waypoints."""
+
+__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
 import roslib; roslib.load_manifest("interactive_waypoint_markers")
 import rospy
@@ -26,9 +30,6 @@ import geometry_msgs.msg
 
 from interactive_markers import interactive_marker_server
 from interactive_markers import menu_handler
-
-
-__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
 
 class Waypoint(object):
@@ -56,7 +57,7 @@ class WaypointQueue(object):
   Attributes:
     waypoints: sequence of waypoints
   """
-    
+
   def __init__(self):
     self._waypoints = []
     self.lock = threading.Lock()
@@ -122,7 +123,7 @@ class WaypointQueue(object):
       removed = self._waypoints[:index]
       self._waypoints = self._waypoints[index:]
     return new_active, removed
-    
+
   def Update(self, name, new_pose):
     waypoint = self.Get(name)
     waypoint.pose = new_pose
@@ -165,7 +166,7 @@ class InteractiveWaypointMarkers(object):
         self.menu_handler.insert(
             'Closed path', callback=self._ToggleClosedPath),
         menu_handler.MenuHandler.UNCHECKED)
-    
+
     self.add_waypoint_sub = rospy.Subscriber(
         '~add_waypoint', geometry_msgs.msg.PoseStamped, self._AddWaypointCallback)
 
@@ -182,13 +183,13 @@ class InteractiveWaypointMarkers(object):
     description = 'waypoint %d' % self.current_waypoint_index
     self.current_waypoint_index += 1
     self._AddWaypoint(name, pose)
-    
+
     waypoint_int_marker = interactive_marker_server.InteractiveMarker()
     waypoint_int_marker.header.frame_id = pose.header.frame_id
     waypoint_int_marker.name = name
     waypoint_int_marker.description = description
     waypoint_int_marker.pose = pose.pose
-    
+
     waypoint_marker = interactive_marker_server.Marker()
     waypoint_marker.type = interactive_marker_server.Marker.ARROW
     waypoint_marker.scale.x = 0.8
@@ -198,12 +199,12 @@ class InteractiveWaypointMarkers(object):
     waypoint_marker.color.g = 0.8
     waypoint_marker.color.b = 0.0
     waypoint_marker.color.a = 1.0
-    
+
     waypoint_control = interactive_marker_server.InteractiveMarkerControl()
     waypoint_control.always_visible = True
     waypoint_control.markers.append(waypoint_marker)
     waypoint_int_marker.controls.append(waypoint_control)
-    
+
     translate_control = interactive_marker_server.InteractiveMarkerControl()
     translate_control.name = 'move_rotate_plane'
     translate_control.interaction_mode = interactive_marker_server.InteractiveMarkerControl.MOVE_ROTATE
@@ -213,7 +214,7 @@ class InteractiveWaypointMarkers(object):
     translate_control.orientation.w = 1
     translate_control.always_visible = True
     waypoint_int_marker.controls.append(translate_control)
-    
+
     self.server.insert(waypoint_int_marker, self._MarkerFeedbackCallback)
     self.menu_handler.apply(self.server, name)
     self.server.applyChanges()
@@ -249,7 +250,7 @@ class InteractiveWaypointMarkers(object):
       self._SendNewNavGoal()
     else:
       self._UpdateCurrentNavGoal()
-    
+
   def _AddWaypoint(self, name, pose):
     new_waypoint = self._waypoints.Add(name, pose)
     self._SendNewOrUpdateCurrentNavGoal(new_waypoint)
@@ -261,7 +262,7 @@ class InteractiveWaypointMarkers(object):
         pose=new_pose)
     updated_waypoint = self._waypoints.Update(name, new_pose_stamped)
     self._SendNewOrUpdateCurrentNavGoal(updated_waypoint)
-    
+
   def _RemoveWaypoint(self, name):
     removed_waypoint = self._waypoints.Remove(name)
     self._SendNewOrUpdateCurrentNavGoal(removed_waypoint)
@@ -303,7 +304,7 @@ class InteractiveWaypointMarkers(object):
   def _UpdateCurrentNavGoal(self):
     """Updates all waypoints on the server that are not active at the moment"""
     self.update_waypoints_srv(waypoints=[wp.pose for wp in self._waypoints.waypoints if not wp.active])
-  
+
   def _NavigationDoneCallback(self, state, result):
     if state != actionlib.GoalStatus.PREEMPTED:
       for wp in self._waypoints.waypoints:
@@ -321,7 +322,7 @@ class InteractiveWaypointMarkers(object):
       for removed in removed_waypoints:
         self._EraseWaypointMarker(removed.name)
 
-      
+
 if __name__=="__main__":
     rospy.init_node("interactive_waypoint_markers")
     markers = InteractiveWaypointMarkers()
