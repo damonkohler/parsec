@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2011 Google Inc.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
 # the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-#
+
+"""Coordinates movement through a mutable queue of waypoints."""
+
+__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
 import roslib; roslib.load_manifest('navigation_waypoints_server')
 
@@ -28,10 +31,6 @@ import nav_msgs.msg
 import nav_msgs.srv
 import move_base_msgs.msg as move_base_msgs
 import geometry_msgs.msg as geometry_msgs
-
-
-__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
-
 
 MOVE_BASE_POLL_TIMEOUT = 0.1
 WAIT_FOR_MOTION_PLAN_SERVICE_TIMEOUT = 2.0
@@ -74,7 +73,7 @@ class MoveBaseProxy(object):
     This triggers termination of the execute method.
     """
     self.interrupted = True
-    
+
   def execute(self, goal, interrupt_poll_timeout=MOVE_BASE_POLL_TIMEOUT):
     """Executes the (move_base-)action while checking for cancellation.
 
@@ -120,7 +119,7 @@ class NavWaypointsServer(object):
     # without preempting the action.
     self.pending = []
     self.lock = Lock()
-        
+
     self.params = self._parse_params()
     self.execute_path = actionlib.SimpleActionServer(
         action_name,
@@ -131,7 +130,7 @@ class NavWaypointsServer(object):
     self.move_base_proxies = [MoveBaseProxy(param['action'], param.get('check_plan'))
                               for param in self.params['move_base_actions']]
 
-        
+
   def _parse_params(self):
     """Currently, we support the following parameters:
 
@@ -142,14 +141,14 @@ class NavWaypointsServer(object):
       check if we actually want to call this service. The check_plan
       parameter is optional, the acton parameter mandatory. Example:
       [{'action': 'move_base_1', 'check_plan': 'move_base_1/make_plan'}]
-    
+
     This function returns a dictionary of parameters.
     """
     return {
       'base_frame': rospy.get_param('~base_frame', 'base_link'),
       'move_base_actions': rospy.get_param('~move_base_actions', [{'action': '/move_base'}]),
       }
-    
+
   def _execute_action(self, goal):
 
     def make_interrupt_proxy_callback(move_base_proxy):
@@ -183,7 +182,7 @@ class NavWaypointsServer(object):
             if move_base_proxy.maybe_check_plan(current) and move_base_proxy.execute(current):
               break
           else:
-            raise WaypointFailed()            
+            raise WaypointFailed()
           visited += [current]
 
         except WaypointFailed, e:
