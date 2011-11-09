@@ -126,7 +126,8 @@ class NavWaypointsServer(object):
         navigation_waypoints_server.msg.ExecutePathAction,
         self._execute_action)
     self.update_waypoints_service = rospy.Service(
-        '~update_waypoints', navigation_waypoints_server.srv.UpdateWaypoints, self._update_waypoints)
+        '~update_waypoints', navigation_waypoints_server.srv.UpdateWaypoints,
+        self._update_waypoints)
     self.move_base_proxies = [MoveBaseProxy(param['action'], param.get('check_plan'))
                               for param in self.params['move_base_actions']]
 
@@ -172,10 +173,8 @@ class NavWaypointsServer(object):
             current = self.pending[0]
             self.pending = self.pending[1:]
           self.execute_path.publish_feedback(
-              navigation_waypoints_server.msg.ExecutePathFeedback(current=current,
-                                                                  visited=visited,
-                                                                  invalid=invalid,
-                                                                  pending=self.pending))
+              navigation_waypoints_server.msg.ExecutePathFeedback(
+                  current=current, visited=visited, invalid=invalid, pending=self.pending))
           for move_base_proxy in self.move_base_proxies:
             self.execute_path.register_preempt_callback(
                 make_interrupt_proxy_callback(move_base_proxy))
@@ -190,19 +189,16 @@ class NavWaypointsServer(object):
           if not goal.continue_on_error:
             raise e
       self.execute_path.set_succeeded(
-          navigation_waypoints_server.msg.ExecutePathResult(visited=visited,
-                                                            invalid=invalid,
-                                                            pending=self.pending))
+          navigation_waypoints_server.msg.ExecutePathResult(
+              visited=visited, invalid=invalid, pending=self.pending))
     except PreemptRequested, e:
       self.execute_path.set_preempted(
-          navigation_waypoints_server.msg.ExecutePathResult(visited=visited,
-                                                            invalid=invalid,
-                                                            pending=[current] + self.pending))
+          navigation_waypoints_server.msg.ExecutePathResult(
+              visited=visited, invalid=invalid, pending=[current] + self.pending))
     except WaypointFailed, e:
       self.execute_path.set_aborted(
-          navigation_waypoints_server.msg.ExecutePathResult(visited=visited,
-                                                            invalid=invalid,
-                                                            pending=self.pending))
+          navigation_waypoints_server.msg.ExecutePathResult(
+              visited=visited, invalid=invalid, pending=self.pending))
 
   def _update_waypoints(self, request):
     self.pending = request.waypoints
