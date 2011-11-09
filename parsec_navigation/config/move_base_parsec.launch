@@ -1,6 +1,10 @@
 <launch>
  
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam>
+      planner_patience: 5.0
+      controller_patience: 5.0
+    </rosparam>
     <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find parsec_navigation)/config/local_costmap_params.yaml" command="load" />
