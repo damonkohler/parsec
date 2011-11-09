@@ -1,0 +1,11 @@
+<launch>
+  <node name="interactive_waypoint_markers" type="interactive_waypoint_markers.py" pkg="interactive_waypoint_markers" />
+  <node name="navigation_waypoints_server" type="navigation_waypoints_server.py" pkg="navigation_waypoints_server">
+    <rosparam>
+      move_base_actions:
+       - {action: /move_base, check_plan: /move_base/make_plan}
+       - {action: /move_base_dynamic}
+      base_frame: base_footprint
+    </rosparam>
+  </node>
+</launch>

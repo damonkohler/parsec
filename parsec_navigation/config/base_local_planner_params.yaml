@@ -1,0 +1,30 @@
+controller_frequency: 20.0
+TrajectoryPlannerROS:
+  # Set the velocity values to something that matches our
+  # platform. However, these values have been sort of guessed and it's
+  # likely that they can be improved.
+  max_vel_x: 0.8
+  min_vel_x: 0.10
+  max_rotational_vel: 1.5
+  min_in_place_rotational_vel: 0.7
+  acc_lim_th: 0.8
+  acc_lim_x: 0.7
+  acc_lim_y: 0.0
+
+  holonomic_robot: false
+
+  # These are guessed tolerance values. Yaw tolerance should be about
+  # 45 degree and xy tolerance within a foot.
+  yaw_goal_tolerance: 0.4 # radians
+  xy_goal_tolerance: 0.5 # meters
+  
+  goal_distance_bias: 0.8
+  path_distance_bias: 0.8
+  sim_time: 1.5
+  heading_lookahead: 0.325
+  oscillation_reset_dist: 0.05
+
+  vx_samples: 6
+  vtheta_samples: 20
+  dwa: false
+
