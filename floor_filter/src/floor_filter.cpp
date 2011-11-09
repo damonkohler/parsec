@@ -53,22 +53,28 @@ static bool IntersectPlanes(
 
   // Calculate the intersection of two planes using the formulas as,
   // for instance, found at http://paulbourke.net/geometry/planeplane/.
-  Eigen::Hyperplane<float, 3>::Scalar n1_n1  =
-      (plane1.normal() * plane1.normal().transpose())(0);
-  Eigen::Hyperplane<float, 3>::Scalar n2_n2  =
-      (plane2.normal() * plane2.normal().transpose())(0);
-  Eigen::Hyperplane<float, 3>::Scalar n1_n2  =
-      (plane1.normal() * plane2.normal().transpose())(0);
+  Eigen::Hyperplane<float, 3>::Scalar n1_n1  = plane1.normal().dot(plane1.normal());
+  Eigen::Hyperplane<float, 3>::Scalar n2_n2  = plane2.normal().dot(plane2.normal());
+  Eigen::Hyperplane<float, 3>::Scalar n1_n2  = plane1.normal().dot(plane2.normal());
   Eigen::Hyperplane<float, 3>::Scalar determinant =
       n1_n1 * n2_n2 - (n1_n2 * n1_n2);
-  
+  Eigen::Hyperplane<float, 3>::Scalar c1 =
+      (plane1.offset() * n2_n2 - plane2.offset() * n1_n2) / determinant;
+  Eigen::Hyperplane<float, 3>::Scalar c2 =
+      (plane2.offset() * n1_n1 - plane1.offset() * n1_n2) / determinant;
   Eigen::ParametrizedLine<float, 3>::VectorType origin =
-      Eigen::ParametrizedLine<float, 3>::VectorType(
-        (plane1.offset() * n2_n2 - plane2.offset() * n1_n2) / determinant,
-        (plane2.offset() * n1_n1 - plane1.offset() * n1_n2) / determinant,
-        0.0);
+    c1 * plane1.normal() + c2 * plane2.normal() + direction / direction.norm();
   *intersection = Eigen::ParametrizedLine<float, 3>(origin, direction);
   return true;
+}
+
+template<typename T>
+static bool VectorsParallel(const T& vector1, const T& vector2, double angle_threshold) {
+  if (fabs(vector1.dot(vector2) / (vector1.norm() * vector2.norm())) < cos(angle_threshold)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void FloorFilter::onInit() {
@@ -78,19 +84,21 @@ void FloorFilter::onInit() {
     ROS_FATAL("Parameter 'sensor_frame' not found");
     return;
   }
-  pnh_->param("reference_frame", reference_frame_, std::string("odom"));
+  pnh_->param("reference_frame", reference_frame_, std::string("base_link"));
   pnh_->param("floor_z_distance", floor_z_distance_, 0.05);
-  double max_slope_angle;
-  pnh_->param("max_slope_angle", max_slope_angle,
+  double max_floor_y_rotation;
+  pnh_->param("max_floor_y_rotation", max_floor_y_rotation,
               static_cast<double>(2.0 * M_PI/180.0));
-  max_slope_ = tan(max_slope_angle);
+  max_slope_ = tan(max_floor_y_rotation);
+  pnh_->param("max_floor_x_rotation", max_floor_x_rotation,
+              static_cast<double>(5.0 * M_PI/180.0));
   pnh_->param("ransac_distance_threshold", ransac_distance_threshold_, 0.03);
-  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, 0.03);
+  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, 1.0);
       
   input_scan_subscriber_ = pnh_->subscribe<sensor_msgs::LaserScan>(
       "scan", 100, boost::bind(&FloorFilter::LaserCallback, this, _1));
   input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
-      "cloud_in", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
+      "input_cloud", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
   floor_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
       "floor_cloud", 10);
   filtered_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
@@ -112,7 +120,12 @@ void FloorFilter::LaserCallback(const sensor_msgs::LaserScan::ConstPtr &scan) {
 
 void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {
   pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl_ros::transformPointCloud(reference_frame_, *cloud, *transformed_cloud, tf_listener_);
+  try {
+    pcl_ros::transformPointCloud(reference_frame_, *cloud, *transformed_cloud, tf_listener_);
+  } catch (tf::TransformException e) {
+    return;
+  }
+    
   if(!transformed_cloud->points.size()) {
     ROS_WARN("No input points");
     return;
@@ -129,7 +142,8 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
 
   Eigen::ParametrizedLine<float, 3> line;
   std::vector<int> line_inlier_indices;
-  if (!FindFloorLine(transformed_cloud, floor_candidate_indices, &line, &line_inlier_indices)) {
+  if (!FindFloorLine(transformed_cloud, floor_candidate_indices, &line, &line_inlier_indices) ||
+      VectorsParallel(line.direction(), Eigen::Vector3f(0, 1, 0), max_floor_x_rotation)) {
     Eigen::Hyperplane<float, 3> sensor_plane = GetSensorPlane(transformed_cloud->header.stamp);
     // Use intersection of the x-y-plane and the sensor plane to
     // generate an artificial floor line.
@@ -138,13 +152,17 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
                              Eigen::Hyperplane<float, 3>::VectorType(0, 0, 1),
                              0.0),
                          &line)) {
+      ROS_DEBUG("No intersection between sensor plane and x-y-plane.");
       // If the sensor plane and the floor plane happen to be
       // parallel, just re-publish the input cloud because we cannot
       // see the floor anyway.
       filtered_cloud_publisher_.publish(transformed_cloud);
       return;
     }
-    ROS_INFO("No floor line found. Using the intersection between the sensor plane and the x-y-plain.");
+    // Clear all line inliers because even if we found a line we
+    // rejected it because it was not parallel to the y axis.
+    line_inlier_indices.clear();
+    ROS_DEBUG("No floor line found. Using the intersection between the sensor plane and the x-y-plain.");
   }
   std::sort(line_inlier_indices.begin(), line_inlier_indices.end());
   
@@ -251,12 +269,28 @@ void FloorFilter::GenerateCliffCloud(
 
   pcl::PointXYZ viewpoint = GetViewpointPoint(input_cloud->header.stamp);
   for (size_t i = 0; i < input_indices.size(); i++) {
-    pcl::PointXYZ projected_cliff_point = ProjectPointOnLine(
-        line_coefficients, input_cloud->points[i]);
-    if (EuclideanDistance(viewpoint, input_cloud->points[i]) >
-        EuclideanDistance(viewpoint, projected_cliff_point) + cliff_distance_threshold_) {
-      cliff_indices->push_back(i);
-      cliff_cloud->points.push_back(projected_cliff_point);
+    pcl::PointXYZ projected_cliff_point;
+    if (!ProjectPointOnLine(input_cloud->header.stamp, line_coefficients, input_cloud->points[i],
+                            &projected_cliff_point)) {
+      continue;
+    }
+    double distance_projected_from_point =
+        EuclideanDistance(viewpoint, input_cloud->points[i]) - EuclideanDistance(viewpoint, projected_cliff_point);
+    if (distance_projected_from_point > 0 &&
+        // Are the projected point  and the point on the same side of the viewpoint?
+        input_cloud->points[i].y * projected_cliff_point.y >= 0) {
+      double distance_projected_from_point_xy =
+          EuclideanDistance(projected_cliff_point,
+                            pcl::PointXYZ(input_cloud->points[i].x,
+                                          input_cloud->points[i].y,
+                                          projected_cliff_point.z));
+      double distance_from_floor =
+        sqrt(distance_projected_from_point * distance_projected_from_point
+             - distance_projected_from_point_xy * distance_projected_from_point_xy);
+      if (distance_from_floor > cliff_distance_threshold_) {
+        cliff_indices->push_back(i);
+        cliff_cloud->points.push_back(projected_cliff_point);
+      }
     }
   }
   cliff_cloud->width = cliff_cloud->points.size();
@@ -287,9 +321,29 @@ double FloorFilter::EuclideanDistance(const pcl::PointXYZ &point1, const pcl::Po
   return sqrt(x * x + y * y + z * z);
 }
 
-pcl::PointXYZ FloorFilter::ProjectPointOnLine(const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point) {
-  Eigen::ParametrizedLine<float, 3>::VectorType projected_point = line.projection(point.getVector3fMap());
-  return pcl::PointXYZ(projected_point[0], projected_point[1], projected_point[2]);
+bool FloorFilter::ProjectPointOnLine(
+    const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point,
+    pcl::PointXYZ *projected_point) {
+  Eigen::ParametrizedLine<float, 3>::VectorType viewpoint = GetViewpointPoint(time).getVector3fMap();
+  Eigen::ParametrizedLine<float, 3> viewpoint_line(viewpoint, point.getVector3fMap() - viewpoint);
+  Eigen::ParametrizedLine<float, 3>::Scalar parameter_divisor =
+      line.direction()(0) * viewpoint_line.direction()(1) - line.direction()(1) * viewpoint_line.direction()(0);
+  // If the line between the viewpoint and the point and the floor
+  // line are parallel `parameter_divisor` is zero. This can happen,
+  // so check for it.
+  if (fabs(parameter_divisor) < 1e-6) {
+    return false;
+  }
+  // This formular can be derived from setting the two line equations
+  // equal and solving the resulting equation system.
+  Eigen::ParametrizedLine<float, 3>::Scalar parameter =
+      (line.origin()(1) + viewpoint_line.origin()(0) * viewpoint_line.direction()(1)
+       - viewpoint_line.origin()(1) * viewpoint_line.direction()(0)
+       - line.origin()(0) * viewpoint_line.direction()(1))
+      / parameter_divisor;
+  Eigen::ParametrizedLine<float, 3>::VectorType intersection_point = line.origin() + line.direction() * parameter;
+  *projected_point = pcl::PointXYZ(intersection_point[0], intersection_point[1], intersection_point[2]);
+  return true;
 }
 
 pcl::PointXYZ FloorFilter::GetViewpointPoint(const ros::Time &time) {
@@ -322,7 +376,7 @@ Eigen::Hyperplane<float, 3> FloorFilter::GetSensorPlane(const ros::Time &time) {
       z_axis_in_reference.x(),
       z_axis_in_reference.y(),
       z_axis_in_reference.z());
-  return Eigen::Hyperplane<float, 3>(normal, 0.0);
+  return Eigen::Hyperplane<float, 3>(normal, sqrt(GetViewpointPoint(time).getVector3fMap().norm()));
 }
 
 }

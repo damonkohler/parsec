@@ -48,10 +48,19 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   double floor_z_distance_;
   
   /**
-   * The maximal slope in radians the floor can have. This value is
-   * used for filtering candidate points. Default: 2 degrees
+   * The maximal slope in radians the floor can have, i.e. this is a
+   * measure for the floor's rotation along the y axis. This value is
+   * used for filtering candidate points. The corresponding ROS
+   * parameter is max_floor_y_rotation. Default: 2 degrees
    */
   double max_slope_;
+
+  /**
+   * The maximal rotation around the x axis in radians the floor can
+   * have before the floor line is rejected as a false
+   * positive. Default: 5 degrees
+   */
+  double max_floor_x_rotation;
   
   /**
    * Distance threshold for points to be considered as inliers. This
@@ -150,15 +159,18 @@ class FloorFilter : public pcl_ros::PCLNodelet {
 
   /**
    * Projects a point on a line, i.e. returns the point on the line
-   * that is closest to the point.
+   * that is closest to the line between the viewpoint and point.
    *
+   * @param time the time at which to take the viewpoint
    * @param line the Eigen representation of the line
    *
    * @param point the point to project
    *
    * @return the point on the line that is closest to point
    */
-  pcl::PointXYZ ProjectPointOnLine(const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point);
+  bool ProjectPointOnLine(
+      const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point,
+      pcl::PointXYZ *projected_point);
 
   pcl::PointXYZ GetViewpointPoint(const ros::Time &time);
 
