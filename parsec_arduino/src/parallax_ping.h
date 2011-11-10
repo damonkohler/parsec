@@ -45,6 +45,9 @@ class Ultrasonic {
   // TODO(whess): Remove.
   int DebugTime();
 
+  // Returns the number of errors that we have seen so far.
+  static int GetErrorCount();
+
  private:
   static const char kStateReady = 0;
   static const char kStateTriggered = 1;
@@ -52,16 +55,19 @@ class Ultrasonic {
 
   static void HandleInputChange();
   inline void UpdateValue();
+  static void LogIfCheck(bool assertion, const char *format, ...);
 
   unsigned long last_micros_;
   int value_;
 
-  static Ultrasonic* measuring_;
+  static Ultrasonic *measuring_;
   static volatile char state_;
   static unsigned long triggered_micros_;
   static unsigned long receiving_micros_;
   static unsigned long done_micros_;
+
   static int debug_id_;
+  static int error_count_;
 };
 
 #endif  // PARSECLIB_PARALLAX_PING_
