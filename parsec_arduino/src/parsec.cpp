@@ -316,11 +316,11 @@ static void WriteUART1(unsigned char byte) {
   UCSR1B |= (1 << RXEN1);
 }
 
-// Finding good PID gains is sort of hard. At the moment we only use a
-// P controller, i.e. we set the I and D gains to 0 which already
+// Finding good PID values is sort of hard. At the moment we only use a
+// P controller, i.e. we set the I and D values to 0 which already
 // gives us a reasonable stable controller. By using rxplot to
 // visualize how the velocities of the right and left position
-// controllers behave, it is easy to incrementally adjust the gains so
+// controllers behave, it is easy to incrementally adjust the values so
 // that we get stable behavior.
 const float kPositionControllerPGain = 0.04f;
 const float kPositionControllerIGain = 0.0f;
@@ -333,10 +333,10 @@ Pid right_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
   kPositionControllerDGain, kPositionControllerIClamp);
 
 static void SetupPidControllers() {
-  float gains[3];
-  if (node_handle.getParam("parsec/pid", gains, 3)) {
-    left_velocity_pid.setGains(gains[0], gains[1], gains[2], kPositionControllerIClamp);
-    right_velocity_pid.setGains(gains[0], gains[1], gains[2], kPositionControllerIClamp);
+  float values[3];
+  if (node_handle.getParam("~pid", values, 3)) {
+    left_velocity_pid.setGains(values[0], values[1], values[2], kPositionControllerIClamp);
+    right_velocity_pid.setGains(values[0], values[1], values[2], kPositionControllerIClamp);
   }
 }
 
@@ -388,7 +388,6 @@ static void LoopPositionController() {
     // SetMotorPower(false);
   }
 }
-
 
 static void PublishJointState() {
   // Note: these names need to match the URDF to have the
@@ -572,7 +571,7 @@ void setup() {
   }
   printf_row(0, "Connected");
 
-  //SetupPidControllers();
+  SetupPidControllers();
 }
 
 void loop() {
