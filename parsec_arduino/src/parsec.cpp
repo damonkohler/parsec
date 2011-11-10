@@ -93,7 +93,7 @@ static void DumpProfiler(char row, const Profiler &profiler) {
 
 static void SetMotorPower(bool enable);
 static void WriteUART1(unsigned char byte);
-static void SendCrashLog(const char *message);
+void SendLogMessage(const char *message);
 
 // Endless loop flashing the LCD to show that we have crashed.
 void Check(bool assertion, const char *format, ...) {
@@ -108,7 +108,7 @@ void Check(bool assertion, const char *format, ...) {
     vsnprintf(error_message, 18, format, ap);
     va_end(ap);
     display.WriteString(8 - strlen(error_message) / 2, 4, error_message);
-    SendCrashLog(error_message);
+    SendLogMessage(error_message);
     for (;;) {
       PositionController::SoftwareEmergencyStop(&WriteUART1);
       digitalWrite(8, HIGH);
@@ -221,6 +221,13 @@ static void LoopUltrasonic() {
     PORTK = current_ping;
     pings[current_ping].SendTriggerPulse(current_ping);
     next_ping = kPingSuccessor[current_ping];
+  }
+
+  static int last_error_count = -1;
+  int current_error_count = Ultrasonic::GetErrorCount();
+  if (current_error_count != last_error_count) {
+    printf_row(2, "PingerErrs %d", current_error_count);
+    last_error_count = current_error_count;
   }
 }
 
@@ -482,7 +489,7 @@ ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
 rosgraph_msgs::Log log_message;
 ros::Publisher log_publisher("rosout", &log_message);
 
-static void SendCrashLog(const char* message) {
+void SendLogMessage(const char* message) {
   log_message.header.stamp = node_handle.now();
   log_message.header.frame_id = const_cast<char*>("");
   log_message.level = rosgraph_msgs::Log::FATAL;
@@ -516,9 +523,10 @@ static void SetupROSSerial() {
 static void LoopROSSerial() {
   node_handle.spinOnce();
   static int last_error_count = -1;
-  if (node_handle.getErrorCount() != last_error_count) {
-    printf_row(1, "ErrorCount %d", node_handle.getErrorCount());
-    last_error_count = node_handle.getErrorCount();
+  int current_error_count = node_handle.getErrorCount();
+  if (current_error_count != last_error_count) {
+    printf_row(1, "ErrorCount %d", current_error_count);
+    last_error_count = current_error_count;
   }
 }
 

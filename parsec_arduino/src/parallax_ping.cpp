@@ -17,7 +17,7 @@
 
 #include <WProgram.h>
 
-void Check(bool assertion, const char *format, ...);  // TODO(whess): Move this.
+void SendLogMessage(const char *message);  // TODO(whess): Move elsewhere.
 
 Ultrasonic* Ultrasonic::measuring_ = NULL;
 volatile char Ultrasonic::state_ = Ultrasonic::kStateReady;
@@ -25,6 +25,7 @@ unsigned long Ultrasonic::triggered_micros_ = 0;
 unsigned long Ultrasonic::receiving_micros_ = 0;
 unsigned long Ultrasonic::done_micros_ = 0;
 int Ultrasonic::debug_id_ = -1;
+int Ultrasonic::error_count_ = 0;
 
 Ultrasonic::Ultrasonic()
     : last_micros_(0), value_(32767) {}
@@ -32,8 +33,8 @@ Ultrasonic::Ultrasonic()
 bool Ultrasonic::IsReady() {
   if (state_ != kStateReady) {
     // Still measuring, so we check for timeout.
-    Check(micros() - triggered_micros_ < 30000,
-          "Ping%d timeout", debug_id_);
+    LogIfCheck(micros() - triggered_micros_ < 30000,
+               "Ping%d timeout", debug_id_);
     return false;
   }
   if (measuring_ != NULL) {
@@ -45,9 +46,9 @@ bool Ultrasonic::IsReady() {
 }
 
 void Ultrasonic::SendTriggerPulse(int debug_id) {
-  Check(measuring_ == NULL, "Ping%d measuring", debug_id_);
-  Check(state_ == kStateReady, "Ping%d busy", debug_id_);
-  Check(micros() - done_micros_ >= 200, "Ping%d+1 lowdelta", debug_id_);
+  LogIfCheck(measuring_ == NULL, "Ping%d measuring", debug_id_);
+  LogIfCheck(state_ == kStateReady, "Ping%d busy", debug_id_);
+  LogIfCheck(micros() - done_micros_ >= 200, "Ping%d+1 lowdelta", debug_id_);
   debug_id_ = debug_id;
   measuring_ = this;
   digitalWrite(kPulsePin, HIGH);
@@ -72,6 +73,10 @@ int Ultrasonic::DebugTime() {
   return last_micros_ / 1000000;
 }
 
+int Ultrasonic::GetErrorCount() {
+  return error_count_;
+}
+
 void Ultrasonic::HandleInputChange() {
   unsigned long current_micros = micros();
   if (digitalRead(kPulsePin) == HIGH) {
@@ -88,11 +93,23 @@ void Ultrasonic::HandleInputChange() {
 void Ultrasonic::UpdateValue() {
   unsigned long delta_micros = receiving_micros_ - triggered_micros_;
   // Answer is expected after 750 us.
-  Check(delta_micros > 650 && delta_micros < 850,
-        "Ping%d at %lu", debug_id_, delta_micros);
+  LogIfCheck(delta_micros > 650 && delta_micros < 850,
+             "Ping%d at %lu", debug_id_, delta_micros);
   value_ = done_micros_ - receiving_micros_;
   // Answer should be between 115 us and 18500 us.
-  Check(value_ > 100 && value_ < 25000,
-        "Ping%d is %lu", debug_id_, value_);
+  LogIfCheck(value_ > 100 && value_ < 25000,
+             "Ping%d is %lu", debug_id_, value_);
   last_micros_ = done_micros_;
+}
+
+void Ultrasonic::LogIfCheck(bool assertion, const char *format, ...) {
+  if (!assertion) {
+    ++error_count_;
+    static char error_message[18];
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(error_message, 18, format, ap);
+    va_end(ap);
+    SendLogMessage(error_message);
+  }
 }
