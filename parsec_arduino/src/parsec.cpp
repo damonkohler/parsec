@@ -331,10 +331,19 @@ Pid left_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
   kPositionControllerDGain, kPositionControllerIClamp);
 Pid right_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
   kPositionControllerDGain, kPositionControllerIClamp);
+
+static void SetupPidControllers() {
+  float gains[3];
+  if (node_handle.getParam("parsec/pid", gains, 3)) {
+    left_velocity_pid.setGains(gains[0], gains[1], gains[2], kPositionControllerIClamp);
+    right_velocity_pid.setGains(gains[0], gains[1], gains[2], kPositionControllerIClamp);
+  }
+}
+
 PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius, &left_velocity_pid);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius, &right_velocity_pid);
 
-static void SetupPositionController() {
+static void SetupPositionControllers() {
   // Position Controller Device serial port. Pins 19 (RX) and 18 (TX).
   // We depend on default for DDR, PORT, UCSR.
   UBRR1H = 0;
@@ -418,7 +427,7 @@ static void PublishJointState() {
     right_velocity_error.data = right_velocity_pid.error();
     right_velocity_error_publisher.publish(&right_velocity_error);
 #endif
-        
+
     last_joint_state_message = micros();
   }
 #endif
@@ -476,7 +485,7 @@ static void SetupROSSerial() {
 #ifdef PUBLISH_JOINT_STATES
   node_handle.advertise(joint_state_publisher);
 #endif
-#ifdef DEBUG_BASE_CONTROLLER  
+#ifdef DEBUG_BASE_CONTROLLER
   node_handle.advertise(left_velocity_cmd_publisher);
   node_handle.advertise(left_velocity_error_publisher);
   node_handle.advertise(right_velocity_cmd_publisher);
@@ -552,9 +561,18 @@ void setup() {
   SetupDisplay();
   SetupROSSerial();
   SetupUltrasonic();
-  SetupPositionController();
+  SetupPositionControllers();
   SetupShiftBrite();
   SetupServoSweep();
+
+  // Wait until we've connected to the host.
+  printf_row(0, "Waiting");
+  while (!node_handle.connected()) {
+    node_handle.spinOnce();
+  }
+  printf_row(0, "Connected");
+
+  //SetupPidControllers();
 }
 
 void loop() {
