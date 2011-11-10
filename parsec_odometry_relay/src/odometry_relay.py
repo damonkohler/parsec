@@ -22,11 +22,14 @@ import roslib
 roslib.load_manifest('parsec_odometry_relay')
 
 import rospy
+import math
+
+import odometry_error_corrector
 
 from parsec_msgs.msg import Odometry as ParsecOdometry
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, PoseStamped
 
 
 class OdometryRelay(object):
@@ -43,33 +46,51 @@ class OdometryRelay(object):
   """
 
   def __init__(self):
-    self.odom_publisher = rospy.Publisher('odom', Odometry)
-    self.tf_publisher = rospy.Publisher('/tf', tfMessage)
-    self.child_frame_id = rospy.get_param('~base_frame_id', 'base_link')
-    self.publish_tf = rospy.get_param('~publish_tf', True)
-    rospy.loginfo('Using base frame %s' % self.child_frame_id)
-    self.odom_subscriber = rospy.Subscriber('odom_simple', ParsecOdometry, self.relay)
+    self._odometry_publisher = rospy.Publisher('odom', Odometry)
+    self._tf_publisher = rospy.Publisher('/tf', tfMessage)
+    self._child_frame_id = rospy.get_param('~base_frame_id', 'base_link')
+    self._publish_tf = rospy.get_param('~publish_tf', True)
+    maximal_linear_correction = rospy.get_param('~maximal_linear_correction', 0.1)
+    maximal_angular_correction = rospy.get_param('~maximal_angular_correction', 10.0 * math.pi / 180)
+    rospy.loginfo('Using base frame %s' % self._child_frame_id)
+    self._odometry_subscriber = rospy.Subscriber(
+        'odom_simple', ParsecOdometry, self._relay_odometry_callback)
+    self._odometry_error_corrector = odometry_error_corrector.OdometryErrorCorrector(
+        maximal_linear_correction, maximal_angular_correction)
+    self._correction_pose_subscriber = rospy.Subscriber(
+        '~correction_pose', PoseStamped, self._correction_pose_callback)
 
-  def relay(self, data):
-    odom = Odometry()
-    odom.header = data.header
-    odom.child_frame_id = self.child_frame_id
-    odom.pose.pose.position.x = data.position_x
-    odom.pose.pose.position.y = data.position_y
-    odom.pose.pose.orientation.z = data.orientation_z
-    odom.pose.pose.orientation.w = data.orientation_w
-    odom.twist.twist.linear.x = data.linear_x
-    odom.twist.twist.linear.y = data.linear_y
-    odom.twist.twist.angular.z = data.angular_z
-    self.odom_publisher.publish(odom)
+  def _relay_odometry_callback(self, data):
+    odometry = Odometry()
+    odometry.header = data.header
+    odometry.child_frame_id = self._child_frame_id
+    odometry.pose.pose.position.x = data.position_x
+    odometry.pose.pose.position.y = data.position_y
+    odometry.pose.pose.orientation.z = data.orientation_z
+    odometry.pose.pose.orientation.w = data.orientation_w
+    odometry.twist.twist.linear.x = data.linear_x
+    odometry.twist.twist.linear.y = data.linear_y
+    odometry.twist.twist.angular.z = data.angular_z
+    corrected_odometry = self._odometry_error_corrector.update_odometry(odometry)
+    self._odometry_publisher.publish(corrected_odometry)
 
-    if self.publish_tf:
+    if self._publish_tf:
       transform = TransformStamped()
       transform.header = data.header
-      transform.child_frame_id = odom.child_frame_id
-      transform.transform.translation = odom.pose.pose.position
-      transform.transform.rotation = odom.pose.pose.orientation
-      self.tf_publisher.publish(tfMessage(transforms=[transform]))
+      transform.child_frame_id = self._child_frame_id
+      transform.transform.translation = corrected_odometry.pose.pose.position
+      transform.transform.rotation = corrected_odometry.pose.pose.orientation
+      
+      transform_uncorrected = TransformStamped()
+      transform_uncorrected.header = data.header
+      transform_uncorrected.child_frame_id = self._child_frame_id + '_uncorrected'
+      transform_uncorrected.transform.translation = odometry.pose.pose.position
+      transform_uncorrected.transform.rotation = odometry.pose.pose.orientation
+
+      self._tf_publisher.publish(tfMessage(transforms=[transform, transform_uncorrected]))
+
+  def _correction_pose_callback(self, pose):
+    self._odometry_error_corrector.set_reference_pose(pose)
 
 
 if __name__ == '__main__':
