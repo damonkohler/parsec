@@ -11,6 +11,7 @@
   </rosparam>
 
   <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay">
+    <remap from="~correction_pose" to="correction_pose_scan_matcher/pose" />
     <rosparam>
       base_frame_id: base_footprint
     </rosparam>
@@ -20,5 +21,19 @@
         pkg="publish_servo_joint_state">
     <remap from="~signal" to="laser_tilt_controller/signal" />
     <remap from="~profile" to="laser_tilt_controller/profile" />
+  </node>
+  <node name="correction_pose_scan_matcher" type="laser_scan_matcher_node"
+        pkg="laser_scan_matcher">
+    <remap from="scan" to="base_scan" />
+    <remap from="pose2D" to="~pose_2d" />
+    <remap from="pose" to="~pose" />
+    <rosparam>
+      fixed_frame: odom
+      base_frame: base_footprint
+      use_imu: false
+      use_odom: true
+      publish_tf: false
+      publish_pose: true
+    </rosparam>
   </node>
 </launch>
