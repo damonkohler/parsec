@@ -92,12 +92,14 @@ static void DumpProfiler(char row, const Profiler &profiler) {
 }
 
 static void SetMotorPower(bool enable);
+static void WriteUART1(unsigned char byte);
+static void SendCrashLog(const char *message);
 
 // Endless loop flashing the LCD to show that we have crashed.
 void Check(bool assertion, const char *format, ...) {
   if (!assertion) {
-    SetMotorPower(false);
-    //PositionController::SoftwareEmergencyStop(&WriteUART1);
+    //SetMotorPower(false);
+    PositionController::SoftwareEmergencyStop(&WriteUART1);
     display.WriteString(0, 3, "      ERROR      ");
     display.WriteString(0, 4, "                 ");
     static char error_message[18];
@@ -106,7 +108,9 @@ void Check(bool assertion, const char *format, ...) {
     vsnprintf(error_message, 18, format, ap);
     va_end(ap);
     display.WriteString(8 - strlen(error_message) / 2, 4, error_message);
+    SendCrashLog(error_message);
     for (;;) {
+      PositionController::SoftwareEmergencyStop(&WriteUART1);
       digitalWrite(8, HIGH);
       for (int i = 0; i != 500; ++i) delayMicroseconds(1000);
       digitalWrite(8, LOW);
@@ -475,9 +479,26 @@ void VelocityCallback(const geometry_msgs::Twist& velocity_message) {
 ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
+rosgraph_msgs::Log log_message;
+ros::Publisher log_publisher("rosout", &log_message);
+
+static void SendCrashLog(const char* message) {
+  log_message.header.stamp = node_handle.now();
+  log_message.header.frame_id = const_cast<char*>("");
+  log_message.level = rosgraph_msgs::Log::FATAL;
+  log_message.name = const_cast<char*>("Parsec Arduino");
+  log_message.msg = const_cast<char*>(message);
+  log_message.file = const_cast<char*>("");
+  log_message.function = const_cast<char*>("");
+  log_message.line = 0;
+  log_message.topics_length = 0;
+  log_publisher.publish(&log_message);
+}
+
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
+  node_handle.advertise(log_publisher);
   node_handle.subscribe(tilt_profile_subscriber);
   node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
