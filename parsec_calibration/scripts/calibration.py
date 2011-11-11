@@ -22,7 +22,7 @@ import math
 import sys
 import threading
 
-import roslib; roslib.load_manifest('estimate_acceleration_limits')
+import roslib; roslib.load_manifest('parsec_calibration')
 
 import rospy
 from rospy import timer
