@@ -27,7 +27,22 @@ class ServoSweep {
 
   ServoSweep(int servo_pin, OnSignalCallback callback=NULL);
 
-  void Init();
+  /**
+   * Attaches the servo to the configured pin.
+   */
+  void Attach();
+
+  /**
+   * Configure servo parameters.
+   *
+   * @param min_pwm_period the minimum PWM period supported by the servo
+   * @param max_pwm_period the maximum PWM period supported by the servo
+   * @param min_angle the angle assocated with the minimum PWM period
+   * @param max_angle the angle associated with the maximum PWM period
+   */
+  void SetParameters(
+      unsigned int min_pwm_period, unsigned int max_pwm_period,
+      float min_angle, float max_angle);
 
   /**
    * min_angle and max_angle must be between -PI/2 and +PI/2.
@@ -35,6 +50,10 @@ class ServoSweep {
    * @param period the length of a complete period in seconds
    */
   void SetProfile(float min_angle, float max_angle, float period);
+
+  /**
+   * Update the servo's position in accordance with the configured profile.
+   */
   void Update();
 
  private:
@@ -42,18 +61,14 @@ class ServoSweep {
   // corresponding ROS message parsec_msgs/LaserTiltSignal.
   typedef enum {ANGLE_DECREASING=0, ANGLE_INCREASING=1} ServoDirection;
 
-  // These are constants are configured for the Modelcraft MC-621.
-  // kMinAngle and kMaxAngle should correspond to the servo's position at
-  // kMinPwmPeriod and kMaxPwmPeriod repsectively.
-  static const unsigned int kServoMinPwmPeriod = 800;
-  static const float kServoMinAngle = -0.96;
-  static const unsigned int kServoMaxPwmPeriod = 2100;
-  static const float kServoMaxAngle = 1.13;
-
   int servo_pin_;
   unsigned long period_;  // period in microseconds
   unsigned int min_pwm_period_;  // minimal period in microseconds
   unsigned int max_pwm_period_;  // maximal period in microseconds
+  unsigned int min_servo_pwm_period_;  // minimum servo PWM period in radians
+  unsigned int max_servo_pwm_period_;  // maximum servo PWM period in radians
+  float min_servo_angle_;  // minimum servo angle in radians
+  float max_servo_angle_;  // maximum servo angle in radians
   Servo servo_;
   ServoDirection direction_;
   OnSignalCallback on_signal_;
