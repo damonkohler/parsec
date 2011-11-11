@@ -72,9 +72,10 @@ class PriorityTeleopMux(object):
 
 def main():
   rospy.init_node('priority_teleop_mux')
-  outgoing_topic = sys.argv[1]
+  outgoing_topic = rospy.get_param('~outgoing_topic')
+  incoming_topics = rospy.get_param('~incoming_topics')
   priority_teleop_mux = PriorityTeleopMux(outgoing_topic)
-  for incoming_topic in sys.argv[2:]:
+  for incoming_topic in incoming_topics:
     priority_teleop_mux.add_topic(incoming_topic)
   rospy.spin()
 
