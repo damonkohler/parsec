@@ -26,6 +26,7 @@ import roslib; roslib.load_manifest('parsec_calibration')
 
 import rospy
 from rospy import timer
+import laser_scans
 
 import sensor_msgs.msg as sensor_msgs
 import nav_msgs.msg as nav_msgs
@@ -37,18 +38,6 @@ _MAX_ANGULAR_VELOCITY = 2.0
 _TWIST_TIMER_PERIOD = rospy.Duration(0.1)
 _MAX_TRAVEL_DISTANCE = 2.0
 _MIN_TRAVEL_DISTANCE = 1.0
-_SCAN_SAMPLE_SIZE = 50
-
-
-def _mean(values):
-  return sum(values) / len(values)
-
-
-def _calculate_laser_scan_range(data):
-  center_index = len(data.ranges) / 2
-  start_index = center_index - _SCAN_SAMPLE_SIZE / 2
-  end_index = center_index + _SCAN_SAMPLE_SIZE / 2
-  return _mean(data.ranges[start_index:end_index])
 
 
 class CalibrationResult(object):
@@ -76,8 +65,8 @@ class CalibrationResult(object):
         (start_x - end_x) ** 2 + (start_y - end_y) ** 2)
 
   def _calculate_laser_scan_distance_traveled(self):
-    start = _calculate_laser_scan_range(self._laser_scan_messages[0])
-    end = _calculate_laser_scan_range(self._laser_scan_messages[-1])
+    start = laser_scans.calculate_laser_scan_range(self._laser_scan_messages[0])
+    end = laser_scans.calculate_laser_scan_range(self._laser_scan_messages[-1])
     self.laser_scan_distance_traveled = abs(start - end)
 
   def calculate_acceleration(self):
@@ -162,7 +151,7 @@ class CalibrationRoutine(object):
     if self._finished.is_set():
       return
     self._result.add_laser_message(data)
-    if (_calculate_laser_scan_range(data) < _MIN_DISTANCE_TO_WALL and
+    if (laser_scans.calculate_laser_scan_range(data) < _MIN_DISTANCE_TO_WALL and
         self._linear_velocity > 0):
       print 'Too close to wall, stopping.'
       self._finish()
