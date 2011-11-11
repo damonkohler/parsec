@@ -1,6 +1,7 @@
 <launch>
  
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <remap from="cmd_vel" to="move_base/cmd_vel" />
     <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find parsec_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find parsec_navigation)/config/move_base_config.yaml" command="load" />
