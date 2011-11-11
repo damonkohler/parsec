@@ -32,8 +32,12 @@ def calculate_laser_scan_range(data):
   return _mean(data.ranges[start_index:end_index])
 
 
+class IntervalInvalid(Exception):
+  pass
+
+
 class LaserScanQueue(object):
-  """A thread safe queue of laser scans"""
+  """A thread safe queue of laser scans."""
 
   def __init__(self):
     self._lock = threading.Lock()
@@ -58,25 +62,18 @@ class LaserScanQueue(object):
           current_closest_scan = scan
       return current_closest_scan
 
-  def remove_scans_before_time(self, time):
-    with self._lock:
-      for index, scan in enumerate(self._scans):
-        if scan.header.stamp >= time:
-          break
-      self._scans = self._scans[index:]
-
   def get_scans_in_interval(self, start_time, end_time):
     if start_time > end_time:
-      start_time, end_time = end_time, start_time
+      raise IntervalInvalid('%f > %f' % (start_time.to_sec(), end_time.to_sec()))
     with self._lock:
       for first_scan_index, scan in enumerate(self._scans):
-        if scan.header.stamp > start_time:
+        if scan.header.stamp >= start_time:
           break
       for last_scan_index, scan in enumerate(self._scans[first_scan_index:],
-                                             first_scan_index + 1):
+                                             first_scan_index):
         if scan.header.stamp > end_time:
           break
-      return self._scans[first_scan_index:last_scan_index]
+      return self._scans[first_scan_index:last_scan_index + 1]
 
   def get_oldest_scan(self):
     if self._scans:
