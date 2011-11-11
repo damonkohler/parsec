@@ -326,7 +326,7 @@ static void WriteUART1(unsigned char byte) {
 // visualize how the velocities of the right and left position
 // controllers behave, it is easy to incrementally adjust the values so
 // that we get stable behavior.
-const float kPositionControllerPGain = 0.03f;
+const float kPositionControllerPGain = 0.04f;
 const float kPositionControllerIGain = 0.0f;
 const float kPositionControllerDGain = 0.0f;
 const float kPositionControllerIClamp = 1.0f;
@@ -450,8 +450,23 @@ void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) 
 ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
   "laser_tilt_controller/profile", &TiltProfileCallback);
 
+// These are constants are configured for the Modelcraft MC-621.
+// kMinAngle and kMaxAngle should correspond to the servo's position at
+// kMinPwmPeriod and kMaxPwmPeriod repsectively.
+static const unsigned int kServoMinPwmPeriod = 800;
+static const float kServoMinAngle = -0.96;
+static const unsigned int kServoMaxPwmPeriod = 2100;
+static const float kServoMaxAngle = 1.13;
+
 void SetupServoSweep() {
-  servo_sweep.Init();
+  // NOTE(damonkohler): Servo PWM periods are typically between 500 and 2500.
+  // The conversion later from signed to unsigned should be safe.
+  int pwm_periods[2] = { kServoMinPwmPeriod, kServoMaxPwmPeriod };
+  float angles[2] = { kServoMinAngle, kServoMaxAngle };
+  node_handle.getParam("~servo_angles", pwm_periods, 3);
+  node_handle.getParam("~servo_pwm_periods", angles, 3);
+  servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1], angles[0], angles[1]);
+  servo_sweep.Attach();
 }
 
 void LoopServoSweep() {
@@ -471,13 +486,26 @@ void VelocityCallback(const geometry_msgs::Twist& velocity_message) {
 ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
+rosgraph_msgs::Log log_message;
+ros::Publisher log_publisher("rosout", &log_message);
+
 void SendLogMessage(const char* message) {
-  node_handle.logfatal(message);
+  log_message.header.stamp = node_handle.now();
+  log_message.header.frame_id = const_cast<char*>("");
+  log_message.level = rosgraph_msgs::Log::FATAL;
+  log_message.name = const_cast<char*>("Parsec Arduino");
+  log_message.msg = const_cast<char*>(message);
+  log_message.file = const_cast<char*>("");
+  log_message.function = const_cast<char*>("");
+  log_message.line = 0;
+  log_message.topics_length = 0;
+  log_publisher.publish(&log_message);
 }
 
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
+  node_handle.advertise(log_publisher);
   node_handle.subscribe(tilt_profile_subscriber);
   node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
@@ -558,7 +586,6 @@ void setup() {
   SetupUltrasonic();
   SetupPositionControllers();
   SetupShiftBrite();
-  SetupServoSweep();
 
   // Wait until we've connected to the host.
   printf_row(0, "Waiting");
@@ -567,7 +594,8 @@ void setup() {
   }
   printf_row(0, "Connected");
 
-  //SetupPidControllers();
+  SetupPidControllers();
+  SetupServoSweep();
 }
 
 void loop() {

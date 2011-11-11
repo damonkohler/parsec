@@ -20,30 +20,39 @@
 ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
   : servo_(), servo_pin_(servo_pin),
     period_(0),
-    min_pwm_period_(kServoMinPwmPeriod),
-    max_pwm_period_(kServoMaxPwmPeriod),
+    min_pwm_period_(min_servo_pwm_period_),
+    max_pwm_period_(max_servo_pwm_period_),
     direction_(ANGLE_INCREASING),
     on_signal_(callback) {}
 
-void ServoSweep::Init() {
+void ServoSweep::Attach() {
   servo_.attach(servo_pin_);
+}
+
+void ServoSweep::SetParameters(
+    unsigned int min_pwm_period, unsigned int max_pwm_period,
+    float min_angle, float max_angle) {
+  min_servo_pwm_period_ = min_pwm_period;
+  max_servo_pwm_period_ = max_pwm_period;
+  min_servo_angle_ = min_angle;
+  max_servo_angle_ = max_angle;
 }
 
 void ServoSweep::SetProfile(float min_angle, float max_angle, float period) {
   period_ = period * 1e6;
-  unsigned int pwm_period_per_radian = (kServoMaxPwmPeriod - kServoMinPwmPeriod) /
-      (kServoMaxAngle - kServoMinAngle);
+  unsigned int pwm_period_per_radian = (max_servo_pwm_period_ - min_servo_pwm_period_) /
+      (max_servo_angle_ - min_servo_angle_);
   // CHECK(max_angle >= min_angle);
-  // CHECK(min_angle >= kServoMinAngle);
-  // CHECK(max_angle <= kServoMaxAngle);
-  min_pwm_period_ = (min_angle - kServoMinAngle) * pwm_period_per_radian + kServoMinPwmPeriod;
-  max_pwm_period_ = (max_angle - kServoMinAngle) * pwm_period_per_radian + kServoMinPwmPeriod;
+  // CHECK(min_angle >= min_servo_angle_);
+  // CHECK(max_angle <= max_servo_angle_);
+  min_pwm_period_ = (min_angle - min_servo_angle_) * pwm_period_per_radian + min_servo_pwm_period_;
+  max_pwm_period_ = (max_angle - min_servo_angle_) * pwm_period_per_radian + min_servo_pwm_period_;
 
-  if (min_pwm_period_ < kServoMinPwmPeriod) {
-    min_pwm_period_ = kServoMinPwmPeriod;
+  if (min_pwm_period_ < min_servo_pwm_period_) {
+    min_pwm_period_ = min_servo_pwm_period_;
   }
-  if (max_pwm_period_ > kServoMaxPwmPeriod) {
-    max_pwm_period_ = kServoMaxPwmPeriod;
+  if (max_pwm_period_ > max_servo_pwm_period_) {
+    max_pwm_period_ = max_servo_pwm_period_;
   }
 }
 
