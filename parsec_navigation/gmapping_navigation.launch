@@ -1,9 +1,7 @@
 <launch>
 
-  <!--- Run gmapping -->
+  <include file="$(find floor_filter)/launch/floor_filter.launch" />
   <include file="$(find parsec_navigation)/config/gmapping_parsec.launch" />
-
-  <!--- Run Move Base -->
   <include file="$(find parsec_navigation)/config/move_base_parsec_dynamic.launch" />
 
 </launch>

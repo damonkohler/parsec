@@ -13,6 +13,7 @@
   <depend package="navfn" />
   <depend package="gmapping" />
   <depend package="amcl" />
+  <depend package="floor_filter" />  
 </package>
 
 

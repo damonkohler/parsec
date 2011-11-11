@@ -1,0 +1,16 @@
+<launch>
+  <node name="floor_filter" type="nodelet" pkg="nodelet" args="standalone floor_filter/FloorFilter">
+    <remap from="~scan" to="tilt_scan" />
+    <rosparam>
+      ransac_distance_threshold: 0.08
+      sensor_frame: tilt_laser
+      reference_frame: base_footprint
+      max_floor_y_rotation: 0.09  # ~5 degrees
+      floor_z_distance: 0.1
+    </rosparam>
+  </node>
+  <node name="floor_filter_converter" type="point_cloud_converter" pkg="point_cloud_converter">
+    <remap from="points2_in" to="floor_filter/filtered_cloud" />
+    <remap from="points_out" to="floor_filter/filtered_cloud_points1" />
+  </node>
+</launch>
