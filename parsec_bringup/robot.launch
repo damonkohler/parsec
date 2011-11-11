@@ -36,4 +36,10 @@
       publish_pose: true
     </rosparam>
   </node>
+  <node name="cmd_vel_mux" type="priority_teleop_mux.py" pkg="priority_teleop_mux">
+    <rosparam>
+      outgoing_topic: cmd_vel
+      incoming_topics: ["estop/cmd_vel", "virtual_joystick/cmd_vel", "move_base/cmd_vel"]
+    </rosparam>
+  </node>
 </launch>
