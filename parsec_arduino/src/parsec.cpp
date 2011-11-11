@@ -91,14 +91,12 @@ static void DumpProfiler(char row, const Profiler &profiler) {
   printf_row(row, "%6lu %s", profiler.GetElapsedMicros(), profiler.GetName());
 }
 
-static void SetMotorPower(bool enable);
 static void WriteUART1(unsigned char byte);
 void SendLogMessage(const char *message);
 
 // Endless loop flashing the LCD to show that we have crashed.
 void Check(bool assertion, const char *format, ...) {
   if (!assertion) {
-    //SetMotorPower(false);
     PositionController::SoftwareEmergencyStop(&WriteUART1);
     display.WriteString(0, 3, "      ERROR      ");
     display.WriteString(0, 4, "                 ");
@@ -265,7 +263,6 @@ float forward_velocity = 0.0;
 float angular_velocity = 0.0;
 unsigned long last_update = 0;
 const unsigned long kTimeoutMicros = 500000ul;
-unsigned long last_moving = 0;
 const unsigned long kMotorShutoffDelayMicros = 5000000ul;
 const int kMotorPowerPin = 9;
 
@@ -292,10 +289,6 @@ ros::Publisher right_velocity_cmd_publisher("base_controller/right_command", &ri
 std_msgs::Float32 right_velocity_error;
 ros::Publisher right_velocity_error_publisher("base_controller/right_error", &right_velocity_error);
 #endif
-
-static void SetMotorPower(bool enable) {
-  digitalWrite(kMotorPowerPin, enable ? HIGH : LOW);
-}
 
 static bool IsUART1Available() {
   return UCSR1A & (1 << RXC1);
@@ -390,14 +383,6 @@ static void LoopPositionController() {
   float left_odometry = left_controller.UpdateVelocity(-left_velocity);
   float right_odometry = right_controller.UpdateVelocity(-right_velocity);
   UpdateOdometry(-left_odometry, -right_odometry);
-  // Only power the motors if we want to maintain velocity.
-  if (left_velocity || right_velocity) {
-    last_moving = micros();
-    SetMotorPower(true);
-  } else if (micros() - last_moving > kMotorShutoffDelayMicros) {
-    // TODO(whess): Deactivated due to stability issues.
-    // SetMotorPower(false);
-  }
 }
 
 static void PublishJointState() {
@@ -575,11 +560,6 @@ static void LoopShiftBrite() {
 // ----------------------------------------------------------------------
 
 void setup() {
-  {
-    // TODO(whess): Stabilize the hardware, so that this is unnecessary.
-    SetMotorPower(true);
-    for (int i = 0; i != 1000; ++i) { delayMicroseconds(1000); }
-  }
   // TODO(moesenle): Why is SPI initialization actually necessary to get
   // ROSSerial working?
   SPI.begin();
