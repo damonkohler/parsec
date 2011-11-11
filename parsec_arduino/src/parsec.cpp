@@ -450,8 +450,23 @@ void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) 
 ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
   "laser_tilt_controller/profile", &TiltProfileCallback);
 
+// These are constants are configured for the Modelcraft MC-621.
+// kMinAngle and kMaxAngle should correspond to the servo's position at
+// kMinPwmPeriod and kMaxPwmPeriod repsectively.
+static const unsigned int kServoMinPwmPeriod = 800;
+static const float kServoMinAngle = -0.96;
+static const unsigned int kServoMaxPwmPeriod = 2100;
+static const float kServoMaxAngle = 1.13;
+
 void SetupServoSweep() {
-  servo_sweep.Init();
+  // NOTE(damonkohler): Servo PWM periods are typically between 500 and 2500.
+  // The conversion later from signed to unsigned should be safe.
+  int pwm_periods[2] = { kServoMinPwmPeriod, kServoMaxPwmPeriod };
+  float angles[2] = { kServoMinAngle, kServoMaxAngle };
+  node_handle.getParam("~servo_angles", pwm_periods, 3);
+  node_handle.getParam("~servo_pwm_periods", angles, 3);
+  servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1], angles[0], angles[1]);
+  servo_sweep.Attach();
 }
 
 void LoopServoSweep() {
@@ -571,7 +586,6 @@ void setup() {
   SetupUltrasonic();
   SetupPositionControllers();
   SetupShiftBrite();
-  SetupServoSweep();
 
   // Wait until we've connected to the host.
   printf_row(0, "Waiting");
@@ -581,6 +595,7 @@ void setup() {
   printf_row(0, "Connected");
 
   SetupPidControllers();
+  SetupServoSweep();
 }
 
 void loop() {
