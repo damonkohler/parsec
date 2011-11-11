@@ -61,6 +61,10 @@ inline float fmaxf(float x, float y) {
 
 ros::NodeHandle node_handle;
 
+void SendLogMessage(const char* message) {
+  node_handle.logerror(message);
+}
+
 // ----------------------------------------------------------------------
 // LCD stuff
 // ----------------------------------------------------------------------
@@ -92,7 +96,6 @@ static void DumpProfiler(char row, const Profiler &profiler) {
 }
 
 static void WriteUART1(unsigned char byte);
-void SendLogMessage(const char *message);
 
 // Endless loop flashing the LCD to show that we have crashed.
 void Check(bool assertion, const char *format, ...) {
@@ -106,7 +109,7 @@ void Check(bool assertion, const char *format, ...) {
     vsnprintf(error_message, 18, format, ap);
     va_end(ap);
     display.WriteString(8 - strlen(error_message) / 2, 4, error_message);
-    SendLogMessage(error_message);
+    node_handle.logerror(error_message);
     for (;;) {
       PositionController::SoftwareEmergencyStop(&WriteUART1);
       digitalWrite(8, HIGH);
@@ -263,8 +266,6 @@ float forward_velocity = 0.0;
 float angular_velocity = 0.0;
 unsigned long last_update = 0;
 const unsigned long kTimeoutMicros = 250000ul;
-const unsigned long kMotorShutoffDelayMicros = 5000000ul;
-const int kMotorPowerPin = 9;
 
 Odometry odometry;
 unsigned long last_odometry_update = 0;
@@ -337,10 +338,10 @@ Pid right_velocity_pid;
 static void SetupPidControllers() {
   float values[4] = { kPositionControllerPGain, kPositionControllerIGain,
                       kPositionControllerDGain, kPositionControllerIClamp };
-  if (node_handle.getParam("~pid", values, 4)) {
-    left_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
-    right_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
-  }
+  node_handle.getParam("~pid", values, 4);
+  left_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
+  right_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
+  
   char message[40];
   snprintf(message, 40, "PID values: %d %d %d %d",
            (int) (values[0] * 100.0f), (int) (values[1] * 100.0f),
@@ -467,10 +468,11 @@ void SetupServoSweep() {
   // The conversion later from signed to unsigned should be safe.
   int pwm_periods[2] = { kServoMinPwmPeriod, kServoMaxPwmPeriod };
   float angles[2] = { kServoMinAngle, kServoMaxAngle };
-  node_handle.getParam("~servo_angles", pwm_periods, 2);
-  node_handle.getParam("~servo_pwm_periods", angles, 2);
+  node_handle.getParam("~servo_pwm_periods", pwm_periods, 2);
+  node_handle.getParam("~servo_angles", angles, 2);
   servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1], angles[0], angles[1]);
   servo_sweep.Attach();
+
   char message[40];
   snprintf(message, 40, "Servo values: %d %d %d %d",
            pwm_periods[0], pwm_periods[1],
@@ -495,26 +497,9 @@ void VelocityCallback(const geometry_msgs::Twist& velocity_message) {
 ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
-rosgraph_msgs::Log log_message;
-ros::Publisher log_publisher("rosout", &log_message);
-
-void SendLogMessage(const char* message) {
-  log_message.header.stamp = node_handle.now();
-  log_message.header.frame_id = const_cast<char*>("");
-  log_message.level = rosgraph_msgs::Log::FATAL;
-  log_message.name = const_cast<char*>("Parsec Arduino");
-  log_message.msg = const_cast<char*>(message);
-  log_message.file = const_cast<char*>("");
-  log_message.function = const_cast<char*>("");
-  log_message.line = 0;
-  log_message.topics_length = 0;
-  log_publisher.publish(&log_message);
-}
-
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
-  node_handle.advertise(log_publisher);
   node_handle.subscribe(tilt_profile_subscriber);
   node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
