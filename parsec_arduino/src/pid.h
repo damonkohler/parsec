@@ -18,20 +18,31 @@
 
 class Pid {
  public:
-  // Constructs a PID controller. i_clamp is the maximal i term that
-  // is used for the controller.
+  Pid()
+    : p_(0.0f), i_(0.0f), d_(0.0f), i_clamp_(0.0f),
+      p_error_(0.0f), p_error_last_(0.0f),
+      d_error_(0.0f), i_error_(0.0f),
+      last_cmd_(0.0f) {}
+
+  /**
+   * @param i_clamp the maximal i term used for the controller
+   */
   Pid(float p, float i, float d, float i_clamp)
     : p_(p), i_(i), d_(d), i_clamp_(i_clamp),
       p_error_(0.0f), p_error_last_(0.0f),
       d_error_(0.0f), i_error_(0.0f),
       last_cmd_(0.0f) {}
 
-  // Resets the PID controller, i.e. sets all errors to 0
+  /**
+   * Resets the PID controller, i.e. sets all errors to 0
+   */
   void reset() {
     last_cmd_ = p_error_ = p_error_last_ = d_error_ = i_error_ = 0.0f;
   }
 
-  // Get the current gains
+  /**
+   * Get the current gains
+   */
   void gains(float *p, float *i, float *d, float *i_clamp) {
     *p = p_;
     *i = i_;
@@ -39,7 +50,9 @@ class Pid {
     *i_clamp = i_clamp_;
   }
 
-  // set the gains
+  /**
+   * Set the gains.
+   */
   void setGains(float p, float i, float d, float i_clamp) {
     p_ = p;
     i_ = i;
@@ -47,8 +60,10 @@ class Pid {
     i_clamp_ = i_clamp;
   }
 
-  // Updates the controller based on the current value, the goal and a
-  // time step. Returns a new control command.
+  /**
+   * Updates the controller based on the current value, the goal and a
+   * time step. Returns a new control command.
+   */
   float update(float current_value, float goal, float dt) {
     p_error_last_ = p_error_;
     p_error_ = goal - current_value;
@@ -66,11 +81,15 @@ class Pid {
     return last_cmd_;
   }
 
-  // Returns the last command that has been calculated by update.
+  /**
+   * Returns the last command that has been calculated by update.
+   */
   float lastCmd() { return last_cmd_; }
 
-  // Returns the last error between the current position and goal as
-  // passed to the update method.
+  /**
+   * Returns the last error between the current position and goal as
+   * passed to the update method.
+   */
   float error() { return p_error_; }
 
  private:

@@ -331,17 +331,21 @@ const float kPositionControllerIGain = 0.0f;
 const float kPositionControllerDGain = 0.0f;
 const float kPositionControllerIClamp = 1.0f;
 
-Pid left_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
-  kPositionControllerDGain, kPositionControllerIClamp);
-Pid right_velocity_pid(kPositionControllerPGain, kPositionControllerIGain,
-  kPositionControllerDGain, kPositionControllerIClamp);
+Pid left_velocity_pid;
+Pid right_velocity_pid;
 
 static void SetupPidControllers() {
-  float values[3];
-  if (node_handle.getParam("~pid", values, 3)) {
-    left_velocity_pid.setGains(values[0], values[1], values[2], kPositionControllerIClamp);
-    right_velocity_pid.setGains(values[0], values[1], values[2], kPositionControllerIClamp);
+  float values[4] = { kPositionControllerPGain, kPositionControllerIGain,
+                      kPositionControllerDGain, kPositionControllerIClamp };
+  if (node_handle.getParam("~pid", values, 4)) {
+    left_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
+    right_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
   }
+  char message[40];
+  snprintf(message, 40, "PID values: %d %d %d %d",
+           (int) (values[0] * 100.0f), (int) (values[1] * 100.0f),
+           (int) (values[2] * 100.0f), (int) (values[3] * 100.0f));
+  node_handle.loginfo(message);
 }
 
 PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius, &left_velocity_pid);
@@ -463,10 +467,15 @@ void SetupServoSweep() {
   // The conversion later from signed to unsigned should be safe.
   int pwm_periods[2] = { kServoMinPwmPeriod, kServoMaxPwmPeriod };
   float angles[2] = { kServoMinAngle, kServoMaxAngle };
-  node_handle.getParam("~servo_angles", pwm_periods, 3);
-  node_handle.getParam("~servo_pwm_periods", angles, 3);
+  node_handle.getParam("~servo_angles", pwm_periods, 2);
+  node_handle.getParam("~servo_pwm_periods", angles, 2);
   servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1], angles[0], angles[1]);
   servo_sweep.Attach();
+  char message[40];
+  snprintf(message, 40, "Servo values: %d %d %d %d",
+           pwm_periods[0], pwm_periods[1],
+           (int) (angles[0] * 100.0f), (int) (angles[1] * 100.0f));
+  node_handle.loginfo(message);
 }
 
 void LoopServoSweep() {
