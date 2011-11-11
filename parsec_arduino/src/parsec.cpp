@@ -471,26 +471,13 @@ void VelocityCallback(const geometry_msgs::Twist& velocity_message) {
 ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
-rosgraph_msgs::Log log_message;
-ros::Publisher log_publisher("rosout", &log_message);
-
 void SendLogMessage(const char* message) {
-  log_message.header.stamp = node_handle.now();
-  log_message.header.frame_id = const_cast<char*>("");
-  log_message.level = rosgraph_msgs::Log::FATAL;
-  log_message.name = const_cast<char*>("Parsec Arduino");
-  log_message.msg = const_cast<char*>(message);
-  log_message.file = const_cast<char*>("");
-  log_message.function = const_cast<char*>("");
-  log_message.line = 0;
-  log_message.topics_length = 0;
-  log_publisher.publish(&log_message);
+  node_handle.logfatal(message);
 }
 
 static void SetupROSSerial() {
   node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
-  node_handle.advertise(log_publisher);
   node_handle.subscribe(tilt_profile_subscriber);
   node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
