@@ -35,7 +35,7 @@ class TimestampsInvalid(Exception):
   pass
 
 
-def normalize_angle(angle):
+def _normalize_angle(angle):
   """Returnes an angle between -PI and PI."""
   if angle > 0:
     while angle > math.pi:
@@ -127,7 +127,7 @@ class OdometryErrorCorrector(object):
       old_error_x, old_error_y, old_error_theta = self._pose_error
       error_x = self._reference_pose.pose.position.x - interpolated_x
       error_y = self._reference_pose.pose.position.y - interpolated_y
-      error_theta = normalize_angle(reference_theta - interpolated_theta)
+      error_theta = _normalize_angle(reference_theta - interpolated_theta)
       # The maximal adjustment of the old error is controled by the
       # parameters maximal_angular_correction and
       # maximal_linear_correction. Our new correction values must not
@@ -146,7 +146,7 @@ class OdometryErrorCorrector(object):
       else:
         correction_y = old_error_y - self._maximal_linear_correction
   
-      if abs(normalize_angle(error_theta - old_error_theta)) < self._maximal_angular_correction:
+      if abs(_normalize_angle(error_theta - old_error_theta)) < self._maximal_angular_correction:
         correction_theta = error_theta
       elif old_error_theta < error_theta:
         correction_theta = old_error_theta + self._maximal_angular_correction
@@ -197,4 +197,4 @@ class OdometryErrorCorrector(object):
                                                          odometry_2.pose.pose.orientation.w))
     return (odometry_1.pose.pose.position.x + (odometry_2.pose.pose.position.x - odometry_1.pose.pose.position.x) * delta_t,
             odometry_1.pose.pose.position.y + (odometry_2.pose.pose.position.x - odometry_1.pose.pose.position.x) * delta_t,
-            normalize_angle(yaw_1 + (yaw_2 - yaw_1) * delta_t))
+            _normalize_angle(yaw_1 + (yaw_2 - yaw_1) * delta_t))
