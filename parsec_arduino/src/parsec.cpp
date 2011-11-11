@@ -262,7 +262,7 @@ const float kWheelRadius = .0762f;  // 6 inch wheels.
 float forward_velocity = 0.0;
 float angular_velocity = 0.0;
 unsigned long last_update = 0;
-const unsigned long kTimeoutMicros = 500000ul;
+const unsigned long kTimeoutMicros = 250000ul;
 const unsigned long kMotorShutoffDelayMicros = 5000000ul;
 const int kMotorPowerPin = 9;
 
@@ -326,7 +326,7 @@ static void WriteUART1(unsigned char byte) {
 // visualize how the velocities of the right and left position
 // controllers behave, it is easy to incrementally adjust the values so
 // that we get stable behavior.
-const float kPositionControllerPGain = 0.04f;
+const float kPositionControllerPGain = 0.03f;
 const float kPositionControllerIGain = 0.0f;
 const float kPositionControllerDGain = 0.0f;
 const float kPositionControllerIClamp = 1.0f;
