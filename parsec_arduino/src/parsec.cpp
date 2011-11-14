@@ -382,7 +382,7 @@ static void LoopPositionController() {
     last_update = micros();
   }
   float safe_velocity = forward_velocity;
-  MakeUltrasonicSafe(&safe_velocity);
+  //MakeUltrasonicSafe(&safe_velocity);
   float left_velocity = safe_velocity - kBaseRadius * angular_velocity;
   float right_velocity = safe_velocity + kBaseRadius * angular_velocity;
   float left_odometry = left_controller.UpdateVelocity(-left_velocity);
