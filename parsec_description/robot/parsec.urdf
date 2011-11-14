@@ -131,12 +131,14 @@
       <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
     </inertial>
     <visual>
-      <material name="Grey"/>      
+      <material name="Grey"/>
+      <origin xyz="0 0 0.825"/>
       <geometry>
         <box size="0.04 0.02 1.65"/>
       </geometry>
     </visual>
     <collision>
+      <origin xyz="0 0 0.825"/>
       <geometry>
         <box size="0.04 0.02 1.65"/>
       </geometry>
@@ -226,26 +228,26 @@
   <joint name="mast_joint" type="fixed">
     <parent link="base_link"/>
     <child link="mast_link"/>
-    <origin xyz="0 0 0.83"/>
+    <origin xyz="0 0 0.0"/>
   </joint>
 
   <joint name="base_laser_joint" type="fixed">
     <parent link="mast_link"/>
     <child link="base_laser"/>
-    <origin xyz="0.045 -0.015 -0.68"/>
+    <origin xyz="0.045 -0.015 0.1725"/>
   </joint>
 
   <joint name="tilting_laser_mount_joint" type="fixed">
     <parent link="mast_link"/>
     <child link="tilting_laser_mount"/>
     <!-- The laser is mounted 12cm below the center of the mast.-->
-    <origin xyz="0.065 0 -0.12"/>
+    <origin xyz="0.065 0 0.77"/>
   </joint>
 
   <joint name="tilt_laser_joint" type="revolute">
     <parent link="tilting_laser_mount"/>
     <child link="tilt_laser"/>
-    <origin xyz="0.0 -0.045 0.033" rpy="0.04 0.00 0.00"/>
+    <origin xyz="0.0 -0.045 0.033" rpy="0.02 -0.10 0.00"/>
     <axis xyz="0 1 0"/>
     <!-- Using dummy effort and velocity values here. They are not
     used on the parsec -->
