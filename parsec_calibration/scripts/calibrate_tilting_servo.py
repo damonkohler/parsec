@@ -90,7 +90,7 @@ class ServoCalibrationRoutine(object):
   def _on_tilt_signal(self, signal):
     with self._lock:
       if signal.signal == parsec_msgs.LaserTiltSignal.ANGLE_DECREASING:
-        # Reached top of the scan range
+        # Reached top of the scan range.
         self._angle_decreasing_stamp = signal.header.stamp
       elif signal.signal == parsec_msgs.LaserTiltSignal.ANGLE_INCREASING:
         self._angle_increasing_stamp = signal.header.stamp

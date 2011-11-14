@@ -48,12 +48,12 @@ class OdometryRelay(object):
   def __init__(self):
     self._odometry_publisher = rospy.Publisher('odom', Odometry)
     self._tf_publisher = rospy.Publisher('/tf', tfMessage)
-    self._child_frame_id = rospy.get_param('~base_frame_id', 'base_link')
+    self._base_frame_id = rospy.get_param('~base_frame_id', 'base_link')
     self._publish_tf = rospy.get_param('~publish_tf', True)
     self._linear_correction_factor = rospy.get_param('~linear_correction_factor', 0.95)
     maximal_linear_correction = rospy.get_param('~maximal_linear_correction', 0.05)
     maximal_angular_correction = rospy.get_param('~maximal_angular_correction', 10 * math.pi / 180)
-    rospy.loginfo('Using base frame %s' % self._child_frame_id)
+    rospy.loginfo('Using base frame: %r' % self._base_frame_id)
     self._odometry_subscriber = rospy.Subscriber(
         'odom_simple', ParsecOdometry, self._relay_odometry_callback)
     self._odometry_error_corrector = odometry_error_corrector.OdometryErrorCorrector(
@@ -64,7 +64,7 @@ class OdometryRelay(object):
   def _relay_odometry_callback(self, data):
     odometry = Odometry()
     odometry.header = data.header
-    odometry.child_frame_id = self._child_frame_id
+    odometry.child_frame_id = self._base_frame_id
     odometry.pose.pose.position.x = data.position_x * self._linear_correction_factor
     odometry.pose.pose.position.y = data.position_y
     odometry.pose.pose.orientation.z = data.orientation_z
@@ -81,14 +81,14 @@ class OdometryRelay(object):
       
       transform = TransformStamped()
       transform.header = data.header
-      transform.child_frame_id = self._child_frame_id
+      transform.child_frame_id = self._base_frame_id
       transform.transform.translation = corrected_odometry.pose.pose.position
       transform.transform.rotation = corrected_odometry.pose.pose.orientation
       transforms.append(transform)
       
       transform_uncorrected = TransformStamped()
       transform_uncorrected.header = data.header
-      transform_uncorrected.child_frame_id = self._child_frame_id + '_uncorrected'
+      transform_uncorrected.child_frame_id = self._base_frame_id + '_uncorrected'
       transform_uncorrected.transform.translation = odometry.pose.pose.position
       transform_uncorrected.transform.rotation = odometry.pose.pose.orientation
       transforms.append(transform_uncorrected)
@@ -97,8 +97,10 @@ class OdometryRelay(object):
         laser_scan_matcher = TransformStamped()
         laser_scan_matcher.header = data.header
         laser_scan_matcher.child_frame_id = 'laser_scan_matcher'
-        laser_scan_matcher.transform.translation = self._odometry_error_corrector._reference_pose.pose.position
-        laser_scan_matcher.transform.rotation = self._odometry_error_corrector._reference_pose.pose.orientation
+        laser_scan_matcher.transform.translation = (
+            self._odometry_error_corrector._reference_pose.pose.position)
+        laser_scan_matcher.transform.rotation = (
+            self._odometry_error_corrector._reference_pose.pose.orientation)
         transforms.append(laser_scan_matcher)
 
       self._tf_publisher.publish(tfMessage(transforms=transforms))

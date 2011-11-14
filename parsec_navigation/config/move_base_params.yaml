@@ -47,9 +47,9 @@ TrajectoryPlannerROS:
 
   # These are guessed tolerance values. Yaw tolerance should be about
   # 45 degree and xy tolerance within a foot.
-  yaw_goal_tolerance: 0.4 # radians
-  xy_goal_tolerance: 0.5 # meters
-  escape_vel: -0.1 # Backup velocity, must be negative!
+  yaw_goal_tolerance: 0.4  # radians
+  xy_goal_tolerance: 0.5  # meters
+  escape_vel: -0.1  # Backup velocity, must be negative!
   
   goal_distance_bias: 0.8
   path_distance_bias: 0.4

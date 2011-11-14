@@ -9,6 +9,11 @@
 
   <!-- Disable all observation sources but the base laser since a
        tilting laser is not supported by stage. -->
-  <param name="/move_base/global_costmap/observation_sources" value="base_laser" />
-  <param name="/move_base/local_costmap/observation_sources" value="base_laser" />
+  <rosparam>
+    move_base:
+      global_costmap:
+        observation_sources: base_laser
+      local_costmap:
+        observation_sources: base_laser
+  </rosparam>
 </launch>

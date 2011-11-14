@@ -53,7 +53,7 @@ class OdometryErrorCorrector(object):
   """
 
   def __init__(self, maximal_linear_correction, maximal_angular_correction):
-    self._maximal_linear_correction = maximal_angular_correction
+    self._maximal_linear_correction = maximal_linear_correction
     self._maximal_angular_correction = maximal_angular_correction
     # reference_pose is the pose used for calculating the error
     # between the last known odometry message and the pose. This error
@@ -64,7 +64,7 @@ class OdometryErrorCorrector(object):
     self._odometry_messages = []
     # The pose error as a 3-tuple (x, y, theta).
     self._pose_error = (0, 0, 0)
-    self._lock = threading.RLock()
+    self._lock = threading.Lock()
 
   def set_reference_pose(self, new_reference_pose):
     """Sets a new reference pose.
@@ -195,6 +195,10 @@ class OdometryErrorCorrector(object):
                                                          odometry_2.pose.pose.orientation.y,
                                                          odometry_2.pose.pose.orientation.z,
                                                          odometry_2.pose.pose.orientation.w))
-    return (odometry_1.pose.pose.position.x + (odometry_2.pose.pose.position.x - odometry_1.pose.pose.position.x) * delta_t,
-            odometry_1.pose.pose.position.y + (odometry_2.pose.pose.position.x - odometry_1.pose.pose.position.x) * delta_t,
+    return (odometry_1.pose.pose.position.x +
+            (odometry_2.pose.pose.position.x - odometry_1.pose.pose.position.x) *
+            delta_t,
+            odometry_1.pose.pose.position.y +
+            (odometry_2.pose.pose.position.x - odometry_1.pose.pose.position.x) *
+            delta_t,
             _normalize_angle(yaw_1 + (yaw_2 - yaw_1) * delta_t))
