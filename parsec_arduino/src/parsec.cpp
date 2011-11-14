@@ -459,9 +459,9 @@ ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
 // kMinAngle and kMaxAngle should correspond to the servo's position at
 // kMinPwmPeriod and kMaxPwmPeriod repsectively.
 static const unsigned int kServoMinPwmPeriod = 800;
-static const float kServoMinAngle = -0.945;
+static const float kServoMinAngle = -0.926;
 static const unsigned int kServoMaxPwmPeriod = 2100;
-static const float kServoMaxAngle = 1.2;
+static const float kServoMaxAngle = 1.16;
 
 void SetupServoSweep() {
   // NOTE(damonkohler): Servo PWM periods are typically between 500 and 2500.
