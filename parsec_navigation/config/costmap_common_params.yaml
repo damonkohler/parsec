@@ -3,8 +3,20 @@ raytrace_range: 3.0
 robot_radius: 0.23
 inflation_radius: 0.3
 observation_sources: "base_laser tilt_laser ground_object_cloud"
-base_laser: {data_type: LaserScan, topic: /base_scan, marking: true, clearing: true}
-tilt_laser: {data_type: LaserScan, topic: /tilt_scan, marking: false, clearing: true}
-ground_object_cloud: {topic: /floor_filter/filtered_cloud_points1, data_type: PointCloud, expected_update_rate: 0.2,
-                      observation_persistence: 2.0, marking: true, clearing: false,
-                      min_obstacle_height: -0.10, max_obstacle_height: 2.0}
+base_laser:
+  data_type: LaserScan
+  topic: /base_scan
+  marking: true
+  clearing: true
+tilt_laser:
+  data_type: LaserScan
+  topic: /tilt_scan
+  marking: false
+  clearing: true
+ground_object_cloud:
+  topic: /floor_filter/filtered_cloud_points1
+  data_type: PointCloud
+  expected_update_rate: 5.0
+  marking: true
+  clearing: false
+  mark_threshold: 2
