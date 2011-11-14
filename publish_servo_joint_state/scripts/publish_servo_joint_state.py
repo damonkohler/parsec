@@ -18,6 +18,8 @@
 
 __author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
+import threading
+
 import roslib; roslib.load_manifest('publish_servo_joint_state')
 
 import rospy
@@ -40,6 +42,7 @@ class PublishServoJointState(object):
   """
 
   def __init__(self):
+    self._lock = threading.Lock()
     # The publish rate at which to publish joint states (default 20Hz)
     self._publish_rate = rospy.Rate(rospy.get_param('~publish_rate', 20.0))
     # The name of the joint we are generating states for (default
@@ -54,6 +57,7 @@ class PublishServoJointState(object):
     self._profile = None
     self._signal = None
     self._velocity = 0
+    self._current_angle = 0
     self._signal_subscriber = rospy.Subscriber('~signal', LaserTiltSignal, self._onLaserTiltSignal)
     self._profile_subscriber = rospy.Subscriber('~profile', LaserTiltProfile, self._onLaserProfile)
 
@@ -62,29 +66,32 @@ class PublishServoJointState(object):
       self._publish_rate.sleep()
       # If we didn't receive a signal or the current configuration
       # yet, do nothing.
-      if not self._profile or self._velocity == 0 or not self._signal:
-        continue
-      now = rospy.Time.now()
-      delta_t = (now - self._signal.header.stamp).to_sec()
-      if delta_t < -self._max_signal_age:
-        rospy.logerr('The signal message is too old. Maybe clocks are out of sync.')
-        self._signal = None
-        continue
-      elif self._signal.signal == LaserTiltSignal.ANGLE_INCREASING:
-        extrapolated_position = self._profile.min_angle + self._velocity * max(delta_t, 0)
-        current_velocity = self._velocity
-      elif self._signal.signal == LaserTiltSignal.ANGLE_DECREASING:
-        extrapolated_position = self._profile.max_angle - self._velocity * max(delta_t, 0)
-        current_velocity = -self._velocity
-      else:
-        rospy.logerr('Unknown singal: %d' % self._signal.signal)
-        raise InvalidSignalError()
-
-      if extrapolated_position < self._profile.min_angle or extrapolated_position > self._profile.max_angle:
-        rospy.logerr('Ran out of possible tilting range. That probably means we are missing a signal.')
-        self._signal = None
-        continue
-
+      with self._lock:
+        if not self._profile or self._velocity == 0 or not self._signal:
+          continue
+        now = rospy.Time.now()
+        delta_t = (now - self._signal.header.stamp).to_sec()
+        if delta_t < -self._max_signal_age:
+          rospy.logerr('The signal message is too old. Maybe clocks are out of sync.')
+          self._signal = None
+          continue
+        elif self._signal.signal == LaserTiltSignal.ANGLE_INCREASING:
+          extrapolated_position = self._profile.min_angle + self._velocity * delta_t
+          current_velocity = self._velocity
+        elif self._signal.signal == LaserTiltSignal.ANGLE_DECREASING:
+          extrapolated_position = self._profile.max_angle - self._velocity * delta_t
+          current_velocity = -self._velocity
+        else:
+          rospy.logerr('Unknown singal: %d' % self._signal.signal)
+          raise InvalidSignalError()
+  
+        if extrapolated_position < self._profile.min_angle:
+          position_error = abs(extrapolated_position - self._profile.min_angle)
+          extrapolated_position = self._profile.min_angle + position_error
+        elif extrapolated_position > self._profile.max_angle:
+          position_error = abs(extrapolated_position - self._profile.max_angle)
+          extrapolated_position = self._profile.max_angle - position_error
+  
       joint_state = JointState()
       joint_state.header.stamp = now
       joint_state.name = [self._joint_name]
@@ -94,15 +101,17 @@ class PublishServoJointState(object):
       self._joint_states_publisher.publish(joint_state)
 
   def _onLaserTiltSignal(self, signal):
-    self._signal = signal
+    with self._lock:
+      self._signal = signal
 
   def _onLaserProfile(self, profile):
-    self._profile = profile
-    self._velocity = 0
-    self._signal = None
-    if profile.period > 0:
-      # Calculate velocity in radians per second.
-      self._velocity = (profile.max_angle - profile.min_angle) / (profile.period / 2)
+    with self._lock:
+      self._profile = profile
+      self._velocity = 0
+      self._signal = None
+      if profile.period > 0:
+        # Calculate velocity in radians per second.
+        self._velocity = (profile.max_angle - profile.min_angle) / (profile.period / 2)
 
 
 def main():
