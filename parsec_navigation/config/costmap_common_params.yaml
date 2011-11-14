@@ -8,6 +8,7 @@ base_laser:
   topic: /base_scan
   marking: true
   clearing: true
+  observation_persistance: 0.5
 tilt_laser:
   data_type: LaserScan
   topic: /tilt_scan
@@ -17,6 +18,9 @@ ground_object_cloud:
   topic: /floor_filter/filtered_cloud_points1
   data_type: PointCloud
   expected_update_rate: 5.0
+  # observation_persistance is necessary when clearing is
+  # enabled. Otherwise, subsequent scans clear lower voxels too early.
+  observation_persistence: 5.0
   marking: true
-  clearing: false
+  clearing: true
   mark_threshold: 2
