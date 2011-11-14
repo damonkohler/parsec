@@ -49,15 +49,34 @@ class LaserScanQueue(object):
       self._scans = []
 
   def find_scan_at_time(self, time):
+    scan_before = self.find_newest_scan_before_time(time)
+    scan_after = self.find_oldest_scan_after_time(time)
+    if scan_before is None:
+      return scan_after
+    elif scan_after is None:
+      return scan_before
+    elif time - scan_before.header.stamp < scan_after.header.stamp - time:
+      return scan_before
+    return scan_after
+
+  def find_newest_scan_before_time(self, time):
     with self._lock:
       if not self._scans:
         return
-      current_closest_scan = self._scans[0]
+      current_scan = self._scans[0]
+      if current_scan.header.stamp > time:
+        return
       for scan in self._scans[1:]:
-        if (abs((time - scan.header.stamp).to_sec()) <
-            abs((time - current_closest_scan.header.stamp).to_sec())):
-          current_closest_scan = scan
-      return current_closest_scan
+        if scan.header.stamp >= time:
+          break
+        current_scan = scan
+      return current_scan
+
+  def find_oldest_scan_after_time(self, time):
+    with self._lock:
+      for scan in self._scans:
+        if scan.header.stamp >= time:
+          return scan
 
   def get_scans_in_interval(self, start_time, end_time):
     if start_time > end_time:
