@@ -86,7 +86,8 @@ class LaserSweepRecorder(object):
 
   def _write_scans(self, scans, stream):
     for scan in scans:
-      stream.write('%r\n' % laser_scans.calculate_laser_scan_range(scan))
+      scan_count = len(scan.ranges)
+      stream.write('%r\n' % min(scan.ranges[scan_count/2-25:scan_count/2+25]))
 
 
 def main():
