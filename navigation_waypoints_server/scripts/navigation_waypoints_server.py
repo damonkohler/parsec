@@ -105,8 +105,11 @@ class MoveBaseProxy(object):
       # move_base sourcecode, an empty frame_id means to use the
       # robot's current pose in move_base's reference frame which is
       # exactly what we want.
-      plan = self._check_motion_plan_service(start=geometry_msgs.PoseStamped(),
-                                             goal=goal, tolerance=0.0)
+      try:
+        plan = self._check_motion_plan_service(start=geometry_msgs.PoseStamped(),
+                                               goal=goal, tolerance=0.0)
+      except rospy.ServiceException:
+        return
       return len(plan.plan.poses) > 0
 
 
@@ -185,12 +188,12 @@ class NavWaypointsServer(object):
           navigation_waypoints_server.msg.ExecutePathResult(visited=visited,
                                                             invalid=invalid,
                                                             pending=self._pending))
-    except PreemptRequested, e:
+    except PreemptRequested:
       self._execute_path.set_preempted(
           navigation_waypoints_server.msg.ExecutePathResult(visited=visited,
                                                             invalid=invalid,
                                                             pending=[current] + self._pending))
-    except WaypointFailed, e:
+    except WaypointFailed:
       self._execute_path.set_aborted(
           navigation_waypoints_server.msg.ExecutePathResult(visited=visited,
                                                             invalid=invalid,
