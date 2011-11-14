@@ -341,7 +341,7 @@ static void SetupPidControllers() {
   node_handle.getParam("~pid", values, 4);
   left_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
   right_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
-  
+
   char message[40];
   snprintf(message, 40, "PID values: %d %d %d %d",
            (int) (values[0] * 100.0f), (int) (values[1] * 100.0f),
@@ -459,9 +459,9 @@ ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
 // kMinAngle and kMaxAngle should correspond to the servo's position at
 // kMinPwmPeriod and kMaxPwmPeriod repsectively.
 static const unsigned int kServoMinPwmPeriod = 800;
-static const float kServoMinAngle = -0.96;
+static const float kServoMinAngle = -0.945;
 static const unsigned int kServoMaxPwmPeriod = 2100;
-static const float kServoMaxAngle = 1.13;
+static const float kServoMaxAngle = 1.2;
 
 void SetupServoSweep() {
   // NOTE(damonkohler): Servo PWM periods are typically between 500 and 2500.

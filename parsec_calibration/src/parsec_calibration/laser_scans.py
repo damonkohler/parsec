@@ -21,15 +21,12 @@ import threading
 _SCAN_SAMPLE_SIZE = 50
 
 
-def _mean(values):
-  return sum(values) / len(values)
-
-
 def calculate_laser_scan_range(data):
   center_index = len(data.ranges) / 2
   start_index = center_index - _SCAN_SAMPLE_SIZE / 2
   end_index = center_index + _SCAN_SAMPLE_SIZE / 2
-  return _mean(data.ranges[start_index:end_index])
+  ranges = data.ranges[start_index:end_index]
+  return sum(ranges) / len(ranges)
 
 
 class IntervalInvalid(Exception):

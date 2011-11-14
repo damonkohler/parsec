@@ -23,10 +23,10 @@ import sys
 import threading
 
 import roslib; roslib.load_manifest('parsec_calibration')
-
 import rospy
 from rospy import timer
-import laser_scans
+
+from parsec_calibration import laser_scans
 
 import sensor_msgs.msg as sensor_msgs
 import nav_msgs.msg as nav_msgs
@@ -34,10 +34,12 @@ import geometry_msgs.msg as geometry_msgs
 
 _MIN_DISTANCE_TO_WALL = 1.0
 _MAX_LINEAR_VELOCITY = 2.0
-_MAX_ANGULAR_VELOCITY = 2.0
 _TWIST_TIMER_PERIOD = rospy.Duration(0.1)
 _MAX_TRAVEL_DISTANCE = 2.0
-_MIN_TRAVEL_DISTANCE = 1.0
+
+
+def _mean(values):
+  return sum(values) / len(values)
 
 
 class CalibrationResult(object):

@@ -18,15 +18,14 @@
 
 __author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
-import roslib; roslib.load_manifest('parsec_calibration')
-
 import math
+import sys
 import threading
 
+import roslib; roslib.load_manifest('parsec_calibration')
 import rospy
-import sys
 
-import laser_scans
+from parsec_calibration import laser_scans
 
 import sensor_msgs.msg as sensor_msgs
 import parsec_msgs.msg as parsec_msgs
@@ -62,8 +61,8 @@ class CalibrationResult(object):
           self.low_angle, self.low_angle * 180 / math.pi, self.low_multiplier) +
       'Calculated high angle %f, %f degrees, multiplier %f.\n' % (
           self.high_angle, self.high_angle * 180 / math.pi, self.high_multiplier))
-        
-    
+
+
 class ServoCalibrationRoutine(object):
   """Calculates the minimal and maximal angles of the tilting servo"""
 
@@ -71,8 +70,9 @@ class ServoCalibrationRoutine(object):
     self._lock = threading.Lock()
     self._scans = laser_scans.LaserScanQueue()
     self._reset()
-    self._minimum_angle = minimum_angle    
+    self._minimum_angle = minimum_angle
     self._maximum_angle = maximum_angle
+    self._tilt_period = tilt_period
     self._calibration_results = []
 
   def run(self):
@@ -83,8 +83,8 @@ class ServoCalibrationRoutine(object):
     self._laser_subscriber = rospy.Subscriber(
         '~scan', sensor_msgs.LaserScan, self._on_laser_scan)
     self._tilt_profile_publisher.publish(parsec_msgs.LaserTiltProfile(
-          min_angle=minimum_angle, max_angle=maximum_angle,
-          period=tilt_period))
+          min_angle=self._minimum_angle, max_angle=self._maximum_angle,
+          period=self._tilt_period))
     rospy.spin()
 
   def _on_tilt_signal(self, signal):
@@ -132,7 +132,7 @@ class ServoCalibrationRoutine(object):
       _print_results_mean(self._calibration_results, sys.stdout)
       sys.stdout.write('\n')
     self._reset()
-      
+
   def _maybe_calculate_calibration(self):
     with self._lock:
       if (self._angle_increasing_stamp is None or
@@ -148,7 +148,7 @@ class ServoCalibrationRoutine(object):
       self._scans.clear_scans()
       self._angle_increasing_stamp = None
       self._angle_decreasing_stamp = None
-    
+
   def _find_closest_scan(self, scans):
     closest_distance = laser_scans.calculate_laser_scan_range(scans[0])
     closest_scan = scans[0]
