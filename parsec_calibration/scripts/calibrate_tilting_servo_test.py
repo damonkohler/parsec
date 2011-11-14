@@ -75,7 +75,7 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self.assertAlmostEqual(
         self._calibration_routine._calibration_results[-1].high_multiplier, correct_high_angle)
 
-  def test_laser_scan_queue(self):
+  def test_laser_scan_queue_intervals(self):
     scans = self._calibration_routine._scans.get_scans_in_interval(rospy.Time(0), rospy.Time(2))
     self.assertEqual(len(scans), 3)
     scans = self._calibration_routine._scans.get_scans_in_interval(rospy.Time(0), rospy.Time(3))
@@ -84,7 +84,26 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self.assertEqual(len(scans), 2)
     self.assertEqual(scans[0].header.stamp, rospy.Time(1))
     self.assertEqual(scans[1].header.stamp, rospy.Time(2))
-  
+
+  def test_laser_scan_queue_lookup_scan_time(self):
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(0))
+    self.assertEqual(scan.header.stamp, rospy.Time(0))
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(1))
+    self.assertEqual(scan.header.stamp, rospy.Time(1))
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(2))
+    self.assertEqual(scan.header.stamp, rospy.Time(2))
+
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(0.9))
+    self.assertEqual(scan.header.stamp, rospy.Time(1))
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(0.5))
+    self.assertEqual(scan.header.stamp, rospy.Time(1))
+
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(1.4))
+    self.assertEqual(scan.header.stamp, rospy.Time(1))
+
+    scan = self._calibration_routine._scans.find_scan_at_time(rospy.Time(100))
+    self.assertEqual(scan.header.stamp, rospy.Time(2))
+
 
 if __name__ == '__main__':
   unittest.main()
