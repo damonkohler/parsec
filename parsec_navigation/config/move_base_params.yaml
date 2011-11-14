@@ -35,12 +35,12 @@ TrajectoryPlannerROS:
   # Set the velocity values to something that matches our
   # platform. However, these values have been sort of guessed and it's
   # likely that they can be improved.
-  max_vel_x: 0.8
-  min_vel_x: 0.10
-  max_rotational_vel: 1.5
-  min_in_place_rotational_vel: 0.7
-  acc_lim_th: 0.8
-  acc_lim_x: 0.4
+  max_vel_x: 0.70
+  min_vel_x: 0.4
+  max_rotational_vel: 3.0
+  min_in_place_rotational_vel: 0.4
+  acc_lim_th: 4.0
+  acc_lim_x: 0.25
   acc_lim_y: 0.0
 
   holonomic_robot: false
