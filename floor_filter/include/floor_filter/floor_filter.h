@@ -30,6 +30,73 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   FloorFilter()
     : PCLNodelet() {}
 
+
+  /**
+   * Checks if two vectors are (almost) parallel with respect to a
+   * maximal angle between them.
+   *
+   * Public for testing only.
+   */
+  template<typename T>
+  bool VectorsParallel(const T& vector1, const T& vector2, double angle_threshold) {
+    return fabs(vector1.dot(vector2) / (vector1.norm() * vector2.norm())) >= cos(angle_threshold);
+  }
+
+  /**
+   * Calculates the Euclidean distance between two points.
+   *
+   * Public for testing.
+   */
+  double EuclideanDistance(const pcl::PointXYZ &point1, const pcl::PointXYZ &point2);
+
+  /**
+   * Calculates the intersection between two lines in
+   * three-dimensional space. Note: the two lines must not be parallel
+   * to the z axis.
+   *
+   * @return true if a valid intersection could be found, false otherwise
+   *
+   * Public for testing.
+   */
+  bool IntersectLines(
+      const Eigen::ParametrizedLine<float, 3> &line1, const Eigen::ParametrizedLine<float, 3> &line2,
+      Eigen::ParametrizedLine<float, 3>::VectorType *interection_point);
+
+  /**
+   * Calculates the minimum distance between the two lines. If the
+   * lines are parallel, returns false.
+   *
+   * Public for testing.
+   */
+  bool LineToLineDistance(const Eigen::ParametrizedLine<float, 3> &line1,
+                          const Eigen::ParametrizedLine<float, 3> &line2,
+                          double *distance);
+
+  /**
+   * Intersects two planes and returns the intersecting line. If the
+   * calculation fails, i.e. if the two planes are paralle, return
+   * false.
+   *
+   * Public for testing.
+   */
+  bool IntersectPlanes(const Eigen::Hyperplane<float, 3> &plane1,
+                       const Eigen::Hyperplane<float, 3> &plane2,
+                       Eigen::ParametrizedLine<float, 3> *intersection);
+
+  /**
+   * Generates the indices of all points that are not in indices.
+   *
+   * @param cloud_size the number of points in the point cloud
+   *
+   * @param indices the indices that should not be in the result
+   *
+   * @param difference cloud indices not in indices
+   *
+   * Public for testing.
+   */
+  void GetIndicesDifference(size_t cloud_size, const std::vector<int> &indices,
+                            std::vector<int> *difference);
+
  protected:
   virtual void onInit();
   
@@ -48,19 +115,21 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   double floor_z_distance_;
   
   /**
-   * The maximal slope in radians the floor can have, i.e. this is a
-   * measure for the floor's rotation along the y axis. This value is
-   * used for filtering candidate points. The corresponding ROS
-   * parameter is max_floor_y_rotation. Default: 2 degrees
+   * The maximal rotation of the floor around the y axis. This value
+   * is used for filtering candidate points. Actual candidate points
+   * are points that have a z coordinate of at most floor_z_distance
+   * m, taking into account a maximal y rotation. I.e. points that are
+   * further away can also be further away from the x-y-plane to still
+   * be considered as floor candidates. Default: 2 degrees
    */
-  double max_slope_;
+  double max_floor_y_rotation_;
 
   /**
    * The maximal rotation around the x axis in radians the floor can
    * have before the floor line is rejected as a false
    * positive. Default: 5 degrees
    */
-  double max_floor_x_rotation;
+  double max_floor_x_rotation_;
   
   /**
    * Distance threshold for points to be considered as inliers. This
@@ -106,7 +175,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
 
   /**
    * Takes an input cloud and point indices and returns the
-   * coefficients of the dominat line as well as the indices of all
+   * coefficients of the dominant line as well as the indices of all
    * line inliers.
    *
    * @param input_cloud the input cloud
@@ -116,21 +185,39 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    *
    * @param line the Eigen representation of the line
    *
-   * @param inlier_indices the indices of all points on the floor
+   * @param inlier_indices the indices of all points on the line
    */
-  bool FindFloorLine(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
-                     const std::vector<int> &indices,
-                     Eigen::ParametrizedLine<float, 3> *line,
-                     std::vector<int> *inlier_indices);
+  bool FindLine(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
+                const std::vector<int> &indices,
+                Eigen::ParametrizedLine<float, 3> *line,
+                std::vector<int> *inlier_indices);
 
   /**
-   * Generates cliff points by projecting them on the
-   * floor. I.e. cliff points are put on the intersection between the
-   * floor line and the line from the viewpoint to the actual point
-   * and only if the point is further away from the view point than
-   * the floor line.
+   * Finds the floor line. If no floor line could be found, i.e. the
+   * sensor plane doesn't intersect with the x-y-plane, returns false.
+   *
+   * @param input_cloud the input cloud
+   *
+   * @param indices
+   *     the indices of points in the input cloud to take into account
    *
    * @param line the Eigen representation of the line
+   *
+   * @param inlier_indices the indices of all points on the floor line
+   *   
+   */
+  bool GetFloorLine(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
+                    const std::vector<int> &indices,
+                    Eigen::ParametrizedLine<float, 3> *line,
+                    std::vector<int> *inlier_indices);
+
+  /**
+   * Generates cliff points by calculating the intersection between
+   * the sightline to a point and the floor line. This method assumes
+   * that the sensor is pointing in the direction of the floor line at
+   * the time input_indices was collected.
+   *
+   * @param floor_line the Eigen representation of the floor line
    *
    * @param input_cloud input point cloud
    *
@@ -143,7 +230,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    *     that were used to generate cliff points, i.e. points below
    *     the floor
    */
-  void GenerateCliffCloud(const Eigen::ParametrizedLine<float, 3> &line,
+  void GenerateCliffCloud(const Eigen::ParametrizedLine<float, 3> &floor_line,
                           const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
                           const std::vector<int> &input_indices,
                           pcl::PointCloud<pcl::PointXYZ> *cliff_cloud,
@@ -153,25 +240,34 @@ class FloorFilter : public pcl_ros::PCLNodelet {
                             const std::vector<int> &input_indices,
                             pcl::PointCloud<pcl::PointXYZ> *output_cloud);
 
-  double PointToLineDistance(const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point);
-
-  double EuclideanDistance(const pcl::PointXYZ &point1, const pcl::PointXYZ &point2);
+  void PublishCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &cloud,
+                               const std::vector<int> &indices,
+                               ros::Publisher &publisher);
 
   /**
-   * Projects a point on a line, i.e. returns the point on the line
-   * that is closest to the line between the viewpoint and point.
+   * Calculates the intersection point between the sight line, i.e. the line between the view point and point,
+   * and line.
    *
    * @param time the time at which to take the viewpoint
    * @param line the Eigen representation of the line
-   *
    * @param point the point to project
+   * @param intersection_point
+   *     the point where line and the view point line intersect
    *
-   * @return the point on the line that is closest to point
+   * @return true if valid intersection could be found, false otherwise
    */
-  bool ProjectPointOnLine(
+  bool IntersectWithSightline(
       const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point,
-      pcl::PointXYZ *projected_point);
+      pcl::PointXYZ *intersection_point);
 
+  /**
+   * Returns the position of the view point, i.e. the sensor frame, at
+   * a specific time in reference frame.
+   *
+   * @param time indicates when to take the view point position
+   *
+   * @return the viewpoint at a specific time
+   */
   pcl::PointXYZ GetViewpointPoint(const ros::Time &time);
 
   Eigen::ParametrizedLine<float, 3> LineFromCoefficients(const pcl::ModelCoefficients &line_coefficients);
@@ -185,6 +281,14 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * @param time indicates which sensor pose to use
    */ 
   Eigen::Hyperplane<float, 3> GetSensorPlane(const ros::Time &time);
+
+  /**
+   * Calculates the intersection line between the sensor plane with
+   * the x-y-plane. If the line is behind the robot, returns false.
+   */
+  bool FindSensorPlaneIntersection(
+      const ros::Time &time, Eigen::ParametrizedLine<float, 3> *intersection_line);
+
 };
 
 }
