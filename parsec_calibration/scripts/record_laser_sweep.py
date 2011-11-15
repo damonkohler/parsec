@@ -92,10 +92,14 @@ class LaserSweepRecorder(object):
 
 def main():
   if len(rospy.myargv()) < 4:
-    sys.stdout.write('Usage: %s <minimum angle> <maximum angle> <tilt period> [filename]\n' % rospy.myargv()[0])
+    sys.stdout.write(
+        'Usage: %s <minimum angle> <maximum angle> <tilt period> [filename]\n' %
+        rospy.myargv()[0])
     return
   rospy.init_node('calibrate_tiltinig_servo')
-  recorder = LaserSweepRecorder(float(rospy.myargv()[1]), float(rospy.myargv()[2]), float(rospy.myargv()[3]))
+  recorder = LaserSweepRecorder(
+      float(rospy.myargv()[1]), float(rospy.myargv()[2]),
+      float(rospy.myargv()[3]))
   if len(rospy.myargv()) > 4:
     stream = open(rospy.myargv()[4], 'w')
   else:

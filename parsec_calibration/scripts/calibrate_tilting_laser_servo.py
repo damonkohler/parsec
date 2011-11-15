@@ -103,26 +103,32 @@ class ServoCalibrationRoutine(object):
     with self._lock:
       if (self._angle_increasing_stamp is None or
           self._angle_decreasing_stamp is None):
-        raise CalibrationError('Not enough signals received: increasing stamp: %r; decreasing stamp: %r' % (
-            self._angle_increasing_stamp, self._angle_decreasing_stamp))
+        raise CalibrationError(
+            'Not enough signals received: increasing stamp: %r; decreasing stamp: %r' %
+            (self._angle_increasing_stamp, self._angle_decreasing_stamp))
       if (self._scans.get_newest_scan().header.stamp < self._angle_decreasing_stamp or
           self._scans.get_newest_scan().header.stamp < self._angle_increasing_stamp):
-        raise CalibrationError('No matching scans received that match the signal time stamps.')
+        raise CalibrationError(
+            'No matching scans received that match the signal time stamps.')
       low_scan = self._scans.find_scan_at_time(self._angle_increasing_stamp)
       high_scan = self._scans.find_scan_at_time(self._angle_decreasing_stamp)
       if low_scan is None or high_scan is None:
-        raise CalibrationError('Signal scans not found: low_scan: %r; high_scan: %r' % (low_scan, high_scan))
+        raise CalibrationError('Signal scans not found: low_scan: %r; high_scan: %r' %
+                               (low_scan, high_scan))
       if self._angle_increasing_stamp < self._angle_decreasing_stamp:
-        scans = self._scans.get_scans_in_interval(self._angle_increasing_stamp, self._angle_decreasing_stamp)
+        scans = self._scans.get_scans_in_interval(self._angle_increasing_stamp,
+                                                  self._angle_decreasing_stamp)
       else:
-        scans = self._scans.get_scans_in_interval(self._angle_decreasing_stamp, self._angle_increasing_stamp)
+        scans = self._scans.get_scans_in_interval(self._angle_decreasing_stamp,
+                                                  self._angle_increasing_stamp)
       low_scan_distance = laser_scans.calculate_laser_scan_range(low_scan)
       high_scan_distance = laser_scans.calculate_laser_scan_range(high_scan)
       closest_scan_distance = laser_scans.calculate_laser_scan_range(self._find_closest_scan(scans))
       if low_scan_distance <= closest_scan_distance or high_scan_distance <= closest_scan_distance:
         raise CalibrationError(
-            'Scan range measurements insufficient for calibration: low scan: %r; middle scan: %r; high scan: %r' % (
-                low_scan_distance, closest_scan_distance, high_scan_distance))
+            'Scan range measurements insufficient for calibration:'
+            'low scan: %r; middle scan: %r; high scan: %r' %
+            (low_scan_distance, closest_scan_distance, high_scan_distance))
       low_scan_angle = math.acos(closest_scan_distance / low_scan_distance)
       high_scan_angle = math.acos(closest_scan_distance / high_scan_distance)
       result = CalibrationResult(low_scan_angle, abs(low_scan_angle / self._minimum_angle),
