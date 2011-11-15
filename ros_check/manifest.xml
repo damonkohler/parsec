@@ -13,7 +13,7 @@
   <depend package="rosconsole" />
 
   <export>
-    <cpp cflags="-I${prefix}/include/ros_check"
+    <cpp cflags="-I${prefix}/include"
          lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lros_check" />
   </export>
 </package>
