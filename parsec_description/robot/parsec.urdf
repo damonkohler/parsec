@@ -130,6 +130,9 @@
       <mass value="0.01"/>
       <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
     </inertial>
+    <!-- The origin of the mast is at the origin of the base
+         link. That means that we need to move the visual and
+         collision elements up by heigt / 2.-->
     <visual>
       <material name="Grey"/>
       <origin xyz="0 0 0.825"/>
@@ -228,7 +231,7 @@
   <joint name="mast_joint" type="fixed">
     <parent link="base_link"/>
     <child link="mast_link"/>
-    <origin xyz="0 0 0.0"/>
+    <origin xyz="0 0 0"/>
   </joint>
 
   <joint name="base_laser_joint" type="fixed">

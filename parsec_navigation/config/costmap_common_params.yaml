@@ -22,5 +22,10 @@ ground_object_cloud:
   # enabled. Otherwise, subsequent scans clear lower voxels too early.
   observation_persistence: 5.0
   marking: true
+  # Clearing is necessary to set voxels to free if the laser scanner
+  # clearly could see through it.
   clearing: true
+  # To reduce the number of false positives, we set mark_threshould to
+  # a non-zero value. It means that a column is only considered to be
+  # an obstacle if at least 2 cells are marked.
   mark_threshold: 2

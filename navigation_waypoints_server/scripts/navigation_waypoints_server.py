@@ -59,9 +59,11 @@ class MoveBaseProxy(object):
   def __init__(self, action_name, check_motion_plan_service_name=None):
     self._interrupted = False
     self._check_motion_plan_service = None
+    self._check_motion_plan_service_name = None
     self._move_base_action = actionlib.SimpleActionClient(
         action_name, move_base_msgs.MoveBaseAction)
     if check_motion_plan_service_name is not None:
+      self._check_motion_plan_service_name = check_motion_plan_service_name
       rospy.wait_for_service(check_motion_plan_service_name,
                              WAIT_FOR_MOTION_PLAN_SERVICE_TIMEOUT)
       self._check_motion_plan_service = rospy.ServiceProxy(
@@ -96,7 +98,8 @@ class MoveBaseProxy(object):
     """Returns True if move_base will be able to find a global plan.
 
     This method executes the service passed to the constructor. If no
-    service name has been passed, always returns True.
+    service name has been passed, always returns True. If the service
+    call fails for some reason, also returns False.
     """
     if not self._check_motion_plan_service:
       return True
@@ -109,6 +112,7 @@ class MoveBaseProxy(object):
         plan = self._check_motion_plan_service(start=geometry_msgs.PoseStamped(),
                                                goal=goal, tolerance=0.0)
       except rospy.ServiceException:
+        rospy.logwarn('Service call failed: %r' % self._check_motion_plan_service_name)
         return
       return len(plan.plan.poses) > 0
 
