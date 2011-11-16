@@ -1,0 +1,17 @@
+<package>
+  <description brief="parsec_calibration">
+
+     parsec_calibration
+
+  </description>
+  <author>Damon Kohler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/parsec_calibration</url>
+  <depend package="geometry_msgs" />
+  <depend package="nav_msgs" />
+  <depend package="rospy" />
+  <depend package="sensor_msgs" />
+  <depend package="parsec_msgs" />
+
+</package>
