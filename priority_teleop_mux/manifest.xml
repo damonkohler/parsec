@@ -8,8 +8,10 @@
   <license>BSD</license>
   <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/priority_teleop_mux</url>
+
   <depend package="rospy" />
   <depend package="geometry_msgs" />
+  <depend package="priority_teleop_mux_msgs" />
 
 </package>
 

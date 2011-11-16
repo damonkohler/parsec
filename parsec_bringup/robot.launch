@@ -1,6 +1,6 @@
 <launch>
   <include file="$(find parsec_description)/launch/upload_parsec.launch" />
-  
+
   <rosparam>
     anonymous_1:
       laser_frame: base_laser
@@ -28,4 +28,6 @@
       incoming_topics: ["estop/cmd_vel", "virtual_joystick/cmd_vel", "move_base/cmd_vel"]
     </rosparam>
   </node>
+  <node name="cmd_vel_mux_log" type="rosbag" pkg="rosbag"
+      args="record cmd_vel_mux/log -o $(env HOME)/.ros/log/cmd_vel_mux_log" />
 </launch>
