@@ -49,7 +49,8 @@ class ServoSweep {
    *
    * @param period the length of a complete period in seconds
    */
-  void SetProfile(float min_angle, float max_angle, float period);
+  void SetProfile(float min_angle, float max_angle,
+                  float increasing_duration, float decreasing_duration);
 
   /**
    * Update the servo's position in accordance with the configured profile.
@@ -62,7 +63,10 @@ class ServoSweep {
   typedef enum {ANGLE_DECREASING=0, ANGLE_INCREASING=1} ServoDirection;
 
   int servo_pin_;
-  unsigned long period_;  // period in microseconds
+  // duration to turn from min angle to max angle in microseconds
+  unsigned long increasing_duration_;
+  // duration to turn from max angle to min angle in microseconds
+  unsigned long decreasing_duration_;
   unsigned int min_pwm_period_;  // minimal period in microseconds
   unsigned int max_pwm_period_;  // maximal period in microseconds
   unsigned int min_servo_pwm_period_;  // minimum servo PWM period in radians

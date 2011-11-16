@@ -436,7 +436,8 @@ void PublishLaserSignal(int signal) {
 ServoSweep servo_sweep(10, &PublishLaserSignal);  // PWM pin
 
 void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) {
-  servo_sweep.SetProfile(tilt_profile_msg.min_angle, tilt_profile_msg.max_angle, tilt_profile_msg.period);
+  servo_sweep.SetProfile(tilt_profile_msg.min_angle, tilt_profile_msg.max_angle,
+                         tilt_profile_msg.increasing_duration, tilt_profile_msg.decreasing_duration);
 }
 
 ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
