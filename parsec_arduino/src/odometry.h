@@ -38,7 +38,7 @@ class Odometry {
   float phi_;
   float x_;
   float y_;
-  
+
   float cumulated_phi_delta_;
   float cumulated_position_delta_;
   float velocity_measurement_interval_;

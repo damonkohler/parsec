@@ -19,14 +19,25 @@
 
 void Check(bool assertion, const char *format, ...);  // TODO(whess): Move this.
 
+const unsigned int PositionController::kMaximumSpeed = 60;
+const float PositionController::kMaximumVelocity = 1.0f;
+
 PositionController::PositionController(
     int (*read)(), void (*write)(unsigned char),
-    unsigned char address, float wheel_radius, Pid *pid)
-    : pid_(pid),
-      read_(read), write_(write), address_(address),
-      wheel_radius_(wheel_radius), last_position_(0), travel_goal_(0),
-      last_position_time_(0), last_velocity_position_(0), last_velocity_(0.0f),
-      last_velocity_cmd_(0.0f), last_control_time_(0.0f) {}
+    unsigned char address, float wheel_radius)
+    : read_(read),
+      write_(write),
+      address_(address),
+      wheel_radius_(wheel_radius),
+      last_position_(0),
+      travel_goal_(0),
+      last_update_time_(0),
+      target_velocity_(0.0f),
+      last_velocity_cmd_(0.0f),
+      distance_error_(0.0f),
+      gain_(0.0f),
+      acceleration_(0.0f),
+      odometry_error_(0.0f) {}
 
 void PositionController::Initialize(bool reverse) {
   // Three CLRPs are kind of a soft reset to ensure all position
@@ -46,10 +57,22 @@ void PositionController::Initialize(bool reverse) {
 }
 
 float PositionController::UpdateVelocity(float velocity) {
-  int delta;
   unsigned long current_time = micros();
-  last_velocity_cmd_ += pid_->update(last_velocity_, velocity, (current_time - last_control_time_) * 1e-6);
+  float time_delta = (current_time - last_update_time_) * 1e-6f;
+
+  // Adjust the target velocity according to our acceleration limit and maximum
+  // velocity limit.
+  LimitAcceleration(velocity, time_delta);
+
+  // Find our expected position given the current target velocity.
+  distance_error_ += time_delta * target_velocity_;
+
+  // Control the current speed via our P controller.
+  last_velocity_cmd_ = target_velocity_ + gain_ * distance_error_;
   float speed = last_velocity_cmd_ * 2.864788975f /* $9/\pi$ */ / wheel_radius_;
+
+  // Find the actual change in position, set direction of travel, and set speed.
+  int delta;
   if (speed < 0) {
     delta = TravelFromHere(-100);
     speed = -speed;
@@ -58,10 +81,32 @@ float PositionController::UpdateVelocity(float velocity) {
   } else if (speed == 0) {
     delta = TravelFromHere(0);
   }
-  RecalculateVelocity();
-  last_control_time_ = current_time;
   SetSpeedMaximum(speed < kMaximumSpeed ? floor(speed + .5f) : kMaximumSpeed);
-  return 1.745329252e-1f /* \pi/18 */ * wheel_radius_ * delta;
+
+  // Update distance error using actual distance traveled.
+  float actual_distance = 1.745329252e-1f /* \pi/18 */ * wheel_radius_ * delta;
+  distance_error_ -= actual_distance;
+
+  last_update_time_ = current_time;
+  return actual_distance;
+}
+
+void PositionController::LimitAcceleration(float velocity, float time_delta) {
+  float clamped_velocity;
+  if (velocity > 0) {
+    clamped_velocity = fmin(velocity, 1.0f);
+  } else {
+    clamped_velocity = fmax(velocity, -1.0f);
+  }
+  float target_delta = clamped_velocity - target_velocity_;
+  float max_delta = acceleration_ * time_delta;
+  float delta;
+  if (target_delta > 0) {
+    delta = fmin(target_delta, max_delta);
+  } else {
+    delta = fmax(target_delta, -max_delta);
+  }
+  target_velocity_ += delta;
 }
 
 void PositionController::SoftwareEmergencyStop(void (*write)(unsigned char)) {
@@ -72,6 +117,14 @@ void PositionController::SoftwareEmergencyStop(void (*write)(unsigned char)) {
     write(CLRP);
     delayMicroseconds(150);
   }
+}
+
+void PositionController::SetGain(float gain) {
+  gain_ = gain;
+}
+
+void PositionController::SetAcceleration(float acceleration) {
+  acceleration_ = acceleration;
 }
 
 unsigned char PositionController::ReadSafely() {
@@ -86,7 +139,6 @@ void PositionController::ClearPosition() {
   write_(CLRP | address_);
   last_position_ = 0;
   travel_goal_ = 0;
-  pid_->reset();
 }
 
 void PositionController::SetTXDelay(int usec) {
@@ -135,20 +187,6 @@ unsigned int PositionController::QueryPositionDelta() {
   unsigned int delta = QueryPosition() - last_position_;
   last_position_ += delta;
   return delta;
-}
-
-void PositionController::RecalculateVelocity() {
-  unsigned long current_time = micros();
-  long time_delta = current_time - last_position_time_;
-  // Only recalculate when enough time since the last measurement has
-  // passed.
-  if (time_delta > 20000) {
-    last_velocity_ = 1.745329252e-1f /* \pi/18 */ * wheel_radius_
-      * int(last_position_ - last_velocity_position_)
-      / (time_delta * 1e-6);
-    last_position_time_ = current_time;
-    last_velocity_position_ = last_position_;
-  }
 }
 
 int PositionController::TravelFromHere(int distance_from_here) {

@@ -4,8 +4,8 @@ build
 msg_gen
 srv_gen
 navigation_waypoints_server/msg
-./*.swp
-*.pyc
+.swp
+.pyc
 navigation_waypoints_server/msg/ExecutePathAction.msg
 navigation_waypoints_server/msg/ExecutePathActionFeedback.msg
 navigation_waypoints_server/msg/ExecutePathActionGoal.msg

@@ -21,8 +21,12 @@
 #include "parsec_msgs/Odometry.h"
 
 Odometry::Odometry()
-  : phi_(0.0f), x_(0.0f), y_(0.0f), cumulated_phi_delta_(0.0f),
-    cumulated_position_delta_(0.0f), velocity_measurement_interval_(0.0f) {}
+  : phi_(0.0f),
+    x_(0.0f),
+    y_(0.0f),
+    cumulated_phi_delta_(0.0f),
+    cumulated_position_delta_(0.0f),
+    velocity_measurement_interval_(0.0f) {}
 
 void Odometry::UpdateFromWheels(
     float left, float right, float wheel_distance, float time_delta) {

@@ -32,7 +32,6 @@
 #include "sensor_msgs/Range.h"
 #include "shift_brite.h"
 #include "simple_led.h"
-#include "pid.h"
 #include "std_msgs/Time.h"
 #include "parsec_msgs/LaserTiltProfile.h"
 #include "parsec_msgs/LaserTiltSignal.h"
@@ -321,38 +320,27 @@ static void WriteUART1(unsigned char byte) {
   UCSR1B |= (1 << RXEN1);
 }
 
-// Finding good PID values is sort of hard. At the moment we only use a
-// P controller, i.e. we set the I and D values to 0 which already
-// gives us a reasonable stable controller. By using rxplot to
-// visualize how the velocities of the right and left position
-// controllers behave, it is easy to incrementally adjust the values so
-// that we get stable behavior.
-const float kPositionControllerPGain = 0.04f;
-const float kPositionControllerIGain = 0.0f;
-const float kPositionControllerDGain = 0.0f;
-const float kPositionControllerIClamp = 1.0f;
-
-Pid left_velocity_pid;
-Pid right_velocity_pid;
-
-static void SetupPidControllers() {
-  float values[4] = { kPositionControllerPGain, kPositionControllerIGain,
-                      kPositionControllerDGain, kPositionControllerIClamp };
-  node_handle.getParam("~pid", values, 4);
-  left_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
-  right_velocity_pid.setGains(values[0], values[1], values[2], values[3]);
-
-  char message[40];
-  snprintf(message, 40, "PID values: %d %d %d %d",
-           (int) (values[0] * 100.0f), (int) (values[1] * 100.0f),
-           (int) (values[2] * 100.0f), (int) (values[3] * 100.0f));
-  node_handle.loginfo(message);
-}
-
-PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius, &left_velocity_pid);
-PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius, &right_velocity_pid);
+PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius);
+PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius);
 
 static void SetupPositionControllers() {
+  float gain = 0.3f;
+  float acceleration = 1.0f;
+  node_handle.getParam("~gain", &gain);
+  node_handle.getParam("~acceleration", &acceleration);
+
+  left_controller.SetGain(gain);
+  left_controller.SetAcceleration(acceleration);
+  right_controller.SetGain(gain);
+  right_controller.SetAcceleration(acceleration);
+
+  char message[40];
+  snprintf(message, 40, "Gain: %d", (int) (gain * 100.0f));
+  node_handle.loginfo(message);
+
+  snprintf(message, 40, "Acceleration: %d", (int) (acceleration * 100.0f));
+  node_handle.loginfo(message);
+
   // Position Controller Device serial port. Pins 19 (RX) and 18 (TX).
   // We depend on default for DDR, PORT, UCSR.
   UBRR1H = 0;
@@ -401,7 +389,6 @@ static void PublishJointState() {
   // warning where the compiler complains that we use a deprecated
   // conversion from const char * to char*.
   static char *names[] = {left_name, right_name};
-  // TODO: reduce publish reate agian!
   if (micros() - last_joint_state_message > 80000ul) {
     float position[] = { left_controller.GetLastPosition(),
                          right_controller.GetLastPosition() };
@@ -578,7 +565,6 @@ void setup() {
   SetupDisplay();
   SetupROSSerial();
   SetupUltrasonic();
-  SetupPositionControllers();
   SetupShiftBrite();
 
   // Wait until we've connected to the host.
@@ -588,7 +574,7 @@ void setup() {
   }
   printf_row(0, "Connected");
 
-  SetupPidControllers();
+  SetupPositionControllers();
   SetupServoSweep();
 }
 

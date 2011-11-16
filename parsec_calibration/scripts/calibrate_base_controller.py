@@ -129,6 +129,7 @@ class CalibrationRoutine(object):
         'base_scan', sensor_msgs.LaserScan, self._on_laser_scan)
     self._twist_timer = timer.Timer(_TWIST_TIMER_PERIOD, self._publish_twist)
     self._finished = threading.Event()
+    self._last_laser_scan = None
 
   def _clear(self):
     self._linear_velocity = 0
@@ -137,6 +138,11 @@ class CalibrationRoutine(object):
     self._finished.clear()
 
   def _publish_twist(self, unused_event):
+    if (self._last_laser_scan is None or
+        rospy.Time.now() - self._last_laser_scan > rospy.Duration(0.25)):
+      rospy.logerr('Laser not coming in fast enough. '
+                   'Last laser scan received at %s' % self._last_laser_scan)
+      return
     twist = geometry_msgs.Twist()
     twist.linear.x = self._linear_velocity
     twist.angular.z = self._angular_velocity
@@ -150,6 +156,7 @@ class CalibrationRoutine(object):
       self._finish()
 
   def _on_laser_scan(self, data):
+    self._last_laser_scan = rospy.Time.now()
     if self._finished.is_set():
       return
     self._result.add_laser_message(data)

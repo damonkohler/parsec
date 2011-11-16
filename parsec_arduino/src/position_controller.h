@@ -16,8 +16,6 @@
 #ifndef PARSECLIB_POSITION_CONTROLLER_
 #define PARSECLIB_POSITION_CONTROLLER_
 
-#include "pid.h"
-
 // Class for the Parallax Position Controller Device.
 class PositionController {
  public:
@@ -44,7 +42,7 @@ class PositionController {
   // interrupts running here have to be faster.
   PositionController(
       int (*read)(), void (*write)(unsigned char),
-      unsigned char address, float wheel_radius, Pid *pid);
+      unsigned char address, float wheel_radius);
 
   // Initializes a position controller, possibly reversing its orientation.
   // It will stay reversed until power is lost, even across soft resets.
@@ -58,19 +56,21 @@ class PositionController {
   // returns the last position reading
   unsigned int GetLastPosition() { return last_position_; }
 
-  // returns the last velocity reading
-  float GetLastVelocity() { return last_velocity_; }
-
   // returns the last velocity command sent to the controller
   float GetLastVelocityCmd() { return last_velocity_cmd_; }
-  
+
   // Tries to broadcast a software reset to all position controllers in the
   // hope they will stop the motors.
   static void SoftwareEmergencyStop(void (*write)(unsigned char));
 
+  void SetGain(float gain);
+
+  void SetAcceleration(float acceleration);
+
  private:
-  static const unsigned int kMaximumSpeed = 60;
-  
+  static const unsigned int kMaximumSpeed;
+  static const float kMaximumVelocity;
+
   // Read successfully or crash.
   inline unsigned char ReadSafely();
 
@@ -100,25 +100,26 @@ class PositionController {
   // Queries the change in position since the last call.
   inline unsigned int QueryPositionDelta();
 
-  // Updates the current velocity
-  inline void RecalculateVelocity();
+  // Limits acceleration toward the target velocity.
+  void LimitAcceleration(float velocity, float time_delta);
 
   // Set the travel destination to a distance relative from the current
   // position. Returns the change in positions since the last call.
   inline int TravelFromHere(int distance_from_here);
 
-  Pid *pid_;
   int (*read_)();
   void (*write_)(unsigned char);
   unsigned char address_;
   float wheel_radius_;
   unsigned int last_position_;
-  unsigned long last_position_time_;
-  unsigned long last_control_time_;
-  unsigned int last_velocity_position_;
-  float last_velocity_;
-  float last_velocity_cmd_;
   int travel_goal_;
+  unsigned long last_update_time_;
+  float target_velocity_;
+  float last_velocity_cmd_;
+  float distance_error_;
+  float gain_;
+  float acceleration_;
+  float odometry_error_;
 };
 
 #endif  // PARSECLIB_POSITION_CONTROLLER_
