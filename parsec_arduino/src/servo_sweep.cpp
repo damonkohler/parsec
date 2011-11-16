@@ -17,11 +17,18 @@
 
 #include <math.h>
 
+extern ros::NodeHandle node_handle;
+
 ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
-  : servo_(), servo_pin_(servo_pin),
-    period_(0),
-    min_pwm_period_(min_servo_pwm_period_),
-    max_pwm_period_(max_servo_pwm_period_),
+  : servo_pin_(servo_pin),
+    increasing_duration_(0),
+    decreasing_duration_(0),
+    min_pwm_period_(0),
+    max_pwm_period_(0),
+    min_servo_pwm_period_(0),
+    max_servo_pwm_period_(0),
+    min_servo_angle_(0.0f),
+    max_servo_angle_(0.0f),
     direction_(ANGLE_INCREASING),
     on_signal_(callback) {}
 
@@ -38,8 +45,10 @@ void ServoSweep::SetParameters(
   max_servo_angle_ = max_angle;
 }
 
-void ServoSweep::SetProfile(float min_angle, float max_angle, float period) {
-  period_ = period * 1e6;
+void ServoSweep::SetProfile(float min_angle, float max_angle,
+                            float increasing_duration, float decreasing_duration) {
+  increasing_duration_ = increasing_duration * 1e6;
+  decreasing_duration_ = decreasing_duration * 1e6;
   unsigned int pwm_period_per_radian = (max_servo_pwm_period_ - min_servo_pwm_period_) /
       (max_servo_angle_ - min_servo_angle_);
   // CHECK(max_angle >= min_angle);
@@ -54,27 +63,36 @@ void ServoSweep::SetProfile(float min_angle, float max_angle, float period) {
   if (max_pwm_period_ > max_servo_pwm_period_) {
     max_pwm_period_ = max_servo_pwm_period_;
   }
+  char str[40];
+  sprintf(str, "Setting profile: %d %d", min_pwm_period_, max_pwm_period_);
+  node_handle.loginfo(str);
 }
 
 void ServoSweep::Update() {
   // Do nothing if tilting is disabled.
-  if (period_ == 0) {
+  if (increasing_duration_ == 0 || decreasing_duration_ == 0) {
     return;
   }
 
-  // Map the current time into the interval [0, period_).
-  unsigned long long position = micros() % period_;
+  // Map the current time into the interval [0, increasing_duration_).
+  unsigned long long position =
+      micros() % (increasing_duration_ + decreasing_duration_);
 
-  if (position > period_ / 2) {
-    position = period_ - position;
+  if (position > increasing_duration_) {
+    position = increasing_duration_ + decreasing_duration_ - position;
     SetDirection(ANGLE_DECREASING);
   } else {
     SetDirection(ANGLE_INCREASING);
   }
 
+  unsigned long current_duration;
+  if (direction_ == ANGLE_INCREASING) {
+    current_duration = increasing_duration_;
+  } else {
+    current_duration = decreasing_duration_;
+  }
   // Map the variable position into the interval [min_pwm_period_, max_pwm_period_).
-  unsigned int pwm_period = min_pwm_period_ + position * (max_pwm_period_ - min_pwm_period_) / (period_ / 2);
-
+  unsigned int pwm_period = min_pwm_period_ + position * (max_pwm_period_ - min_pwm_period_) / current_duration;
   // We use writeMicroseconds for increased precision.
   servo_.writeMicroseconds(pwm_period);
 }
