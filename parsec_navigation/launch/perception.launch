@@ -1,0 +1,47 @@
+<launch>
+  <!-- Filter out points that are immediately surrounding the laser (e.g. the laser mount). -->
+  <node pkg="nodelet" type="nodelet" name="box_filter_pcl_manager" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="box_filter_x" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+    <remap from="~input" to="tilt_scan" />
+    <rosparam>
+      filter_field_name: x
+      filter_limit_min: -0.05
+      filter_limit_max: 0.05
+      filter_limit_negative: true
+    </rosparam>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="box_filter_y" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+    <remap from="~input" to="box_filter_x/output" />
+    <rosparam>
+      filter_field_name: y
+      filter_limit_min: -0.05
+      filter_limit_max: 0.05
+      filter_limit_negative: true
+    </rosparam>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="box_filter_z" args="load pcl/PassThrough box_filter_pcl_manager" output="screen">
+    <remap from="~input" to="box_filter_y/output" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -0.05
+      filter_limit_max: 0.05
+      filter_limit_negative: true
+    </rosparam>
+  </node>
+  <!-- Filter out points on the floor. -->
+  <node name="floor_filter" type="nodelet" pkg="nodelet" args="standalone floor_filter/FloorFilter">
+    <remap from="~scan" to="box_filter_z/output" />
+    <rosparam>
+      ransac_distance_threshold: 0.05
+      sensor_frame: tilt_laser
+      reference_frame: base_footprint
+      max_floor_y_rotation: 0.05
+      max_floor_x_rotation: 1.00
+      floor_z_distance: 0.05
+    </rosparam>
+  </node>
+  <node name="floor_filter_converter" type="point_cloud_converter" pkg="point_cloud_converter">
+    <remap from="points2_in" to="floor_filter/filtered_cloud" />
+    <remap from="points_out" to="floor_filter/filtered_cloud_points1" />
+  </node>
+</launch>
