@@ -250,7 +250,7 @@
   <joint name="tilt_laser_joint" type="revolute">
     <parent link="tilting_laser_mount"/>
     <child link="tilt_laser"/>
-    <origin xyz="0.0 -0.045 0.033" rpy="0.02 -0.10 0.00"/>
+    <origin xyz="0.0 -0.045 0.033" rpy="0.02 0.00 0.00"/>
     <axis xyz="0 1 0"/>
     <!-- Using dummy effort and velocity values here. They are not
     used on the parsec -->

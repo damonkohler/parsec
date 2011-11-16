@@ -22,4 +22,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 
 rosbuild_add_library(floor_filter_nodelet src/floor_filter.cpp)
-#rosbuild_add_executable(floor_filter src/floor_filter.cpp)
+rosbuild_add_gtest(floor_filter_test test/floor_filter_test.cpp)
+target_link_libraries(floor_filter_test floor_filter_nodelet)
