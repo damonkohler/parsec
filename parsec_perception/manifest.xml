@@ -1,11 +1,11 @@
 <package>
-  <description brief="floor_filter">
+  <description brief="parsec_parception">
 
-     floor_filter
+     parsec_perception
 
   </description>
   <author>Lorenz Moesenlechner</author>
-  <license>BSD</license>
+  <license>Apache2</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/floor_filter</url>
   <depend package="roscpp"/>
@@ -16,7 +16,7 @@
   <depend package="ros_check"/>
 
   <export>
-    <nodelet plugin="${prefix}/nodelet.xml"/>
+    <nodelet plugin="${prefix}/nodelets.xml"/>
   </export>
 </package>
 
