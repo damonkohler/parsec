@@ -57,13 +57,13 @@ void CircularRobotSelfFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>
 
   boost::shared_ptr<std::vector<int> > indices(new std::vector<int>);
   for (size_t i = 0; i < transformed_cloud->points.size(); i++) {
-    if (transformed_cloud->points[i].z > maximal_z_value_ ||
-        transformed_cloud->points[i].z < minimal_z_value_ ||
-        pcl::euclideanDistance(
-            transformed_cloud->points[i],
-            pcl::PointXYZ(0, 0, transformed_cloud->points[i].z)) > radius_) {
-      indices->push_back(i);
+    pcl::PointXYZ point = transformed_cloud->points[i];
+    pcl::PointXYZ origin_xy(0, 0, transformed_cloud->points[i].z);
+    if (point.z <= maximal_z_value_ && point.z >= minimal_z_value_ &&
+        pcl::euclideanDistance(point, origin_xy) <= radius_) {
+      continue;
     }
+    indices->push_back(i);
   }
   pcl::ExtractIndices<pcl::PointXYZ> extract_indices;
   extract_indices.setIndices(indices);
