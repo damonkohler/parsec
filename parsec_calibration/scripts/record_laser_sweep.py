@@ -49,13 +49,15 @@ class LaserSweepRecorder(object):
         '~scan', sensor_msgs.LaserScan, self._on_laser_scan)
     tilt_profile_publisher.publish(parsec_msgs.LaserTiltProfile(
           min_angle=self._minimum_angle, max_angle=self._maximum_angle,
-          period=self._tilt_period))
-    increasing_signal = self._wait_for_signal(parsec_msgs.LaserTiltSignal.ANGLE_INCREASING)
+          increasing_duration=self._tilt_period / 2,
+          decreasing_duration=self._tilt_period / 2))
+    first_increasing_signal = self._wait_for_signal(parsec_msgs.LaserTiltSignal.ANGLE_INCREASING)
     decreasing_signal = self._wait_for_signal(parsec_msgs.LaserTiltSignal.ANGLE_DECREASING)
-    increasing_time = self._scans.find_oldest_scan_after_time(increasing_signal.header.stamp).header.stamp
-    decreasing_time = self._scans.find_newest_scan_before_time(decreasing_signal.header.stamp).header.stamp
-    self._wait_for_scan_after(decreasing_signal.header.stamp)
-    scans = self._scans.get_scans_in_interval(increasing_time, decreasing_time)
+    second_increasing_signal = self._wait_for_signal(parsec_msgs.LaserTiltSignal.ANGLE_INCREASING)
+    self._wait_for_scan_after(second_increasing_signal.header.stamp)
+    start_time = self._scans.find_oldest_scan_after_time(first_increasing_signal.header.stamp).header.stamp
+    end_time = self._scans.find_newest_scan_before_time(second_increasing_signal.header.stamp).header.stamp
+    scans = self._scans.get_scans_in_interval(start_time, end_time)
     self._write_scans(scans, stream)
 
   def _on_tilt_signal(self, data):
