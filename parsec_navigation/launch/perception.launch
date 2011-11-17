@@ -10,7 +10,7 @@
     <remap from="~input" to="laser_scan_converter/output" />
     <rosparam>
       base_frame: base_footprint
-      radius: 0.215
+      radius: 0.23
       minimal_z_value: 0.0
       maximal_z_value: 1.77
     </rosparam>
