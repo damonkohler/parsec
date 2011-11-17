@@ -1,8 +1,7 @@
-planner_patience: 5.0
-controller_patience: 5.0
+planner_patience: 2.5
+controller_patience: 2.5
 controller_frequency: 20.0
 base_local_planner: dwa_local_planner/DWAPlannerROS
-clearing_rotation_allowed: false
 recovery_behaviors:
   - name: conservative_reset
     type: clear_costmap_recovery/ClearCostmapRecovery
@@ -10,6 +9,10 @@ recovery_behaviors:
     type: rotate_recovery/RotateRecovery
   - name: aggressive_reset
     type: clear_costmap_recovery/ClearCostmapRecovery
+
+# Configuration for recovery behaviors
+aggressive_reset:
+  reset_distance: 0.01
 
 # See also costmap_common_params.yaml for additional parameters set
 # for the two costmaps.
@@ -26,7 +29,6 @@ local_costmap:
    resolution: 0.025
    transform_tolerance: 0.5
    unknown_cost_value: 100
-   observation_sources: "base_laser tilt_laser ground_object_cloud"
 
 global_costmap:
    global_frame: /map
@@ -40,8 +42,6 @@ global_costmap:
    resolution: 0.05
    origin_x: -50.0
    origin_y: -50.0
-   inflation_radius: 0.37
-   observation_sources: "base_laser"
 
 DWAPlannerROS:
   acc_lim_th: 8.0
@@ -58,12 +58,11 @@ DWAPlannerROS:
   # These are guessed tolerance values. Yaw tolerance should be about
   # 45 degree and xy tolerance within a foot.
   yaw_goal_tolerance: 0.4  # radians
-  xy_goal_tolerance: 0.5  # meters
+  xy_goal_tolerance: 0.3  # meters
   stop_time_buffer: 0.8
   forward_point_distance: 0.4
   vy_samples: 0
   vtheta_samples: 40
-  path_distance_bias: 40
   
 TrajectoryPlannerROS:
   # Set the velocity values to something that matches our
