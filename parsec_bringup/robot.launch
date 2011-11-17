@@ -1,0 +1,33 @@
+<launch>
+  <include file="$(find parsec_description)/launch/upload_parsec.launch" />
+
+  <rosparam>
+    anonymous_1:
+      laser_frame: base_laser
+      laser_topic: base_scan
+    anonymous_2:
+      laser_frame: tilt_laser
+      laser_topic: tilt_scan
+  </rosparam>
+
+  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay">
+    <remap from="~correction_pose" to="correction_pose_scan_matcher/pose" />
+    <rosparam>
+      base_frame_id: base_footprint
+    </rosparam>
+  </node>
+  <node name="parsec_state_publisher" type="state_publisher" pkg="robot_state_publisher" />
+  <node name="servo_joint_state_publisher" type="publish_servo_joint_state.py"
+        pkg="publish_servo_joint_state">
+    <remap from="~signal" to="laser_tilt_controller/signal" />
+    <remap from="~profile" to="laser_tilt_controller/profile" />
+  </node>
+  <node name="cmd_vel_mux" type="priority_teleop_mux.py" pkg="priority_teleop_mux">
+    <rosparam>
+      outgoing_topic: cmd_vel
+      incoming_topics: ["estop/cmd_vel", "virtual_joystick/cmd_vel", "move_base/cmd_vel"]
+    </rosparam>
+  </node>
+  <node name="cmd_vel_mux_log" type="rosbag" pkg="rosbag"
+      args="record cmd_vel_mux/log -o $(env HOME)/.ros/log/cmd_vel_mux_log" />
+</launch>

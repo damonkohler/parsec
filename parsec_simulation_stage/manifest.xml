@@ -1,0 +1,16 @@
+<package>
+  <description brief="parsec_simulation_stage">
+
+     parsec_simulation_stage
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_simulation_stage</url>
+  <depend package="stage" />
+  <depend package="parsec_navigation" />
+
+</package>
+
+

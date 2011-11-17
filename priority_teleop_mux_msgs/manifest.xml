@@ -1,0 +1,13 @@
+<package>
+  <description brief="priority_teleop_mux_msgs">
+
+     priority_teleop_mux_msgs
+
+  </description>
+  <author>Damon Kohler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/priority_teleop_mux_msgs</url>
+
+</package>
+
