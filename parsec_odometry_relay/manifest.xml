@@ -5,7 +5,7 @@
 
   </description>
   <author>Damon Kohler</author>
-  <license>BSD</license>
+  <license>Apache 2.0</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/parsec_odometry_relay</url>
 

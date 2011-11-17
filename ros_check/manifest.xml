@@ -7,7 +7,7 @@
 
   </description>
   <author>Lorenz Moesenlechner</author>
-  <license>Apache2</license>
+  <license>Apache 2.0</license>
   <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/ros_check</url>
   <depend package="rosconsole" />
