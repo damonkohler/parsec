@@ -1,6 +1,6 @@
 <launch>
 
-  <include file="$(find floor_filter)/launch/floor_filter.launch" />
+  <include file="$(find parsec_navigation)/launch/perception.launch" />
   <include file="$(find parsec_navigation)/config/gmapping_parsec.launch" />
   <include file="$(find parsec_navigation)/config/move_base_parsec_dynamic.launch" />
 

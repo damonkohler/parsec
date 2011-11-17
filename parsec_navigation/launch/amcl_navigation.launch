@@ -1,6 +1,6 @@
 <launch>
 
-  <include file="$(find floor_filter)/launch/floor_filter.launch" />
+  <include file="$(find parsec_navigation)/launch/perception.launch" />
 
   <!-- Run the map server (to be changed to use correct map)-->
   <arg name="map_file" default="$(find parsec_navigation)/maps/google-m-alt-2011-10-13.yaml" />
