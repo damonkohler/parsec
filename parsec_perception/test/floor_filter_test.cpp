@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "floor_filter/floor_filter.h"
+#include "parsec_perception/floor_filter.h"
 
 #include <gtest/gtest.h>
 #include <Eigen/Geometry>
@@ -21,7 +21,7 @@
 #include <ros/ros.h>
 
 TEST(FindFloor, VectorsParallel) {
-  floor_filter::FloorFilter floor_filter;
+  parsec_perception::FloorFilter floor_filter;
   Eigen::Vector3f vector_1(1, 0, 0);
   Eigen::Vector3f vector_2(-1, 0, 0);
   Eigen::Vector3f vector_3(2, 0, 0);
@@ -36,7 +36,7 @@ TEST(FindFloor, VectorsParallel) {
 }
 
 TEST(FindFloor, IntersectLines) {
-  floor_filter::FloorFilter floor_filter;
+  parsec_perception::FloorFilter floor_filter;
   Eigen::ParametrizedLine<float, 3>::VectorType origin(0, 0, 0);
   Eigen::ParametrizedLine<float, 3>::VectorType origin_y_1(0, 1, 0);
   Eigen::ParametrizedLine<float, 3>::VectorType origin_z_1(0, 0, 1);
@@ -68,7 +68,7 @@ TEST(FindFloor, IntersectLines) {
 }
 
 TEST(FindFloor, IntersectPlanes) {
-  floor_filter::FloorFilter floor_filter;
+  parsec_perception::FloorFilter floor_filter;
   Eigen::Hyperplane<float, 3>::VectorType origin(0, 0, 0);
   Eigen::Hyperplane<float, 3>::VectorType x_direction(1, 0, 0);
   Eigen::Hyperplane<float, 3>::VectorType y_direction(0, 1, 0);
@@ -86,7 +86,7 @@ TEST(FindFloor, IntersectPlanes) {
 }
 
 TEST(FindFloor, IndicesDifference) {
-  floor_filter::FloorFilter floor_filter;
+  parsec_perception::FloorFilter floor_filter;
   std::vector<int> indices;
   indices.push_back(0);
   indices.push_back(2);
