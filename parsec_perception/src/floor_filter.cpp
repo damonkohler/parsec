@@ -53,11 +53,11 @@ void FloorFilter::onInit() {
   pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, 1.0);
       
   input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
-      "input_cloud", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
+      "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
+  filtered_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
+      "output", 10);
   floor_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
       "floor_cloud", 10);
-  filtered_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
-      "filtered_cloud", 10);
   cliff_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
       "cliff_cloud", 10);
   cliff_generating_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
@@ -185,7 +185,7 @@ bool FloorFilter::GetFloorLine(
   }
   else if (!VectorsParallel(line->direction(), y_axis, max_floor_x_rotation_)) {
     ROS_DEBUG("The angle between the found floor line and the x-y-plane above threshold."
-              "Rejecting the line and using the intersection between x-y-plane and sensor plane.");
+             "Rejecting the line and using the intersection between x-y-plane and sensor plane.");
     inlier_indices->clear();
     *line = sensor_floor_intersection_line;
   }
@@ -195,6 +195,12 @@ bool FloorFilter::GetFloorLine(
 bool FloorFilter::FindSensorPlaneIntersection(
     const ros::Time &time, Eigen::ParametrizedLine<float, 3> *intersection_line) {
   Eigen::Hyperplane<float, 3> sensor_plane = GetSensorPlane(time);
+  // The sensor plane and the floor plane will intersect behind the
+  // robot the x component of its normal is smaller than zero.
+  if (sensor_plane.normal()(0) < 0) {
+    ROS_DEBUG("Intersection line between sensor and floor plane behind the robot.");
+    return false;
+  }  
   // Use intersection of the x-y-plane and the sensor plane to
   // generate an artificial floor line.
   Eigen::Hyperplane<float, 3> floor_plane(Eigen::Hyperplane<float, 3>::VectorType(0, 0, 1), 0.0);
@@ -202,13 +208,6 @@ bool FloorFilter::FindSensorPlaneIntersection(
   // rejected it because it was not parallel to the x-y-plane.
   if (!IntersectPlanes(sensor_plane, floor_plane, intersection_line)) {
     ROS_DEBUG("No intersection between sensor plane and x-y-plane.");
-    return false;
-  }
-  // Check if the intersection line is in front of the robot.
-  if (intersection_line->origin()(1) -
-      (intersection_line->origin()(0) / intersection_line->direction()(0)) *
-      intersection_line->direction()(1) < 0) {
-    ROS_DEBUG("Intersection line between sensor and floor plane behind the robot.");
     return false;
   }
   return true;
@@ -358,7 +357,6 @@ bool FloorFilter::IntersectLines(
   // lines is > 0.
   double distance;
   if (!LineToLineDistance(line1, line2, &distance) || distance > 1e-6) {
-    std::cerr << "line to line distance bad: " << distance << std::endl;
     return false;
   }
   // This formular can be derived from setting the two line equations
