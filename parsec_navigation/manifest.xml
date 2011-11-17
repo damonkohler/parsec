@@ -13,7 +13,5 @@
   <depend package="navfn" />
   <depend package="gmapping" />
   <depend package="amcl" />
-  <depend package="floor_filter" />  
+  <depend package="parsec_perception" />  
 </package>
-
-
