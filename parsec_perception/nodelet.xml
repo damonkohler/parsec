@@ -1,8 +1,0 @@
-<library path="lib/libfloor_filter_nodelet">
-  <class name="floor_filter/FloorFilter" type="floor_filter::FloorFilter" base_class_type="nodelet::Nodelet">
-    <description>
-      FloorFilter removes the floor from point clouds and generates
-      cliff points.
-    </description>
-  </class>
-</library>

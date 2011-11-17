@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "parsec_perception/floor_filter.h"
+
 #include <cmath>
 
 #include <algorithm>
@@ -21,25 +23,24 @@
 #include <boost/bind.hpp>
 #include <boost/timer.hpp>
 
+#include <Eigen/Geometry>
 #include <laser_geometry/laser_geometry.h>
+#include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_ros/transforms.h>
-#include <Eigen/Geometry>
 #include <pluginlib/class_list_macros.h>
 #include <ros_check/ros_check.h>
 
-#include "floor_filter/floor_filter.h"
-
-namespace floor_filter {
+namespace parsec_perception {
 
 void FloorFilter::onInit() {
   PCLNodelet::onInit();
   
   if (!pnh_->getParam("sensor_frame", sensor_frame_)) {
-    ROS_FATAL("Parameter 'sensor_frame' not found");
+    ROS_FATAL("Parameter 'sensor_frame' not found.");
     return;
   }
   pnh_->param("reference_frame", reference_frame_, std::string("base_link"));
@@ -51,8 +52,6 @@ void FloorFilter::onInit() {
   pnh_->param("ransac_distance_threshold", ransac_distance_threshold_, 0.03);
   pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, 1.0);
       
-  input_scan_subscriber_ = pnh_->subscribe<sensor_msgs::LaserScan>(
-      "scan", 100, boost::bind(&FloorFilter::LaserCallback, this, _1));
   input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
       "input_cloud", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
   floor_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
@@ -63,15 +62,6 @@ void FloorFilter::onInit() {
       "cliff_cloud", 10);
   cliff_generating_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
       "cliff_generating_cloud", 10);
-}
-
-void FloorFilter::LaserCallback(const sensor_msgs::LaserScan::ConstPtr &scan) {
-  laser_geometry::LaserProjection laser_projection;
-  sensor_msgs::PointCloud2 cloud_msg;
-  laser_projection.projectLaser(*scan, cloud_msg);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(cloud_msg, *cloud);
-  CloudCallback(cloud);
 }
 
 void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {
@@ -242,10 +232,10 @@ void FloorFilter::GenerateCliffCloud(
                                 &cliff_point)) {
       continue;
     }
-    double distance_to_input_point = EuclideanDistance(viewpoint, input_cloud->points[i]);
-    double distance_to_cliff_point = EuclideanDistance(viewpoint, cliff_point);
+    double distance_to_input_point = pcl::euclideanDistance(viewpoint, input_cloud->points[i]);
+    double distance_to_cliff_point = pcl::euclideanDistance(viewpoint, cliff_point);
     double distance_cliff_from_point_xy =
-      EuclideanDistance(cliff_point,
+      pcl::euclideanDistance(cliff_point,
                         pcl::PointXYZ(input_cloud->points[i].x,
                                       input_cloud->points[i].y,
                                       cliff_point.z));
@@ -284,13 +274,6 @@ void FloorFilter::PublishCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &
   pcl::PointCloud<pcl::PointXYZ>::Ptr indices_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   MakeCloudFromIndices(cloud, indices, indices_cloud.get());
   publisher.publish(indices_cloud);
-}
-
-double FloorFilter::EuclideanDistance(const pcl::PointXYZ &point1, const pcl::PointXYZ &point2) {
-  float x = point1.x - point2.x;
-  float y = point1.y - point2.y;
-  float z = point1.z - point2.z;
-  return sqrt(x * x + y * y + z * z);
 }
 
 bool FloorFilter::IntersectWithSightline(
@@ -429,6 +412,6 @@ bool FloorFilter::IntersectPlanes(
   return true;
 }
 
-}  // namespace floor_filter
+}  // namespace parsec_perception
 
-PLUGINLIB_DECLARE_CLASS(floor_filter, FloorFilter, floor_filter::FloorFilter, nodelet::Nodelet);
+PLUGINLIB_DECLARE_CLASS(parsec_perception, FloorFilter, parsec_perception::FloorFilter, nodelet::Nodelet);

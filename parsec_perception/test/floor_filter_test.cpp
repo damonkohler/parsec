@@ -35,16 +35,6 @@ TEST(FindFloor, VectorsParallel) {
   EXPECT_FALSE(floor_filter.VectorsParallel(vector_4, vector_5, 1e-9));
 }
 
-TEST(FindFloor, EuclideanDistance) {
-  floor_filter::FloorFilter floor_filter;
-  pcl::PointXYZ point_1(1, 0, 0);
-  pcl::PointXYZ point_2(2, 0, 0);
-  pcl::PointXYZ point_3(0, 1, 0);
-
-  EXPECT_DOUBLE_EQ(floor_filter.EuclideanDistance(point_1, point_2), 1);
-  EXPECT_DOUBLE_EQ(floor_filter.EuclideanDistance(point_1, point_3), sqrt(2));
-}
-
 TEST(FindFloor, IntersectLines) {
   floor_filter::FloorFilter floor_filter;
   Eigen::ParametrizedLine<float, 3>::VectorType origin(0, 0, 0);

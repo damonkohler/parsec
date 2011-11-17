@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef FLOOR_FILTER_H
-#define FLOOR_FILTER_H
+#ifndef PARSEC_PERCEPTION_FLOOR_FILTER_H
+#define PARSEC_PERCEPTION_FLOOR_FILTER_H
 
 #include <vector>
 
@@ -23,13 +23,12 @@
 #include <pcl_ros/pcl_nodelet.h>
 #include <sensor_msgs/LaserScan.h>
 
-namespace floor_filter {
+namespace parsec_perception {
 
 class FloorFilter : public pcl_ros::PCLNodelet {
  public:
   FloorFilter()
     : PCLNodelet() {}
-
 
   /**
    * Checks if two vectors are (almost) parallel with respect to a
@@ -41,13 +40,6 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   bool VectorsParallel(const T& vector1, const T& vector2, double angle_threshold) {
     return fabs(vector1.dot(vector2) / (vector1.norm() * vector2.norm())) >= cos(angle_threshold);
   }
-
-  /**
-   * Calculates the Euclidean distance between two points.
-   *
-   * Public for testing.
-   */
-  double EuclideanDistance(const pcl::PointXYZ &point1, const pcl::PointXYZ &point2);
 
   /**
    * Calculates the intersection between two lines in
@@ -101,7 +93,6 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   virtual void onInit();
   
  private:
-  ros::Subscriber input_scan_subscriber_;
   ros::Subscriber input_cloud_subscriber_;
   ros::Publisher floor_cloud_publisher_;
   ros::Publisher filtered_cloud_publisher_;
@@ -153,8 +144,6 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * The reference frame in which we perform our processing. Default: odom
    */
   std::string reference_frame_;
-
-  void LaserCallback(const sensor_msgs::LaserScan::ConstPtr &scan);
 
   void CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
 
@@ -291,6 +280,6 @@ class FloorFilter : public pcl_ros::PCLNodelet {
 
 };
 
-}
+}  // namespace parsec_perception
 
-#endif  // FLOOR_FILTER_H
+#endif  // PARSEC_PERCEPTION_FLOOR_FILTER_H
