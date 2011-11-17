@@ -20,7 +20,7 @@
         args="load parsec_perception/FloorFilter parsec_perception_nodelet_manager">
     <remap from="~input" to="robot_self_filter/output" />
     <rosparam>
-      ransac_distance_threshold: 0.05
+      line_distance_threshold: 0.05
       sensor_frame: tilt_laser
       reference_frame: base_footprint
       max_floor_y_rotation: 0.05

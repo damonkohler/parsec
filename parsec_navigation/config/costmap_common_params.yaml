@@ -22,7 +22,10 @@ ground_object_cloud:
   observation_persistence: 5.0
   marking: true
   # Clearing is necessary to set voxels to free if the laser scanner
-  # clearly could see through it.
+  # clearly could see through it. This is in particular important for
+  # points on the floor because they are not cleared out by the
+  # tilt_laser observation source since the floor appears in the raw
+  # scan.
   clearing: true
   # To reduce the number of false positives, we set mark_threshould to
   # a non-zero value. It means that a column is only considered to be

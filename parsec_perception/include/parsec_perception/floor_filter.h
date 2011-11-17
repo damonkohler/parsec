@@ -46,9 +46,9 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * three-dimensional space. Note: the two lines must not be parallel
    * to the z axis.
    *
-   * @return true if a valid intersection could be found, false otherwise
-   *
    * Public for testing.
+   *
+   * @return true if a valid intersection could be found, false otherwise
    */
   bool IntersectLines(
       const Eigen::ParametrizedLine<float, 3> &line1, const Eigen::ParametrizedLine<float, 3> &line2,
@@ -78,13 +78,11 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   /**
    * Generates the indices of all points that are not in indices.
    *
-   * @param cloud_size the number of points in the point cloud
-   *
-   * @param indices the indices that should not be in the result
-   *
-   * @param difference cloud indices not in indices
-   *
    * Public for testing.
+   *
+   * @param cloud_size the number of points in the point cloud
+   * @param indices the indices that should not be in the result
+   * @param difference cloud indices not in indices
    */
   void GetIndicesDifference(size_t cloud_size, const std::vector<int> &indices,
                             std::vector<int> *difference);
@@ -93,6 +91,13 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   virtual void onInit();
   
  private:
+  static const double kDefaultFloorZDistance = 0.05;
+  static const double kMaxFloorYRotation = 0.035;  // 2 degrees
+  static const double kMaxFloorXRotation = 0.087;  // 5 degrees
+  static const double kLineDistanceThreshold = 0.03;
+  static const double kCliffDistanceThreshold = 0.1;
+  static const std::string kDefaultReferenceFrame;
+  
   ros::Subscriber input_cloud_subscriber_;
   ros::Publisher floor_cloud_publisher_;
   ros::Publisher filtered_cloud_publisher_;
@@ -101,7 +106,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   
   /**
    * The maximal distance from the x-y-planes points can have to be
-   * considered as floor candidates. Default: 0.05m
+   * considered as floor candidates.
    */
   double floor_z_distance_;
   
@@ -111,27 +116,27 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * are points that have a z coordinate of at most floor_z_distance
    * m, taking into account a maximal y rotation. I.e. points that are
    * further away can also be further away from the x-y-plane to still
-   * be considered as floor candidates. Default: 2 degrees
+   * be considered as floor candidates.
    */
   double max_floor_y_rotation_;
 
   /**
    * The maximal rotation around the x axis in radians the floor can
    * have before the floor line is rejected as a false
-   * positive. Default: 5 degrees
+   * positive.
    */
   double max_floor_x_rotation_;
   
   /**
    * Distance threshold for points to be considered as inliers. This
-   * parameter is directly used by PCL's ransac. Default: 0.03m
+   * parameter is directly used by PCL's ransac.
    */
-  double ransac_distance_threshold_;
+  double line_distance_threshold_;
 
   /**
    * Distance threshold for determining if a point is possibly a
    * cliff. Points that are further away from the floor line than this
-   * threshold are considered for cliff checking. Default: 0.03m
+   * threshold are considered for cliff checking.
    */
   double cliff_distance_threshold_;
 
@@ -141,7 +146,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   std::string sensor_frame_;
 
   /**
-   * The reference frame in which we perform our processing. Default: odom
+   * The reference frame in which we perform our processing.
    */
   std::string reference_frame_;
 
@@ -168,12 +173,9 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * line inliers.
    *
    * @param input_cloud the input cloud
-   * 
    * @param indices
    *     the indices of points in the input cloud to take into account
-   *
    * @param line the Eigen representation of the line
-   *
    * @param inlier_indices the indices of all points on the line
    */
   bool FindLine(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
@@ -186,14 +188,10 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * sensor plane doesn't intersect with the x-y-plane, returns false.
    *
    * @param input_cloud the input cloud
-   *
    * @param indices
    *     the indices of points in the input cloud to take into account
-   *
    * @param line the Eigen representation of the line
-   *
    * @param inlier_indices the indices of all points on the floor line
-   *   
    */
   bool GetFloorLine(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
                     const std::vector<int> &indices,
@@ -207,14 +205,10 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * the time input_indices was collected.
    *
    * @param floor_line the Eigen representation of the floor line
-   *
    * @param input_cloud input point cloud
-   *
    * @param input_indices
    *     indices of points in the input cloud to consider
-   *
    * @param cliff_cloud generated points indicating cliffs
-   *
    * @param cliff_indices indices in input_cloud indicating points
    *     that were used to generate cliff points, i.e. points below
    *     the floor

@@ -36,6 +36,8 @@
 
 namespace parsec_perception {
 
+const std::string FloorFilter::kDefaultReferenceFrame("base_link");
+
 void FloorFilter::onInit() {
   PCLNodelet::onInit();
   
@@ -43,14 +45,12 @@ void FloorFilter::onInit() {
     ROS_FATAL("Parameter 'sensor_frame' not found.");
     return;
   }
-  pnh_->param("reference_frame", reference_frame_, std::string("base_link"));
-  pnh_->param("floor_z_distance", floor_z_distance_, 0.05);
-  pnh_->param("max_floor_y_rotation", max_floor_y_rotation_,
-              static_cast<double>(2.0 * M_PI/180.0));
-  pnh_->param("max_floor_x_rotation", max_floor_x_rotation_,
-              static_cast<double>(5.0 * M_PI/180.0));
-  pnh_->param("ransac_distance_threshold", ransac_distance_threshold_, 0.03);
-  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, 1.0);
+  pnh_->param("reference_frame", reference_frame_, kDefaultReferenceFrame);
+  pnh_->param("floor_z_distance", floor_z_distance_, kDefaultFloorZDistance);
+  pnh_->param("max_floor_y_rotation", max_floor_y_rotation_, kMaxFloorYRotation);
+  pnh_->param("max_floor_x_rotation", max_floor_x_rotation_, kMaxFloorXRotation);
+  pnh_->param("line_distance_threshold", line_distance_threshold_, kLineDistanceThreshold);
+  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, kCliffDistanceThreshold);
       
   input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
       "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
@@ -141,7 +141,7 @@ bool FloorFilter::FindLine(
   ransac_line_finder.setOptimizeCoefficients(true);
   ransac_line_finder.setModelType(pcl::SACMODEL_LINE);
   ransac_line_finder.setMethodType(pcl::SAC_RANSAC);
-  ransac_line_finder.setDistanceThreshold(ransac_distance_threshold_);
+  ransac_line_finder.setDistanceThreshold(line_distance_threshold_);
   ransac_line_finder.setMaxIterations(100);
 
   ransac_line_finder.setInputCloud(input_cloud);
