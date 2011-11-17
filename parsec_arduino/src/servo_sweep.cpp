@@ -17,8 +17,6 @@
 
 #include <math.h>
 
-extern ros::NodeHandle node_handle;
-
 ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
   : servo_pin_(servo_pin),
     increasing_duration_(0),
@@ -29,6 +27,7 @@ ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
     max_servo_pwm_period_(0),
     min_servo_angle_(0.0f),
     max_servo_angle_(0.0f),
+    pwm_period_per_radian_(0),
     direction_(ANGLE_INCREASING),
     on_signal_(callback) {}
 
@@ -39,23 +38,36 @@ void ServoSweep::Attach() {
 void ServoSweep::SetParameters(
     unsigned int min_pwm_period, unsigned int max_pwm_period,
     float min_angle, float max_angle) {
+  // CHECK(min_angle >= 0);
+  // CHECK(max_angle >= min_angle);
   min_servo_pwm_period_ = min_pwm_period;
   max_servo_pwm_period_ = max_pwm_period;
   min_servo_angle_ = min_angle;
   max_servo_angle_ = max_angle;
+  pwm_period_per_radian_ = (max_servo_pwm_period_ - min_servo_pwm_period_) /
+      (max_servo_angle_ - min_servo_angle_);
+  // Move to the perpendicular position for a visual sanity check of the
+  // parameters.
+  SetPosition(0.0f);
+}
+
+void ServoSweep::SetPosition(float angle) {
+  unsigned int pwm_period =
+      min_servo_pwm_period_ - min_servo_angle_ * pwm_period_per_radian_;
+  servo_.writeMicroseconds(pwm_period);
 }
 
 void ServoSweep::SetProfile(float min_angle, float max_angle,
                             float increasing_duration, float decreasing_duration) {
   increasing_duration_ = increasing_duration * 1e6;
   decreasing_duration_ = decreasing_duration * 1e6;
-  unsigned int pwm_period_per_radian = (max_servo_pwm_period_ - min_servo_pwm_period_) /
-      (max_servo_angle_ - min_servo_angle_);
   // CHECK(max_angle >= min_angle);
   // CHECK(min_angle >= min_servo_angle_);
   // CHECK(max_angle <= max_servo_angle_);
-  min_pwm_period_ = (min_angle - min_servo_angle_) * pwm_period_per_radian + min_servo_pwm_period_;
-  max_pwm_period_ = (max_angle - min_servo_angle_) * pwm_period_per_radian + min_servo_pwm_period_;
+  min_pwm_period_ = (min_angle - min_servo_angle_) * pwm_period_per_radian_
+      + min_servo_pwm_period_;
+  max_pwm_period_ = (max_angle - min_servo_angle_) * pwm_period_per_radian_
+      + min_servo_pwm_period_;
 
   if (min_pwm_period_ < min_servo_pwm_period_) {
     min_pwm_period_ = min_servo_pwm_period_;
@@ -63,9 +75,6 @@ void ServoSweep::SetProfile(float min_angle, float max_angle,
   if (max_pwm_period_ > max_servo_pwm_period_) {
     max_pwm_period_ = max_servo_pwm_period_;
   }
-  char str[40];
-  sprintf(str, "Setting profile: %d %d", min_pwm_period_, max_pwm_period_);
-  node_handle.loginfo(str);
 }
 
 void ServoSweep::Update() {
@@ -74,7 +83,7 @@ void ServoSweep::Update() {
     return;
   }
 
-  // Map the current time into the interval [0, increasing_duration_).
+  // Map the current time into the interval [0, period).
   unsigned long long position =
       micros() % (increasing_duration_ + decreasing_duration_);
 
@@ -92,7 +101,9 @@ void ServoSweep::Update() {
     current_duration = decreasing_duration_;
   }
   // Map the variable position into the interval [min_pwm_period_, max_pwm_period_).
-  unsigned int pwm_period = min_pwm_period_ + position * (max_pwm_period_ - min_pwm_period_) / current_duration;
+  unsigned int pwm_range = max_pwm_period_ - min_pwm_period_;
+  unsigned int pwm_period =
+      min_pwm_period_ + position * pwm_range / current_duration;
   // We use writeMicroseconds for increased precision.
   servo_.writeMicroseconds(pwm_period);
 }

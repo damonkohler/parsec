@@ -71,12 +71,14 @@ class ServoSweep {
   unsigned int max_pwm_period_;  // maximal period in microseconds
   unsigned int min_servo_pwm_period_;  // minimum servo PWM period in radians
   unsigned int max_servo_pwm_period_;  // maximum servo PWM period in radians
+  unsigned int pwm_period_per_radian_;  // PWM period per radian
   float min_servo_angle_;  // minimum servo angle in radians
   float max_servo_angle_;  // maximum servo angle in radians
   Servo servo_;
   ServoDirection direction_;
   OnSignalCallback on_signal_;
 
+  void SetPosition(float angle);
   void SetDirection(ServoDirection new_direction);
 };
 

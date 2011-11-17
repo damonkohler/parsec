@@ -60,9 +60,17 @@ float PositionController::UpdateVelocity(float velocity) {
   unsigned long current_time = micros();
   float time_delta = (current_time - last_update_time_) * 1e-6f;
 
+  // TODO(damonkohler): Pull out maximum velocity into a constant/param.
+  float clamped_velocity;
+  if (velocity > 0) {
+    clamped_velocity = fmin(velocity, 1.0f);
+  } else {
+    clamped_velocity = fmax(velocity, -1.0f);
+  }
+
   // Adjust the target velocity according to our acceleration limit and maximum
   // velocity limit.
-  LimitAcceleration(velocity, time_delta);
+  LimitAcceleration(clamped_velocity, time_delta);
 
   // Find our expected position given the current target velocity.
   distance_error_ += time_delta * target_velocity_;
@@ -92,13 +100,7 @@ float PositionController::UpdateVelocity(float velocity) {
 }
 
 void PositionController::LimitAcceleration(float velocity, float time_delta) {
-  float clamped_velocity;
-  if (velocity > 0) {
-    clamped_velocity = fmin(velocity, 1.0f);
-  } else {
-    clamped_velocity = fmax(velocity, -1.0f);
-  }
-  float target_delta = clamped_velocity - target_velocity_;
+  float target_delta = velocity - target_velocity_;
   float max_delta = acceleration_ * time_delta;
   float delta;
   if (target_delta > 0) {
