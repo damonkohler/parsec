@@ -5,7 +5,7 @@
 
   </description>
   <author>Lorenz Moesenlechner</author>
-  <license>BSD</license>
+  <license>Apache 2.0</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/interactive_waypoint_markers</url>
   <depend package="rospy" />
