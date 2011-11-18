@@ -103,24 +103,25 @@ class ServoCalibrationRoutine(object):
 
   def _on_tilt_signal(self, signal):
     with self._lock:
+      # ignore the first signal if it is ANGLE_DECREASING because we
+      # always want to start with an ANGLE_INCREASING signal to get
+      # the phase offset parameter of the optimization right.
+      if (not self._tilt_signals and
+          signal.signal == parsec_msgs.LaserTiltSignal.ANGLE_DECREASING):
+        return
       self._tilt_signals.append(signal)
-      if len(self._tilt_signals) > 3:
-        self._tilt_signals = self._tilt_signals[-4:]
-      if self._tilt_signals[0].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING:
-        self._tilt_signals = self._tilt_signals[1:]
+    self._maybe_calculate_calibration()
 
   def _on_laser_scan(self, scan):
     self._scans.add_scan(scan)
-    self._maybe_calculate_calibration()
 
   def _calculate_calibration(self):
     with self._lock:
-      if len(self._tilt_signals) != 3:
+      if len(self._tilt_signals) < 2:
         raise CalibrationError(
-            'Invalid number of signals: %r. We need at exactly three signals.' %
+            'Invalid number of signals: %r. We need at exactly two signals.' %
             len(self._tilt_signals))
-      if (self._tilt_signals[0].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING or
-          self._tilt_signals[-1].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING):
+      if self._tilt_signals[0].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING:
         raise CalibrationError(
             'Invalid signals. The first and last signal need to be ANGLE_INCREASING.')
       if self._scans.get_newest_scan().header.stamp < self._tilt_signals[-1].header.stamp:
@@ -137,8 +138,10 @@ class ServoCalibrationRoutine(object):
       scan_parameter_finder = find_scan_parameters.FindScanParameters(
           sensor_distance_from_rotation_axis=_LASER_DISTANCE_FROM_ROTATION_AXIS)
       parameters = scan_parameter_finder.find_scan_parameters(
-          [scan.ranges[int(len(scan.ranges) / 2)] for scan in scans],
-          self._tilt_period / (end_time - start_time).to_sec())
+          [(scan.ranges[int(len(scan.ranges) / 2)],
+            (scan.header.stamp - start_time).to_sec())
+           for scan in scans],
+          self._tilt_period)
       current_result = CalibrationResult(
           parameters.low_angle, parameters.low_angle / self._minimum_angle,
           parameters.high_angle, parameters.high_angle / self._maximum_angle,

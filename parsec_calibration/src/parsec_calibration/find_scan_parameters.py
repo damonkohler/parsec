@@ -59,19 +59,36 @@ class FindScanParameters(object):
     self._initial_high_angle = initial_high_angle
     self._initial_phase_offset = initial_phase_offset
 
-  def find_scan_parameters(self, scans, periods=1.0):
-    mean_distance_from_plane = sum(scans) / len(scans)
+  def find_scan_parameters(self, scans, period_duration):
+    mean_distance_from_plane = sum(scan[0] for scan in scans) / len(scans)
     initial_parameters = [mean_distance_from_plane,
                           self._initial_low_angle,
                           self._initial_high_angle,
                           self._initial_phase_offset]
-    function = self._make_laser_error_function(scans, periods)
+    function = self._make_laser_error_function(scans, period_duration)
     result = scipy.optimize.leastsq(function, initial_parameters)
     distance_from_plane, low_angle, high_angle, phase_offset = result[0]
     return ScanParameters(low_angle, high_angle, phase_offset, distance_from_plane,
                           sum(v*v for v in function(list(result[0]))))
 
-  def _make_laser_error_function(self, scans, periods=1.0):
+  def _optimal_laser_distance(self, distance_from_plane, angle):
+    """Evaluates the optimal laser function at angle and returns the corresponding distance"""
+    return ((distance_from_plane - self._sensor_distance_from_rotation_axis * math.sin(angle)) /
+            math.cos(angle))
+
+  def _angle_at_time(self, parameters, period_duration, time):
+    """The angle function is a triangle starting at start_angle,
+    increasing until period_duration / 2 and decreasing until
+    end_angle again.
+    """
+    _, low_angle, high_angle, phase_offset = parameters
+    slope = (high_angle - low_angle) / (period_duration / 2)
+    x = math.fmod(time - phase_offset + period_duration, period_duration)
+    if x > period_duration / 2:
+        return high_angle - (x - period_duration / 2) * slope
+    return low_angle + x * slope
+
+  def _make_laser_error_function(self, scans, period_duration):
     """Returns a function for optimization.
 
     Returns a function used by the optimization algorithm. The function
@@ -79,14 +96,10 @@ class FindScanParameters(object):
     optimized and returns the squared error these parameters cause when
     compared to scans.
     """
-    def function(x):
-      distance_from_plane, low_angle, high_angle, phase_offset = x
-      sawtooth_values = [math.modf((float(i) / (len(scans) - 1.0)) * periods + phase_offset + 1)[0]
-                         for i in xrange(len(scans))]
-      sweep_0_to_1 = [2 * x if x < 0.5 else 2 - 2 * x for x in sawtooth_values]
-      angles = [x * high_angle + (1 - x) * low_angle for x in sweep_0_to_1]
-      return [scans[i] -
-              (distance_from_plane -
-               self._sensor_distance_from_rotation_axis * math.sin(angles[i])) /
-              math.cos(angles[i]) for i in xrange(len(scans))]
-    return function
+
+    def error_function(parameters):
+      distance_from_plane, low_angle, high_angle, phase_offset = parameters
+      return [scan - self._optimal_laser_distance(
+          distance_from_plane, self._angle_at_time(parameters, period_duration, time))
+              for scan, time in scans]
+    return error_function
