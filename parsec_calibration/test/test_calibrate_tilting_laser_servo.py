@@ -38,15 +38,15 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self._calibration_routine = servo_calibration_routine.ServoCalibrationRoutine(
         self._low_angle, self._high_angle, 4.0)
 
-    for scan in self._interpolate_laser_scans(
+    for scan in self._generate_laser_scans(
         self._wall_distance, self._low_angle, self._high_angle,
         start_time=0.0, end_time=2.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
-    for scan in self._interpolate_laser_scans(
+    for scan in self._generate_laser_scans(
         self._wall_distance, self._high_angle, self._low_angle,
         start_time=2.0, end_time=4.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
-    for scan in self._interpolate_laser_scans(
+    for scan in self._generate_laser_scans(
         self._wall_distance, self._low_angle, self._high_angle,
         start_time=4.0, end_time=6.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
@@ -67,7 +67,7 @@ class CalibrateTiltingServoTest(unittest.TestCase):
                                                decreasing_signal,
                                                increasing_signal_2]
 
-  def _interpolate_laser_scans(
+  def _generate_laser_scans(
       self, wall_distance, start_angle, end_angle, start_time, end_time, count):
     angle_delta = (end_angle - start_angle) / count
     delta_t = (end_time - start_time) / count
