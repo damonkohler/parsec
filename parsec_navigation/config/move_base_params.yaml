@@ -12,6 +12,8 @@ recovery_behaviors:
 
 # Configuration for recovery behaviors
 aggressive_reset:
+  # When doing an aggressive reset, remove all voxels from the
+  # costmap.
   reset_distance: 0.01
 
 # See also costmap_common_params.yaml for additional parameters set

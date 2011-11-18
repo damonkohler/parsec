@@ -14,6 +14,9 @@
 
 """Find scan parameters such as minimum angle, maximum angle and phase offset."""
 
+__author__ = ('whess@google.com (Wolfgang Hess),' +
+              'moesenle@google.com (Lorenz Moesenlechner)')
+
 import math
 import scipy.optimize
 
@@ -41,11 +44,11 @@ class ScanParameters(object):
 class FindScanParameters(object):
   """Calculates scan parameters such as minimum angle, maximum angle and phase offset.
 
-  This class takes a sequence numbers representing corresponding range
-  measurements along a complete tilt period, i.e. all distances
-  recorded while the laser rotates up and down exactly once. The
+  This class takes a sequence of numbers representing corresponding
+  range measurements along a complete tilt period, i.e. all distances
+  recorded while the laser tilts up and down exactly once. The
   algorithm assumes that the range measurements are taken by scanning
-  a vertical plane, i.e. the robot was facing a wall.
+  a vertical plane, i.e. the robot is facing a wall.
   """
 
   def __init__(self, sensor_distance_from_rotation_axis,

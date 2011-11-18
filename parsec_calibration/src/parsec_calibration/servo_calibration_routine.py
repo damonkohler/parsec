@@ -32,17 +32,25 @@ import parsec_msgs.msg as parsec_msgs
 _LASER_DISTANCE_FROM_ROTATION_AXIS = 0.033
 
 
+def _mean(values):
+  values = tuple(values)
+  return sum(values) / len(values)
+
+
+def _radians_to_degrees(angle):
+  return angle * 180 / math.pi
+
+
 def _print_results_mean(results, stream):
-  count = len(results)
-  low_angle_mean = sum(result.low_angle for result in results) / count
-  low_multiplier_mean = sum(result.low_multiplier for result in results) / count
-  high_angle_mean = sum(result.high_angle for result in results) / count
-  high_multiplier_mean = sum(result.high_multiplier for result in results) / count
-  phase_offset_mean = sum(result.phase_offset for result in results) / count
+  low_angle_mean = _mean(result.low_angle for result in results)
+  low_multiplier_mean = _mean(result.low_multiplier for result in results)
+  high_angle_mean = _mean(result.high_angle for result in results)
+  high_multiplier_mean = _mean(result.high_multiplier for result in results)
+  phase_offset_mean = _mean(result.phase_offset for result in results)
   stream.write('Low angle mean: %r, %r degrees, multiplier %r\n' % (
-    low_angle_mean, low_angle_mean * 180 / math.pi, low_multiplier_mean))
+    low_angle_mean, _radians_to_degrees(low_angle_mean), low_multiplier_mean))
   stream.write('High angle mean: %r, %r degrees, multiplier %r\n' % (
-    high_angle_mean, high_angle_mean * 180 / math.pi, high_multiplier_mean))
+    high_angle_mean, _radians_to_degrees(high_angle_mean), high_multiplier_mean))
   stream.write('Phase offset mean: %r\n' % phase_offset_mean)
 
 
@@ -62,9 +70,9 @@ class CalibrationResult(object):
   def write(self, stream):
     stream.write(
       'Calculated low angle %r, %r degrees, multiplier %r\n' % (
-          self.low_angle, self.low_angle * 180 / math.pi, self.low_multiplier) +
+          self.low_angle, _radians_to_degrees(self.low_angle), self.low_multiplier) +
       'Calculated high angle %r, %r degrees, multiplier %r\n' % (
-          self.high_angle, self.high_angle * 180 / math.pi, self.high_multiplier) +
+          self.high_angle, _radians_to_degrees(self.high_angle), self.high_multiplier) +
       'Phase offset %r\n' % self.phase_offset)
 
 
@@ -97,7 +105,7 @@ class ServoCalibrationRoutine(object):
     with self._lock:
       self._tilt_signals.append(signal)
       if len(self._tilt_signals) > 3:
-        self._tilt_signals = self._tilt_signals[-4:-1]
+        self._tilt_signals = self._tilt_signals[-4:]
       if self._tilt_signals[0].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING:
         self._tilt_signals = self._tilt_signals[1:]
 
