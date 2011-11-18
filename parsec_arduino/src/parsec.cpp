@@ -19,22 +19,24 @@
 #include <SPI.h>
 #include <WProgram.h>
 
-#include "servo_sweep.h"
+#include "arduino_hardware.h"
 #include "dogs102lcd.h"
 #include "geometry_msgs/Twist.h"
 #include "odometry.h"
 #include "parallax_ping.h"
+#include "parsec_msgs/LaserTiltProfile.h"
+#include "parsec_msgs/LaserTiltSignal.h"
 #include "parsec_msgs/Odometry.h"
 #include "position_controller.h"
 #include "profiler.h"
+#include "ros/node_handle.h"
+#include "ros/publisher.h"
 #include "rosgraph_msgs/Log.h"
-#include "ros.h"
 #include "sensor_msgs/Range.h"
+#include "servo_sweep.h"
 #include "shift_brite.h"
 #include "simple_led.h"
 #include "std_msgs/Time.h"
-#include "parsec_msgs/LaserTiltProfile.h"
-#include "parsec_msgs/LaserTiltSignal.h"
 
 // Please note that PUBLISH_JOINT_STATES needs to be defined also when
 // defining DEBUG_BASE_CONTROLLER.
@@ -58,7 +60,8 @@ inline float fmaxf(float x, float y) {
   return x > y ? x : y;
 }
 
-ros::NodeHandle node_handle;
+ArduinoHardware hardware;
+ros::NodeHandle node_handle(&hardware);
 
 void SendLogMessage(const char* message) {
   node_handle.logerror(message);

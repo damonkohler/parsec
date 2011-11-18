@@ -18,8 +18,6 @@
 
 #include <WProgram.h>
 
-#include "ros.h"
-
 class ServoSweep {
  public:
   typedef void (*OnSignalCallback)(int);
