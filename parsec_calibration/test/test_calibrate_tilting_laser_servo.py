@@ -50,6 +50,10 @@ class CalibrateTiltingServoTest(unittest.TestCase):
         self._wall_distance, self._low_angle, self._high_angle,
         start_time=4.0, end_time=6.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
+    for scan in self._generate_laser_scans(
+        self._wall_distance, self._high_angle, self._low_angle,
+        start_time=6.0, end_time=8.0, count=20):
+      self._calibration_routine._scans.add_scan(scan)
     
     increasing_signal_1 = parsec_msgs.LaserTiltSignal()
     increasing_signal_1.header.stamp = rospy.Time(0.0)
@@ -62,10 +66,15 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     increasing_signal_2 = parsec_msgs.LaserTiltSignal()
     increasing_signal_2.header.stamp = rospy.Time(4.0)
     increasing_signal_2.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
+
+    decreasing_signal_2 = parsec_msgs.LaserTiltSignal()
+    decreasing_signal_2.header.stamp = rospy.Time(6.0)
+    decreasing_signal_2.signal = parsec_msgs.LaserTiltSignal.ANGLE_DECREASING
     
     self._calibration_routine._tilt_signals = [increasing_signal_1,
                                                decreasing_signal,
-                                               increasing_signal_2]
+                                               increasing_signal_2,
+                                               decreasing_signal_2]
 
   def _generate_laser_scans(
       self, wall_distance, start_angle, end_angle, start_time, end_time, count):
@@ -96,13 +105,13 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self._calibration_routine._calculate_calibration()
     self.assertTrue(self._calibration_routine._calibration_results)
     self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].low_angle, self._low_angle, 2e-2)
+        self._calibration_routine._calibration_results[-1].low_angle, self._low_angle)
     self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].low_multiplier, 1, 2e-2)
+        self._calibration_routine._calibration_results[-1].low_multiplier, 1)
     self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].high_angle, self._high_angle, 2e-2)
+        self._calibration_routine._calibration_results[-1].high_angle, self._high_angle)
     self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].high_multiplier, 1, 2e-2)
+        self._calibration_routine._calibration_results[-1].high_multiplier, 1)
 
 
 if __name__ == '__main__':
