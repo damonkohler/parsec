@@ -39,19 +39,16 @@ class CalibrateTiltingServoTest(unittest.TestCase):
         self._low_angle, self._high_angle, 4.0)
 
     for scan in self._interpolate_laser_scans(
-        self._wall_distance, self._low_angle, 0, 0.0, 1.0, 20):
+        self._wall_distance, self._low_angle, self._high_angle,
+        start_time=0.0, end_time=2.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
     for scan in self._interpolate_laser_scans(
-        self._wall_distance, 0, self._high_angle, 1.0, 2.0, 20):
+        self._wall_distance, self._high_angle, self._low_angle,
+        start_time=2.0, end_time=4.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
     for scan in self._interpolate_laser_scans(
-        self._wall_distance, self._high_angle, 0, 2.0, 3.0, 20):
-      self._calibration_routine._scans.add_scan(scan)
-    for scan in self._interpolate_laser_scans(
-        self._wall_distance, 0, self._low_angle, 3.0, 4.0, 20):
-      self._calibration_routine._scans.add_scan(scan)
-    for scan in self._interpolate_laser_scans(
-        self._wall_distance, self._low_angle, 0, 4.0, 5.0, 20):
+        self._wall_distance, self._low_angle, self._high_angle,
+        start_time=4.0, end_time=6.0, count=20):
       self._calibration_routine._scans.add_scan(scan)
     
     increasing_signal_1 = parsec_msgs.LaserTiltSignal()

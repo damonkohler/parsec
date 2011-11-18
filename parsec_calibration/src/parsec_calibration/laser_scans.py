@@ -85,11 +85,17 @@ class LaserScanQueue(object):
       for first_scan_index, scan in enumerate(self._scans):
         if scan.header.stamp >= start_time:
           break
+      else:
+        raise IntervalInvalid('Start time not in interval.')
       for last_scan_index, scan in enumerate(self._scans[first_scan_index:],
                                              first_scan_index):
+        if scan.header.stamp == end_time:
+          return self._scans[first_scan_index:last_scan_index + 1]
         if scan.header.stamp > end_time:
-          break
-      return self._scans[first_scan_index:last_scan_index + 1]
+          return self._scans[first_scan_index:last_scan_index]
+      else:
+        raise IntervalInvalid('End time not in interval.')
+        
 
   def get_oldest_scan(self):
     if self._scans:

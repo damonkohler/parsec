@@ -46,12 +46,22 @@ class TestLaserScans(unittest.TestCase):
   def test_intervals(self):
     scans = self._scans.get_scans_in_interval(rospy.Time(0), rospy.Time(2))
     self.assertEqual(len(scans), 3)
-    scans = self._scans.get_scans_in_interval(rospy.Time(0), rospy.Time(3))
-    self.assertEqual(len(scans), 3)
-    scans = self._scans.get_scans_in_interval(rospy.Time(0.5), rospy.Time(2.5))
+    self.assertEqual(scans[0].header.stamp, rospy.Time(0))
+    self.assertEqual(scans[-1].header.stamp, rospy.Time(2))
+    
+    scans = self._scans.get_scans_in_interval(rospy.Time(0.5), rospy.Time(2.0))
     self.assertEqual(len(scans), 2)
     self.assertEqual(scans[0].header.stamp, rospy.Time(1))
     self.assertEqual(scans[1].header.stamp, rospy.Time(2))
+
+    scans = self._scans.get_scans_in_interval(rospy.Time(0.0), rospy.Time(1.5))
+    self.assertEqual(len(scans), 2)
+    self.assertEqual(scans[0].header.stamp, rospy.Time(0))
+    self.assertEqual(scans[1].header.stamp, rospy.Time(1))
+
+    scans = self._scans.get_scans_in_interval(rospy.Time(0.5), rospy.Time(1.5))
+    self.assertEqual(len(scans), 1)
+    self.assertEqual(scans[0].header.stamp, rospy.Time(1))
 
   def test_laser_scan_queue_lookup_scan_time(self):
     scan = self._scans.find_scan_at_time(rospy.Time(0))

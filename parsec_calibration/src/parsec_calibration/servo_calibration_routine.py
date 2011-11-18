@@ -123,7 +123,7 @@ class ServoCalibrationRoutine(object):
             'Oldest scan is newer than oldest signal.')
       start_time = self._scans.find_oldest_scan_after_time(
           self._tilt_signals[0].header.stamp).header.stamp
-      end_time = self._scans.find_newest_scan_before_time(
+      end_time = self._scans.find_oldest_scan_after_time(
           self._tilt_signals[-1].header.stamp).header.stamp
       scans = self._scans.get_scans_in_interval(start_time, end_time)
       scan_parameter_finder = find_scan_parameters.FindScanParameters(
