@@ -462,6 +462,7 @@ static const unsigned int kServoMaxPwmPeriod = 2100;
 static const float kServoMaxAngle = 1.25;
 
 void SetupServoSweep() {
+  servo_sweep.Attach();
   // NOTE(damonkohler): Servo PWM periods are typically between 500 and 2500.
   // The conversion later from signed to unsigned should be safe.
   int pwm_periods[2] = { kServoMinPwmPeriod, kServoMaxPwmPeriod };
@@ -469,7 +470,6 @@ void SetupServoSweep() {
   node_handle.getParam("~servo_pwm_periods", pwm_periods, 2);
   node_handle.getParam("~servo_angles", angles, 2);
   servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1], angles[0], angles[1]);
-  servo_sweep.Attach();
 
   char message[40];
   snprintf(message, 40, "Servo values: %d %d %d %d",
