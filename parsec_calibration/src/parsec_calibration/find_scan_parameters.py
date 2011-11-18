@@ -62,13 +62,13 @@ class FindScanParameters(object):
                           self._initial_low_angle,
                           self._initial_high_angle,
                           self._initial_phase_offset]
-    function = self._make_laser_function(scans, periods)
+    function = self._make_laser_error_function(scans, periods)
     result = scipy.optimize.leastsq(function, initial_parameters)
     distance_from_plane, low_angle, high_angle, phase_offset = result[0]
     return ScanParameters(low_angle, high_angle, phase_offset, distance_from_plane,
                           sum(v*v for v in function(list(result[0]))))
 
-  def _make_laser_function(self, scans, periods=1.0):
+  def _make_laser_error_function(self, scans, periods=1.0):
     """Returns a function for optimization.
 
     Returns a function used by the optimization algorithm. The function
