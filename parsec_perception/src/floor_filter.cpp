@@ -47,10 +47,10 @@ void FloorFilter::onInit() {
   }
   pnh_->param("reference_frame", reference_frame_, kDefaultReferenceFrame);
   pnh_->param("floor_z_distance", floor_z_distance_, kDefaultFloorZDistance);
-  pnh_->param("max_floor_y_rotation", max_floor_y_rotation_, kMaxFloorYRotation);
-  pnh_->param("max_floor_x_rotation", max_floor_x_rotation_, kMaxFloorXRotation);
-  pnh_->param("line_distance_threshold", line_distance_threshold_, kLineDistanceThreshold);
-  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, kCliffDistanceThreshold);
+  pnh_->param("max_floor_y_rotation", max_floor_y_rotation_, kDefaultMaxFloorYRotation);
+  pnh_->param("max_floor_x_rotation", max_floor_x_rotation_, kDefaultMaxFloorXRotation);
+  pnh_->param("line_distance_threshold", line_distance_threshold_, kDefaultLineDistanceThreshold);
+  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, kDefaultCliffDistanceThreshold);
       
   input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
       "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
@@ -185,7 +185,7 @@ bool FloorFilter::GetFloorLine(
   }
   else if (!VectorsParallel(line->direction(), y_axis, max_floor_x_rotation_)) {
     ROS_DEBUG("The angle between the found floor line and the x-y-plane above threshold."
-             "Rejecting the line and using the intersection between x-y-plane and sensor plane.");
+              "Rejecting the line and using the intersection between x-y-plane and sensor plane.");
     inlier_indices->clear();
     *line = sensor_floor_intersection_line;
   }
@@ -196,9 +196,9 @@ bool FloorFilter::FindSensorPlaneIntersection(
     const ros::Time &time, Eigen::ParametrizedLine<float, 3> *intersection_line) {
   Eigen::Hyperplane<float, 3> sensor_plane = GetSensorPlane(time);
   // The sensor plane and the floor plane will intersect behind the
-  // robot the x component of its normal is smaller than zero.
+  // robot when the x component of its normal is smaller than zero.
   if (sensor_plane.normal()(0) < 0) {
-    ROS_DEBUG("Intersection line between sensor and floor plane behind the robot.");
+    ROS_DEBUG("The sensor plane intersects the floor plane behind the robot.");
     return false;
   }  
   // Use intersection of the x-y-plane and the sensor plane to
