@@ -85,7 +85,8 @@ class MoveBaseProxy(object):
     self._interrupted = False
     goal_msg = move_base_msgs.MoveBaseGoal(target_pose=goal)
     self._move_base_action.send_goal(goal_msg)
-    while not self._move_base_action.wait_for_result(rospy.Duration(interrupt_poll_timeout)):
+    while not (self._move_base_action.wait_for_result(rospy.Duration(interrupt_poll_timeout)) or
+               rospy.is_shutdown()):
       if self._interrupted:
         self._move_base_action.cancel_goal()
         self._move_base_action.wait_for_result(
@@ -164,7 +165,7 @@ class NavWaypointsServer(object):
     with self._lock:
       self._pending = goal.waypoints
     try:
-      while True:
+      while not rospy.is_shutdown():
         try:
           with self._lock:
             if not self._pending:
