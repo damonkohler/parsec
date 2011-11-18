@@ -17,7 +17,6 @@
 
 #include <math.h>
 
-#include "ros.h"
 #include "parsec_msgs/Odometry.h"
 
 Odometry::Odometry()
@@ -51,7 +50,7 @@ void Odometry::UpdateFromWheels(
 }
 
 void Odometry::ToMessage(
-    const ros::NodeHandle &node_handle, parsec_msgs::Odometry *message) {
+    ros::NodeHandle &node_handle, parsec_msgs::Odometry *message) {
   message->header.stamp = node_handle.now();
   static char frame_id[] = "odom";
   message->header.frame_id = frame_id;

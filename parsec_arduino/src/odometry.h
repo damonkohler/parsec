@@ -18,7 +18,7 @@
 
 #include <math.h>
 
-#include "ros.h"
+#include "ros/node_handle.h"
 #include "parsec_msgs/Odometry.h"
 
 class Odometry {
@@ -32,7 +32,7 @@ class Odometry {
 
   // Puts the current odometry state into a message.
   void ToMessage(
-      const ros::NodeHandle &node_handle, parsec_msgs::Odometry *message);
+      ros::NodeHandle &node_handle, parsec_msgs::Odometry *message);
 
  private:
   float phi_;
