@@ -1,0 +1,33 @@
+obstacle_range: 2.5
+raytrace_range: 3.0
+robot_radius: 0.22
+inflation_radius: 0.4
+observation_sources: "base_laser tilt_laser ground_object_cloud"
+base_laser:
+  data_type: LaserScan
+  topic: /base_scan
+  marking: true
+  clearing: true
+  observation_persistance: 0.5
+tilt_laser:
+  data_type: LaserScan
+  topic: /tilt_scan
+  marking: false
+  clearing: true
+ground_object_cloud:
+  topic: /floor_filter/filtered_cloud_points1
+  data_type: PointCloud
+  expected_update_rate: 5.0
+  # observation_persistance is necessary when clearing is
+  # enabled. Otherwise, subsequent scans clear lower voxels too early.
+  observation_persistence: 5.0
+  marking: true
+  # Clearing is necessary to set voxels to free if the laser scanner
+  # clearly could see through it. This is particularly important for
+  # points on the floor will not be cleared out by the tilt_laser
+  # observation source since the floor appears in the raw scan.
+  clearing: true
+  # To reduce the number of false positives, we set mark_threshould to
+  # a non-zero value. It means that a column is only considered to be
+  # an obstacle if at least 2 cells are marked.
+  mark_threshold: 2

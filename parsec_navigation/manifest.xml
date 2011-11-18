@@ -1,0 +1,17 @@
+<package>
+  <description brief="parsec_navigation">
+
+     parsec_navigation
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_navigation</url>
+  <depend package="move_base" />
+  <depend package="base_local_planner" />
+  <depend package="navfn" />
+  <depend package="gmapping" />
+  <depend package="amcl" />
+  <depend package="parsec_perception" />  
+</package>
