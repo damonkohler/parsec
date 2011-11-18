@@ -17,9 +17,11 @@
 
 #include <math.h>
 
-ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
-  : servo_pin_(servo_pin),
-    increasing_duration_(0),
+bool ServoSweep::attached_ = false;
+const int ServoSweep::kPrescaler = 8;
+
+ServoSweep::ServoSweep(OnSignalCallback callback)
+  : increasing_duration_(0),
     decreasing_duration_(0),
     min_pwm_period_(0),
     max_pwm_period_(0),
@@ -32,7 +34,28 @@ ServoSweep::ServoSweep(int servo_pin, OnSignalCallback callback)
     on_signal_(callback) {}
 
 void ServoSweep::Attach() {
-  servo_.attach(servo_pin_);
+  // CHECK(!attached_);
+  attached_ = true;
+
+  // We use PWM pin 11, a.k.a. PB5, timer 1.
+  pinMode(11, OUTPUT);
+  // Prescaler 8 means the 16-bit timer can run for at most 32.768 ms before
+  // overflowing at 16 MHz.
+  unsigned long long frequency = F_CPU;
+  // Update the servo every 10 ms.
+  unsigned int max_timer_value = frequency * 10 / 1000 / kPrescaler - 1;
+  ICR1 = max_timer_value;
+  TCNT1 = 0;
+  // Initialize timer 1 Fast PWM with ICR1 as TOP (mode 14 = WGM13|WGM12|WGM11).
+  TCCR1B = _BV(CS11) | _BV(WGM13) | _BV(WGM12);  // kPrescaler == 8.
+  TCCR1A = _BV(COM1A1) | _BV(WGM11);  // Non-inverting mode.
+  UpdateMicroseconds(1500);
+}
+
+void ServoSweep::UpdateMicroseconds(unsigned int pulse_width) {
+  unsigned long long frequency = F_CPU;
+  unsigned int time_value = frequency * pulse_width / 1000000ul / kPrescaler;
+  OCR1A = time_value;
 }
 
 void ServoSweep::SetParameters(
@@ -48,13 +71,9 @@ void ServoSweep::SetParameters(
       (max_servo_angle_ - min_servo_angle_);
   // Move to the perpendicular position for a visual sanity check of the
   // parameters.
-  SetPosition(0.0f);
-}
-
-void ServoSweep::SetPosition(float angle) {
   unsigned int pwm_period =
       min_servo_pwm_period_ - min_servo_angle_ * pwm_period_per_radian_;
-  servo_.writeMicroseconds(pwm_period);
+  UpdateMicroseconds(pwm_period);
 }
 
 void ServoSweep::SetProfile(float min_angle, float max_angle,
@@ -104,8 +123,8 @@ void ServoSweep::Update() {
   unsigned int pwm_range = max_pwm_period_ - min_pwm_period_;
   unsigned int pwm_period =
       min_pwm_period_ + position * pwm_range / current_duration;
-  // We use writeMicroseconds for increased precision.
-  servo_.writeMicroseconds(pwm_period);
+
+  UpdateMicroseconds(pwm_period);
 }
 
 void ServoSweep::SetDirection(ServoDirection new_direction) {

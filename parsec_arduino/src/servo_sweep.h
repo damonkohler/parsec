@@ -16,19 +16,20 @@
 #ifndef PARSECLIB_SERVO_SWEEP_
 #define PARSECLIB_SERVO_SWEEP_
 
-#include <Servo.h>
 #include <WProgram.h>
 
 #include "ros.h"
 
 class ServoSweep {
  public:
-  typedef void(*OnSignalCallback)(int);
+  typedef void (*OnSignalCallback)(int);
 
-  ServoSweep(int servo_pin, OnSignalCallback callback=NULL);
+  ServoSweep(OnSignalCallback callback=NULL);
 
   /**
-   * Attaches the servo to the configured pin.
+   * Starts the timer interrupt based servo updates. Call this only once.
+   * We will always attach to pin 11 (a.k.a. PB5) for hardware PWM with
+   * timer 1.
    */
   void Attach();
 
@@ -61,25 +62,26 @@ class ServoSweep {
   // Set values in the enum here to match the signal in the
   // corresponding ROS message parsec_msgs/LaserTiltSignal.
   typedef enum {ANGLE_DECREASING=0, ANGLE_INCREASING=1} ServoDirection;
+  static const int kPrescaler;
 
-  int servo_pin_;
+  void SetDirection(ServoDirection new_direction);
+  void UpdateMicroseconds(unsigned int pulse_width);
+
+  static bool attached_;
+
   // duration to turn from min angle to max angle in microseconds
   unsigned long increasing_duration_;
   // duration to turn from max angle to min angle in microseconds
   unsigned long decreasing_duration_;
   unsigned int min_pwm_period_;  // minimal period in microseconds
   unsigned int max_pwm_period_;  // maximal period in microseconds
-  unsigned int min_servo_pwm_period_;  // minimum servo PWM period in radians
-  unsigned int max_servo_pwm_period_;  // maximum servo PWM period in radians
-  unsigned int pwm_period_per_radian_;  // PWM period per radian
+  unsigned int min_servo_pwm_period_;  // minimum servo PWM period in microseconds
+  unsigned int max_servo_pwm_period_;  // maximum servo PWM period in microseconds
+  unsigned int pwm_period_per_radian_;  // PWM period microseconds per radian
   float min_servo_angle_;  // minimum servo angle in radians
   float max_servo_angle_;  // maximum servo angle in radians
-  Servo servo_;
   ServoDirection direction_;
   OnSignalCallback on_signal_;
-
-  void SetPosition(float angle);
-  void SetDirection(ServoDirection new_direction);
 };
 
 #endif  // PARSECLIB_SERVO_SWEEP_
