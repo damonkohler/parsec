@@ -49,7 +49,6 @@ void ServoSweep::Attach() {
   // Initialize timer 1 Fast PWM with ICR1 as TOP (mode 14 = WGM13|WGM12|WGM11).
   TCCR1B = _BV(CS11) | _BV(WGM13) | _BV(WGM12);  // kPrescaler == 8.
   TCCR1A = _BV(COM1A1) | _BV(WGM11);  // Non-inverting mode.
-  UpdateMicroseconds(1500);
 }
 
 void ServoSweep::UpdateMicroseconds(unsigned int pulse_width) {
