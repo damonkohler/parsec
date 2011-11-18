@@ -433,7 +433,7 @@ void PublishLaserSignal(int signal) {
   tilt_signal_pub.publish(&tilt_signal);
 }
 
-ServoSweep servo_sweep(10, &PublishLaserSignal);  // PWM pin
+ServoSweep servo_sweep(&PublishLaserSignal);  // Using pin 11 and timer 1.
 
 void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) {
   servo_sweep.SetProfile(tilt_profile_msg.min_angle, tilt_profile_msg.max_angle,
@@ -589,7 +589,9 @@ void setup() {
 void loop() {
   LoopDisplay();
   LoopROSSerial();
+  LoopServoSweep();
   LoopPositionController();
+  LoopServoSweep();
   PublishJointState();
   LoopUltrasonic();
   LoopShiftBrite();
