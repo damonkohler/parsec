@@ -68,7 +68,9 @@ class FindScanParameters(object):
     function = self._make_laser_error_function(scans, period_duration)
     result = scipy.optimize.leastsq(function, initial_parameters)
     distance_from_plane, low_angle, high_angle, phase_offset = result[0]
-    return ScanParameters(low_angle, high_angle, phase_offset, distance_from_plane,
+    return ScanParameters(low_angle, high_angle,
+                          (phase_offset / period_duration),
+                          distance_from_plane,
                           sum(v*v for v in function(list(result[0]))))
 
   def _optimal_laser_distance(self, distance_from_plane, angle):
@@ -83,7 +85,7 @@ class FindScanParameters(object):
     """
     _, low_angle, high_angle, phase_offset = parameters
     slope = (high_angle - low_angle) / (period_duration / 2)
-    x = math.fmod(time - phase_offset + period_duration, period_duration)
+    x = math.fmod(time + phase_offset + period_duration, period_duration)
     if x > period_duration / 2:
         return high_angle - (x - period_duration / 2) * slope
     return low_angle + x * slope

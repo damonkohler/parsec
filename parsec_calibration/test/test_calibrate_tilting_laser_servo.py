@@ -34,6 +34,7 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self._low_angle = -math.pi / 4
     self._high_angle = math.pi / 4
     self._wall_distance = 10
+    self._phase_offset = 0.1
     
     self._calibration_routine = servo_calibration_routine.ServoCalibrationRoutine(
         self._low_angle, self._high_angle, 4.0)
@@ -56,19 +57,19 @@ class CalibrateTiltingServoTest(unittest.TestCase):
       self._calibration_routine._scans.add_scan(scan)
     
     increasing_signal_1 = parsec_msgs.LaserTiltSignal()
-    increasing_signal_1.header.stamp = rospy.Time(0.0)
+    increasing_signal_1.header.stamp = rospy.Time(0.0 + self._phase_offset)
     increasing_signal_1.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
 
     decreasing_signal = parsec_msgs.LaserTiltSignal()
-    decreasing_signal.header.stamp = rospy.Time(2.0)
+    decreasing_signal.header.stamp = rospy.Time(2.0 + self._phase_offset)
     decreasing_signal.signal = parsec_msgs.LaserTiltSignal.ANGLE_DECREASING
 
     increasing_signal_2 = parsec_msgs.LaserTiltSignal()
-    increasing_signal_2.header.stamp = rospy.Time(4.0)
+    increasing_signal_2.header.stamp = rospy.Time(4.0 + self._phase_offset)
     increasing_signal_2.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
 
     decreasing_signal_2 = parsec_msgs.LaserTiltSignal()
-    decreasing_signal_2.header.stamp = rospy.Time(6.0)
+    decreasing_signal_2.header.stamp = rospy.Time(6.0 + self._phase_offset)
     decreasing_signal_2.signal = parsec_msgs.LaserTiltSignal.ANGLE_DECREASING
     
     self._calibration_routine._tilt_signals = [increasing_signal_1,
@@ -105,13 +106,18 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self._calibration_routine._calculate_calibration()
     self.assertTrue(self._calibration_routine._calibration_results)
     self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].low_angle, self._low_angle)
+        self._calibration_routine._calibration_results[-1].low_angle,
+        self._low_angle)
     self.assertAlmostEqual(
         self._calibration_routine._calibration_results[-1].low_multiplier, 1)
     self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].high_angle, self._high_angle)
+        self._calibration_routine._calibration_results[-1].high_angle,
+        self._high_angle)
     self.assertAlmostEqual(
         self._calibration_routine._calibration_results[-1].high_multiplier, 1)
+    self.assertAlmostEqual(
+        self._calibration_routine._calibration_results[-1].phase_offset,
+        self._phase_offset)
 
 
 if __name__ == '__main__':
