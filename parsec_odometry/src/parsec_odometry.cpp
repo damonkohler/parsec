@@ -59,48 +59,62 @@ ParsecOdometry::ParsecOdometry(const ros::NodeHandle &nh)
 
 void ParsecOdometry::ParsecOdometryCallback(
     const parsec_msgs::Odometry::ConstPtr &parsec_odometry) {
-  // If we are getting laser scans and we see a time difference
-  // between subsequent odometry messages, invalidate the correction
-  // transform to recalculate it.
-  if (last_parsec_odometry_ && last_valid_laser_scan_ &&
-      parsec_odometry->header.stamp - last_parsec_odometry_->header.stamp >
-      ros::Duration(1 / minimal_odometry_rate_)) {
-    correction_transform_.reset();
-    ROS_INFO("Time difference between two succeeding odometry messages too large. "
-             "Recalculating error correction.");
-    return;
-  }
   if (!correction_transform_) {
     return;
   }
-  last_parsec_odometry_ = parsec_odometry;
-  nav_msgs::Odometry odometry;
-  ConvertAndCorrectParsecOdometry(*parsec_odometry, *correction_transform_, &odometry);
+  // If we are getting laser scans and we see a time difference
+  // between subsequent odometry messages, invalidate the correction
+  // transform to recalculate it.
+  if (last_corrected_odometry_ && last_valid_laser_cloud_ &&
+      parsec_odometry->header.stamp - last_corrected_odometry_->header.stamp >
+      ros::Duration(1 / minimal_odometry_rate_)) {
+    correction_transform_.reset();
+    ROS_INFO("Time difference between two succeeding odometry messages too big. "
+             "Recalculating error correction.");
+    return;
+  }
+  nav_msgs::Odometry::Ptr odometry(new nav_msgs::Odometry());
+  ConvertAndCorrectParsecOdometry(*parsec_odometry, *correction_transform_, odometry.get());
   odometry_publisher_.publish(odometry);
+  last_corrected_odometry_ = odometry;  
   if (publish_tf_) {
     tf::StampedTransform transform;
-    OdometryToTransform(odometry, &transform);
+    OdometryToTransform(*odometry, &transform);
     tf_broadcaster_.sendTransform(transform);
   }
 }
 
 void ParsecOdometry::LaserCallback(const sensor_msgs::LaserScan::ConstPtr &laser_scan) {
-  if (!last_parsec_odometry_) {
+  laser_geometry::LaserProjection laser_projection;
+
+  sensor_msgs::PointCloud2 scan_cloud;
+  try {
+    laser_projection.transformLaserScanToPointCloud(base_frame_, *laser_scan, scan_cloud, tf_);
+  } catch (tf::TransformException &e) {
+    ROS_WARN("Couldn't transform laser scan into base frame: %s", base_frame_.c_str());
     return;
   }
-  if (!last_valid_laser_scan_) {
+  
+  if (!last_corrected_odometry_) {
+    return;
+  }
+  if (!last_valid_laser_cloud_) {
     // Only initialize the last scan if it is approximately as old as the
     // last odometry message we received.
-    if (last_parsec_odometry_->header.stamp - laser_scan->header.stamp <
+    if (last_corrected_odometry_->header.stamp - scan_cloud.header.stamp <
         ros::Duration(1 / minimal_odometry_rate_)) {
-      last_valid_laser_scan_ = laser_scan;
+      last_valid_laser_cloud_ = sensor_msgs::PointCloud2::Ptr(
+          new sensor_msgs::PointCloud2(scan_cloud));
     }
     return;
   }
-  if (!correction_transform_ && last_valid_laser_scan_) {
-    tf::Transform new_correction_transform;
-    if (CalculateCorrectionTransform(*last_valid_laser_scan_, *laser_scan,
-                                     &new_correction_transform)) {
+  if (!correction_transform_ && last_valid_laser_cloud_) {
+    tf::Transform laser_transform;
+    tf::StampedTransform odometry_transform;
+    OdometryToTransform(*last_corrected_odometry_, &odometry_transform);
+    if (CalculateCorrectionTransform(*last_valid_laser_cloud_, scan_cloud,
+                                     &laser_transform)) {
+      tf::Transform new_correction_transform = odometry_transform * laser_transform;
       ROS_INFO("Calculated new correction transform: (%f, %f, %f), (%f, %f, %f, %f)",
                new_correction_transform.getOrigin().x(),
                new_correction_transform.getOrigin().y(),
@@ -110,11 +124,16 @@ void ParsecOdometry::LaserCallback(const sensor_msgs::LaserScan::ConstPtr &laser
                new_correction_transform.getRotation().z(),
                new_correction_transform.getRotation().w());
       correction_transform_.reset(new tf::Transform(new_correction_transform));
+      // Clear the old odometry to make the callback publish odometry
+      // again.
+      last_corrected_odometry_.reset();
+      return;
     }
   }
-  if (fabs((last_valid_laser_scan_->header.stamp - last_parsec_odometry_->header.stamp).toSec()) >
-      fabs((laser_scan->header.stamp - last_parsec_odometry_->header.stamp).toSec())) {
-    last_valid_laser_scan_ = laser_scan;
+  if (fabs((last_valid_laser_cloud_->header.stamp - last_corrected_odometry_->header.stamp).toSec()) >
+      fabs((scan_cloud.header.stamp - last_corrected_odometry_->header.stamp).toSec())) {
+    last_valid_laser_cloud_ = sensor_msgs::PointCloud2::Ptr(
+        new sensor_msgs::PointCloud2(scan_cloud));
   }
 }
 
@@ -172,7 +191,7 @@ void ParsecOdometry::CorrectOdometry(
     nav_msgs::Odometry *odometry) {
   tf::StampedTransform odometry_transform;
   OdometryToTransform(uncorrected_odometry, &odometry_transform);
-  tf::Transform corrected_odometry_transform = odometry_transform * transform;
+  tf::Transform corrected_odometry_transform = transform * odometry_transform;
   TransformToOdometry(
       tf::StampedTransform(corrected_odometry_transform, odometry_transform.stamp_,
                            odometry_transform.frame_id_, odometry_transform.child_frame_id_)
@@ -182,29 +201,25 @@ void ParsecOdometry::CorrectOdometry(
 }
 
 bool ParsecOdometry::CalculateCorrectionTransform(
-    const sensor_msgs::LaserScan &old_scan, const sensor_msgs::LaserScan &new_scan,
+    const sensor_msgs::PointCloud2 &old_cloud_msg,
+    const sensor_msgs::PointCloud2 &new_cloud_msg,
     tf::Transform *transform) {
-  laser_geometry::LaserProjection laser_projection;
-
-  sensor_msgs::PointCloud2 old_cloud_msg;
-  laser_projection.transformLaserScanToPointCloud(base_frame_, old_scan, old_cloud_msg, tf_);
   pcl::PointCloud<pcl::PointXYZ>::Ptr old_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(old_cloud_msg, *old_cloud);
   
-  sensor_msgs::PointCloud2 new_cloud_msg;
-  laser_projection.transformLaserScanToPointCloud(base_frame_, new_scan, new_cloud_msg, tf_);
   pcl::PointCloud<pcl::PointXYZ>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(new_cloud_msg, *new_cloud);
 
-  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> ipc;
-  ipc.setInputCloud(old_cloud);
-  ipc.setInputTarget(new_cloud);
+  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setMaximumIterations(50);
+  icp.setInputCloud(old_cloud);
+  icp.setInputTarget(new_cloud);
 
-  // We actually don't use the variable new_cloud_in_old but ipc.align
+  // We actually don't use the variable new_cloud_in_old but icp.align
   // needs it.
   pcl::PointCloud<pcl::PointXYZ> new_cloud_in_old;
-  ipc.align(new_cloud_in_old);
-  MatrixToTransfrom(ipc.getFinalTransformation(), transform);
+  icp.align(new_cloud_in_old);
+  MatrixToTransfrom(icp.getFinalTransformation(), transform);
   
   return true;
 }

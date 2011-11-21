@@ -21,6 +21,7 @@
 #include <nav_msgs/Odometry.h>
 #include <parsec_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
@@ -46,8 +47,8 @@ class ParsecOdometry {
   ros::Subscriber parsec_odometry_subscriber_;
   ros::Subscriber laser_subscriber_;
   ros::Publisher odometry_publisher_;
-  parsec_msgs::Odometry::ConstPtr last_parsec_odometry_;
-  sensor_msgs::LaserScan::ConstPtr last_valid_laser_scan_;
+  nav_msgs::Odometry::ConstPtr last_corrected_odometry_;
+  sensor_msgs::PointCloud2::ConstPtr last_valid_laser_cloud_;
   boost::shared_ptr<tf::Transform> correction_transform_;
 
   void ParsecOdometryCallback(const parsec_msgs::Odometry::ConstPtr &parsec_odometry);
@@ -62,9 +63,9 @@ class ParsecOdometry {
   void CorrectOdometry(
       const nav_msgs::Odometry &uncorrected_odometry, const tf::Transform &transform,
       nav_msgs::Odometry *odometry);
-  bool CalculateCorrectionTransform(
-      const sensor_msgs::LaserScan &old_scan, const sensor_msgs::LaserScan &new_scan,
-      tf::Transform *transform);
+  bool CalculateCorrectionTransform(const sensor_msgs::PointCloud2 &old_cloud_msg,
+                                    const sensor_msgs::PointCloud2 &new_cloud_msg,
+                                    tf::Transform *transform);
 };
 
 }  // parsec_odometry
