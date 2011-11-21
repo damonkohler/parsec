@@ -327,7 +327,7 @@ PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius);
 
 static void SetupPositionControllers() {
-  float gain = 0.3f;
+  float gain = 0.05f;
   float acceleration = 1.0f;
   node_handle.getParam("~gain", &gain);
   node_handle.getParam("~acceleration", &acceleration);
@@ -395,8 +395,8 @@ static void PublishJointState() {
   if (micros() - last_joint_state_message > 80000ul) {
     float position[] = { left_controller.GetLastPosition(),
                          right_controller.GetLastPosition() };
-    float velocity[] = { left_controller.GetLastVelocity(),
-                         right_controller.GetLastVelocity() };
+    float velocity[] = { left_controller.GetTargetVelocity(),
+                         right_controller.GetTargetVelocity() };
     // Note: this is actually not correct. We needed to use the time of
     // the last position/velocity measurements instead of current time.
     joint_state_message.header.stamp = node_handle.now();
