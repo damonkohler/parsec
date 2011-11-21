@@ -10,10 +10,12 @@
       laser_topic: tilt_scan
   </rosparam>
 
-  <node name="parsec_odometry_relay" type="odometry_relay.py" pkg="parsec_odometry_relay">
-    <remap from="~correction_pose" to="correction_pose_scan_matcher/pose" />
+  <node name="parsec_odometry" type="parsec_odometry" pkg="parsec_odometry">
+    <remap from="~odom_simple" to="/odom_simple" />
+    <remap from="~odom" to="/odom" />
+    <remap from="~scan" to="/base_scan" />
     <rosparam>
-      base_frame_id: base_footprint
+      base_frame: base_footprint
     </rosparam>
   </node>
   <node name="parsec_state_publisher" type="state_publisher" pkg="robot_state_publisher" />
