@@ -33,7 +33,6 @@ PositionController::PositionController(
       travel_goal_(0),
       last_update_time_(0),
       target_velocity_(0.0f),
-      last_velocity_cmd_(0.0f),
       distance_error_(0.0f),
       gain_(0.0f),
       acceleration_(0.0f),
@@ -68,19 +67,20 @@ float PositionController::UpdateVelocity(float velocity) {
     clamped_velocity = fmax(velocity, -1.0f);
   }
 
+  // Add the distance to our expected position given the current requested
+  // velocity to the current error.
+  distance_error_ += time_delta * clamped_velocity;
+
+  // Correct velocity via our P controller.
+  float corrected_velocity = clamped_velocity + gain_ * distance_error_;
+
   // Adjust the target velocity according to our acceleration limit and maximum
   // velocity limit.
-  LimitAcceleration(clamped_velocity, time_delta);
-
-  // Find our expected position given the current target velocity.
-  distance_error_ += time_delta * target_velocity_;
-
-  // Control the current speed via our P controller.
-  last_velocity_cmd_ = target_velocity_ + gain_ * distance_error_;
-  float speed = last_velocity_cmd_ * 2.864788975f /* $9/\pi$ */ / wheel_radius_;
+  LimitAcceleration(corrected_velocity, time_delta);
 
   // Find the actual change in position, set direction of travel, and set speed.
   int delta;
+  float speed = target_velocity_ * 2.864788975f /* $9/\pi$ */ / wheel_radius_;
   if (speed < 0) {
     delta = TravelFromHere(-100);
     speed = -speed;
@@ -89,7 +89,8 @@ float PositionController::UpdateVelocity(float velocity) {
   } else if (speed == 0) {
     delta = TravelFromHere(0);
   }
-  SetSpeedMaximum(speed < kMaximumSpeed ? floor(speed + .5f) : kMaximumSpeed);
+  // Round up aggresively so that a velocity of 0.0027 m/s results in a speed of 1.
+  SetSpeedMaximum(speed < kMaximumSpeed ? floor(speed + 0.9f) : kMaximumSpeed);
 
   // Update distance error using actual distance traveled.
   float actual_distance = 1.745329252e-1f /* \pi/18 */ * wheel_radius_ * delta;
