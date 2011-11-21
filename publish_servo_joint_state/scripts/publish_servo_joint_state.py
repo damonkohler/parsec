@@ -125,8 +125,15 @@ class PublishServoJointState(object):
 
   def _on_laser_profile(self, profile):
     with self._lock:
+      # only reset the signal if the profile changed
+      if (self._profile is None or
+          self._profile.min_angle != profile.min_angle or
+          self._profile.max_angle != profile.max_angle or
+          self._profile.increasing_duration != profile.increasing_duration or
+          self._profile.decreasing_duration != profile.decreasing_duration):
+        self._signal = None
+
       self._profile = profile
-      self._signal = None
       self._increasing_velocity = self._calculate_velocity(self._profile.min_angle, self._profile.max_angle,
                                                            self._profile.increasing_duration)
       self._decreasing_velocity = self._calculate_velocity(self._profile.max_angle, self._profile.min_angle,
