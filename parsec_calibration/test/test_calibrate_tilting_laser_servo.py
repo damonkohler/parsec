@@ -103,21 +103,13 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self.assertTrue(abs(lhs - rhs) < error, msg=message)
     
   def test_laser_scan_calibration(self):
-    self._calibration_routine._calculate_calibration()
-    self.assertTrue(self._calibration_routine._calibration_results)
-    self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].low_angle,
-        self._low_angle)
-    self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].low_multiplier, 1)
-    self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].high_angle,
-        self._high_angle)
-    self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].high_multiplier, 1)
-    self.assertAlmostEqual(
-        self._calibration_routine._calibration_results[-1].phase_offset,
-        self._phase_offset)
+    calibration_result = self._calibration_routine._calculate_calibration()
+    self.assertTrue(calibration_result)
+    self.assertAlmostEqual(calibration_result.low_angle, self._low_angle)
+    self.assertAlmostEqual(calibration_result.low_multiplier, 1)
+    self.assertAlmostEqual(calibration_result.high_angle, self._high_angle)
+    self.assertAlmostEqual(calibration_result.high_multiplier, 1)
+    self.assertAlmostEqual(calibration_result.phase_offset, self._phase_offset)
 
 
 if __name__ == '__main__':
