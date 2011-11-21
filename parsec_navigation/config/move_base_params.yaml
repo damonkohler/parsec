@@ -1,5 +1,3 @@
-planner_patience: 2.5
-controller_patience: 2.5
 controller_frequency: 20.0
 base_local_planner: dwa_local_planner/DWAPlannerROS
 recovery_behaviors:
