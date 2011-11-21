@@ -1,0 +1,20 @@
+<package>
+  <description brief="parsec_odometry">
+
+     parsec_odometry
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/parsec_odometry</url>
+  <depend package="roscpp" />
+  <depend package="pcl" />
+  <depend package="laser_geometry" />
+  <depend package="tf" />
+  <depend package="parsec_msgs" />
+  <depend package="nav_msgs" />
+  <depend package="sensor_msgs" />
+  <depend package="eigen" />
+
+</package>
