@@ -41,19 +41,6 @@ def _radians_to_degrees(angle):
   return angle * 180 / math.pi
 
 
-def _print_results_mean(results, stream):
-  low_angle_mean = _mean(result.low_angle for result in results)
-  low_multiplier_mean = _mean(result.low_multiplier for result in results)
-  high_angle_mean = _mean(result.high_angle for result in results)
-  high_multiplier_mean = _mean(result.high_multiplier for result in results)
-  phase_offset_mean = _mean(result.phase_offset for result in results)
-  stream.write('Low angle mean: %r, %r degrees, multiplier %r\n' % (
-    low_angle_mean, _radians_to_degrees(low_angle_mean), low_multiplier_mean))
-  stream.write('High angle mean: %r, %r degrees, multiplier %r\n' % (
-    high_angle_mean, _radians_to_degrees(high_angle_mean), high_multiplier_mean))
-  stream.write('Phase offset mean: %r\n' % phase_offset_mean)
-
-
 class CalibrationError(Exception):
   pass
 
@@ -86,9 +73,11 @@ class ServoCalibrationRoutine(object):
     self._tilt_period = tilt_period
     self._tilt_signals = []
     self._scans = laser_scans.LaserScanQueue()
-    self._calibration_results = []
+    self._last_calibration_time = None
+    self._stream = None
 
-  def run(self):
+  def run(self, stream=sys.stdout):
+    self._stream = stream
     self._tilt_profile_publisher = rospy.Publisher(
         '~profile', parsec_msgs.LaserTiltProfile, latch=True)
     self._tilt_signal_subscriber = rospy.Subscriber(
@@ -109,11 +98,16 @@ class ServoCalibrationRoutine(object):
       if (not self._tilt_signals and
           signal.signal == parsec_msgs.LaserTiltSignal.ANGLE_DECREASING):
         return
+      # Don't accept the signal if we didn't receive a laser scan that
+      # is older than the signal yet.
+      oldest_scan = self._scans.get_oldest_scan()
+      if oldest_scan and oldest_scan.header.stamp > signal.header.stamp:
+        return
       self._tilt_signals.append(signal)
-    self._maybe_calculate_calibration()
 
   def _on_laser_scan(self, scan):
     self._scans.add_scan(scan)
+    self._maybe_calculate_calibration()
 
   def _calculate_calibration(self):
     with self._lock:
@@ -123,7 +117,7 @@ class ServoCalibrationRoutine(object):
             len(self._tilt_signals))
       if self._tilt_signals[0].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING:
         raise CalibrationError(
-            'Invalid signals. The first and last signal need to be ANGLE_INCREASING.')
+            'Invalid signals. The first signal needs to be ANGLE_INCREASING.')
       if self._scans.get_newest_scan().header.stamp < self._tilt_signals[-1].header.stamp:
         raise CalibrationError(
             'Newest scan is older than newest signal.')
@@ -146,20 +140,24 @@ class ServoCalibrationRoutine(object):
           parameters.low_angle, parameters.low_angle / self._minimum_angle,
           parameters.high_angle, parameters.high_angle / self._maximum_angle,
           phase_offset = parameters.phase_offset * self._tilt_period)
-      current_result.write(sys.stdout)
-      self._calibration_results.append(current_result)
-      self._tilt_signals = self._tilt_signals[2:]
-      _print_results_mean(self._calibration_results, sys.stdout)
-      sys.stdout.write('\n')
+      if self._stream:
+        current_result.write(self._stream)
+        self._stream.write('\n')
+      self._last_calibration_time = end_time
+      return current_result
 
   def _maybe_calculate_calibration(self):
     with self._lock:
-      if len(self._tilt_signals) < 3:
-        return
-      if self._tilt_signals[0].signal != parsec_msgs.LaserTiltSignal.ANGLE_INCREASING:
+      if len(self._tilt_signals) < 2:
+        rospy.logdebug('Cannot calibrate. Not enough signals received. Need at least two.')
         return
       if self._scans.get_newest_scan().header.stamp < self._tilt_signals[-1].header.stamp:
+        rospy.logdebug('Cannot calibrate. Newest scan older than newest signal.')
         return
       if self._scans.get_oldest_scan().header.stamp > self._tilt_signals[0].header.stamp:
+        rospy.logdebug('Cannot calibrate. Oldest scan newer thanoldest signal.')
+        return
+      if (self._last_calibration_time is not None and
+          self._last_calibration_time >= self._tilt_signals[-1].header.stamp):
         return
     self._calculate_calibration()
