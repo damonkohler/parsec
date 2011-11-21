@@ -34,49 +34,8 @@ class CalibrateTiltingServoTest(unittest.TestCase):
     self._low_angle = -math.pi / 4
     self._high_angle = math.pi / 4
     self._wall_distance = 10
-    self._phase_offset = 0.1
+    self._scan_count_per_period = 20
     
-    self._calibration_routine = servo_calibration_routine.ServoCalibrationRoutine(
-        self._low_angle, self._high_angle, 4.0)
-
-    for scan in self._generate_laser_scans(
-        self._wall_distance, self._low_angle, self._high_angle,
-        start_time=0.0, end_time=2.0, count=20):
-      self._calibration_routine._scans.add_scan(scan)
-    for scan in self._generate_laser_scans(
-        self._wall_distance, self._high_angle, self._low_angle,
-        start_time=2.0, end_time=4.0, count=20):
-      self._calibration_routine._scans.add_scan(scan)
-    for scan in self._generate_laser_scans(
-        self._wall_distance, self._low_angle, self._high_angle,
-        start_time=4.0, end_time=6.0, count=20):
-      self._calibration_routine._scans.add_scan(scan)
-    for scan in self._generate_laser_scans(
-        self._wall_distance, self._high_angle, self._low_angle,
-        start_time=6.0, end_time=8.0, count=20):
-      self._calibration_routine._scans.add_scan(scan)
-    
-    increasing_signal_1 = parsec_msgs.LaserTiltSignal()
-    increasing_signal_1.header.stamp = rospy.Time(0.0 + self._phase_offset)
-    increasing_signal_1.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
-
-    decreasing_signal = parsec_msgs.LaserTiltSignal()
-    decreasing_signal.header.stamp = rospy.Time(2.0 + self._phase_offset)
-    decreasing_signal.signal = parsec_msgs.LaserTiltSignal.ANGLE_DECREASING
-
-    increasing_signal_2 = parsec_msgs.LaserTiltSignal()
-    increasing_signal_2.header.stamp = rospy.Time(4.0 + self._phase_offset)
-    increasing_signal_2.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
-
-    decreasing_signal_2 = parsec_msgs.LaserTiltSignal()
-    decreasing_signal_2.header.stamp = rospy.Time(6.0 + self._phase_offset)
-    decreasing_signal_2.signal = parsec_msgs.LaserTiltSignal.ANGLE_DECREASING
-    
-    self._calibration_routine._tilt_signals = [increasing_signal_1,
-                                               decreasing_signal,
-                                               increasing_signal_2,
-                                               decreasing_signal_2]
-
   def _generate_laser_scans(
       self, wall_distance, start_angle, end_angle, start_time, end_time, count):
     angle_delta = (end_angle - start_angle) / count
@@ -96,20 +55,90 @@ class CalibrateTiltingServoTest(unittest.TestCase):
             servo_calibration_routine._LASER_DISTANCE_FROM_ROTATION_AXIS *
             math.sin(angle)) / math.cos(angle)
 
+  def _make_calibration_routine(self, periods, period_duration, phase_offset):
+    calibration_routine = servo_calibration_routine.ServoCalibrationRoutine(
+        self._low_angle, self._high_angle, period_duration)
+
+    for period in xrange(periods):
+      increasing_scans = self._generate_laser_scans(
+          self._wall_distance, self._low_angle, self._high_angle,
+          start_time=period * period_duration,
+          end_time=period * period_duration + period_duration / 2,
+          count=self._scan_count_per_period)
+      decreasing_scans = self._generate_laser_scans(
+          self._wall_distance, self._high_angle, self._low_angle,
+          start_time=period * period_duration + period_duration / 2,
+          end_time=(period + 1) * period_duration,
+          count=self._scan_count_per_period)
+      for scan in increasing_scans + decreasing_scans:
+        calibration_routine._scans.add_scan(scan)
+      
+      increasing_signal = parsec_msgs.LaserTiltSignal()
+      increasing_signal.header.stamp = rospy.Time(period * period_duration + phase_offset)
+      increasing_signal.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
+      calibration_routine._tilt_signals.append(increasing_signal)
+  
+      decreasing_signal = parsec_msgs.LaserTiltSignal()
+      decreasing_signal.header.stamp = rospy.Time(
+          period * period_duration + period_duration / 2 + phase_offset)
+      decreasing_signal.signal = parsec_msgs.LaserTiltSignal.ANGLE_DECREASING
+      calibration_routine._tilt_signals.append(decreasing_signal)
+
+    # we need to add scans from the last scan to at least
+    # phase_offset. We just add another complete sweep.
+    scans = self._generate_laser_scans(
+        self._wall_distance, self._low_angle, self._high_angle,
+        start_time=periods * period_duration,
+        end_time=periods * period_duration + period_duration / 2,
+        count=self._scan_count_per_period)
+    for scan in scans:
+      calibration_routine._scans.add_scan(scan)
+    last_signal = parsec_msgs.LaserTiltSignal()
+    last_signal.header.stamp = rospy.Time(
+        periods * period_duration + phase_offset)
+    last_signal.signal = parsec_msgs.LaserTiltSignal.ANGLE_INCREASING
+    calibration_routine._tilt_signals.append(last_signal)
+
+    return calibration_routine
+
   def assertAlmostEqual(self, lhs, rhs, error=1e-6, msg=None):
     message = '%r - %r >= %r' % (lhs, rhs, error)
     if msg is not None:
       message = msg
     self.assertTrue(abs(lhs - rhs) < error, msg=message)
     
-  def test_laser_scan_calibration(self):
-    calibration_result = self._calibration_routine._calculate_calibration()
+  def _check_laser_scan_calibration(self, calibration_routine, phase_offset):
+    calibration_result = calibration_routine._calculate_calibration()
     self.assertTrue(calibration_result)
     self.assertAlmostEqual(calibration_result.low_angle, self._low_angle)
     self.assertAlmostEqual(calibration_result.low_multiplier, 1)
     self.assertAlmostEqual(calibration_result.high_angle, self._high_angle)
     self.assertAlmostEqual(calibration_result.high_multiplier, 1)
-    self.assertAlmostEqual(calibration_result.phase_offset, self._phase_offset)
+    self.assertAlmostEqual(calibration_result.phase_offset, phase_offset)
+
+  def test_1_period(self):
+    calibration_routine = self._make_calibration_routine(1, 4.0, 0.0)
+    self._check_laser_scan_calibration(calibration_routine, 0.0)
+
+  def test_2_periods(self):
+    calibration_routine = self._make_calibration_routine(2, 4.0, 0.0)
+    self._check_laser_scan_calibration(calibration_routine, 0.0)
+
+  def test_10_periods(self):
+    calibration_routine = self._make_calibration_routine(10, 4.0, 0.0)
+    self._check_laser_scan_calibration(calibration_routine, 0.0)
+
+  def test_1_period_with_phase_offset(self):
+    calibration_routine = self._make_calibration_routine(1, 4.0, 0.5)
+    self._check_laser_scan_calibration(calibration_routine, 0.5)
+
+  def test_2_periods_with_phase_offset(self):
+    calibration_routine = self._make_calibration_routine(2, 4.0, 0.5)
+    self._check_laser_scan_calibration(calibration_routine, 0.5)
+
+  def test_10_periods_with_phase_offset(self):
+    calibration_routine = self._make_calibration_routine(10, 4.0, 0.5)
+    self._check_laser_scan_calibration(calibration_routine, 0.5)
 
 
 if __name__ == '__main__':
