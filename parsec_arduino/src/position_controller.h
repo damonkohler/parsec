@@ -53,11 +53,11 @@ class PositionController {
   // use a single position query for efficiency.
   float UpdateVelocity(float velocity);
 
-  // returns the last position reading
+  // Returns the last position reading.
   unsigned int GetLastPosition() { return last_position_; }
 
-  // returns the last velocity command sent to the controller
-  float GetLastVelocityCmd() { return last_velocity_cmd_; }
+  // Returns the current target velocity.
+  float GetTargetVelocity() { return target_velocity_; }
 
   // Tries to broadcast a software reset to all position controllers in the
   // hope they will stop the motors.
@@ -115,7 +115,6 @@ class PositionController {
   int travel_goal_;
   unsigned long last_update_time_;
   float target_velocity_;
-  float last_velocity_cmd_;
   float distance_error_;
   float gain_;
   float acceleration_;

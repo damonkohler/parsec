@@ -326,8 +326,8 @@ static void WriteUART1(unsigned char byte) {
 PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius);
 
-static void SetupPositionControllers() {
-  float gain = 0.3f;
+static void SetupPositionControllerParameters() {
+  float gain = 0.025f;
   float acceleration = 1.0f;
   node_handle.getParam("~gain", &gain);
   node_handle.getParam("~acceleration", &acceleration);
@@ -343,7 +343,9 @@ static void SetupPositionControllers() {
 
   snprintf(message, 40, "Acceleration: %d", (int) (acceleration * 100.0f));
   node_handle.loginfo(message);
+}
 
+static void SetupPositionControllers() {
   // Position Controller Device serial port. Pins 19 (RX) and 18 (TX).
   // We depend on default for DDR, PORT, UCSR.
   UBRR1H = 0;
@@ -395,8 +397,8 @@ static void PublishJointState() {
   if (micros() - last_joint_state_message > 80000ul) {
     float position[] = { left_controller.GetLastPosition(),
                          right_controller.GetLastPosition() };
-    float velocity[] = { left_controller.GetLastVelocity(),
-                         right_controller.GetLastVelocity() };
+    float velocity[] = { left_controller.GetTargetVelocity(),
+                         right_controller.GetTargetVelocity() };
     // Note: this is actually not correct. We needed to use the time of
     // the last position/velocity measurements instead of current time.
     joint_state_message.header.stamp = node_handle.now();
@@ -577,6 +579,7 @@ void setup() {
   SetupROSSerial();
   SetupUltrasonic();
   SetupShiftBrite();
+  SetupPositionControllers();
 
   // Wait until we've connected to the host.
   printf_row(0, "Waiting");
@@ -585,7 +588,7 @@ void setup() {
   }
   printf_row(0, "Connected");
 
-  SetupPositionControllers();
+  SetupPositionControllerParameters();
   SetupServoSweep();
 }
 
