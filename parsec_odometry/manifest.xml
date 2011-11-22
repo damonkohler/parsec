@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/parsec_odometry</url>
   <depend package="roscpp" />
   <depend package="pcl" />
+  <depend package="pcl_ros" />  
   <depend package="laser_geometry" />
   <depend package="tf" />
   <depend package="parsec_msgs" />

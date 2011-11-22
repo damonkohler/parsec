@@ -40,10 +40,19 @@ static void MatrixToTransfrom(const Eigen::Matrix4f &matrix, tf::Transform *tran
     btQuaternion(rotation.x(), rotation.y(), rotation.z(), rotation.w()));
 }
 
+ParsecOdometry::ParsecOdometry()
+  : publish_tf_(false),
+    minimal_odometry_rate_(kDefaultMinimalOdometryRate),
+    base_frame_(kDefaultBaseFrame),
+    odometry_frame_(kDefaultOdometryFrame),
+    correction_transform_(new tf::Transform(tf::Transform::getIdentity())) {
+}
+
 ParsecOdometry::ParsecOdometry(const ros::NodeHandle &nh)
   : nh_(nh),
     tf_broadcaster_(),
-    tf_ (nh_) {
+    tf_ (nh_),
+    correction_transform_(new tf::Transform(tf::Transform::getIdentity())) {
   nh_.param("publish_tf", publish_tf_, kDefaultPublishTf);
   nh_.param("minimal_odometry_rate", minimal_odometry_rate_, kDefaultMinimalOdometryRate);
   nh_.param("base_frame", base_frame_, kDefaultBaseFrame);
@@ -53,8 +62,6 @@ ParsecOdometry::ParsecOdometry(const ros::NodeHandle &nh)
   laser_subscriber_ = nh_.subscribe<sensor_msgs::LaserScan>(
       "scan", 10, boost::bind(&ParsecOdometry::LaserCallback, this, _1));
   odometry_publisher_ = nh_.advertise<nav_msgs::Odometry>("odom", 10);
-  correction_transform_.reset(new tf::Transform(btQuaternion(0, 0, 0, 1),
-                                                btVector3(0, 0, 0)));
 }
 
 void ParsecOdometry::ParsecOdometryCallback(
@@ -190,8 +197,8 @@ void ParsecOdometry::CorrectOdometry(
   tf::Transform corrected_odometry_transform = odometry_transform * transform;
   TransformToOdometry(
       tf::StampedTransform(corrected_odometry_transform, odometry_transform.stamp_,
-                           odometry_transform.frame_id_, odometry_transform.child_frame_id_)
-      , odometry);
+                           odometry_transform.frame_id_, odometry_transform.child_frame_id_),
+      odometry);
   // The twist didn't change, just copy it.
   odometry->twist = uncorrected_odometry.twist;
 }
@@ -205,9 +212,9 @@ void ParsecOdometry::CalculateCorrectionTransform(
   tf::StampedTransform last_corrected_odometry_transform;
   OdometryToTransform(last_corrected_odometry, &last_corrected_odometry_transform);
   // We use the following equation to calculate the correction factor:
-  // last_odometry * correction = last_corrected_odometry * offset
+  // last_odometry * correction = last_corrected_odometry * offset;
   *correction = last_odometry_transform.inverse() *
-      last_corrected_odometry_transform * offset;
+      (last_corrected_odometry_transform * offset);
 }
 
 bool ParsecOdometry::CalculateLaserCorrectionTransform(
@@ -229,6 +236,10 @@ bool ParsecOdometry::CalculateLaserCorrectionTransform(
   // needs it.
   pcl::PointCloud<pcl::PointXYZ> new_cloud_in_old;
   icp.align(new_cloud_in_old);
+
+  if (!icp.hasConverged()) {
+    return false;
+  }
   MatrixToTransfrom(icp.getFinalTransformation(), transform);
   
   return true;

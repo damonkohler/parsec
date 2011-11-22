@@ -20,6 +20,8 @@
 
 #include <nav_msgs/Odometry.h>
 #include <parsec_msgs/Odometry.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_listener.h>
@@ -29,7 +31,51 @@ namespace parsec_odometry {
 
 class ParsecOdometry {
  public:
+  /**
+   * Default constructor to instantiate without using ros. Mainly
+   * useful for testing.
+   */
+  ParsecOdometry();
+
   ParsecOdometry(const ros::NodeHandle &nh);
+
+  /**
+   * Apply a correction transform to an odometry message.
+   *
+   * Public for testing.
+   */
+  void CorrectOdometry(
+      const nav_msgs::Odometry &uncorrected_odometry, const tf::Transform &transform,
+      nav_msgs::Odometry *odometry);
+
+  /**
+   * Calculates the correction transform to be applied to an odometry
+   * message to correct for errors introduced by restarts of the micro
+   * controller. This function also takes an offset form the last
+   * corrected odometry to calculate the new correction. This offset
+   * usually comes from laser based ICP to correct for small pose
+   * errors introduced by e.g. exchanging batteries.
+   *
+   * Public for testing.
+   *
+   * @param last_odometry the newest odometry message
+   * @param last_corrected_odometry the last correct odometry message
+   * @param offset offset of last_corrected_odometry to the real pose
+   * @param correction the new correction tranform
+   */
+  void CalculateCorrectionTransform(const nav_msgs::Odometry &last_odometry,
+                                    const nav_msgs::Odometry &last_corrected_odometry,
+                                    const tf::Transform &offset,
+                                    tf::Transform *correction);
+
+  /**
+   * Calculates the transform between two point clouds using ICP.
+   *
+   * Public for testing.
+   */
+  bool CalculateLaserCorrectionTransform(const sensor_msgs::PointCloud2 &old_cloud_msg,
+                                         const sensor_msgs::PointCloud2 &new_cloud_msg,
+                                         tf::Transform *transform);
 
  private:
   static const double kDefaultMinimalOdometryRate = 2.0;
@@ -58,38 +104,6 @@ class ParsecOdometry {
   void TransformToOdometry(const tf::StampedTransform &transform, nav_msgs::Odometry *odometry);
   void ParsecOdometryToOdometry(const parsec_msgs::Odometry &parsec_odometry,
                                 nav_msgs::Odometry *odometry);
-
-  /**
-   * Apply a correction transform to an odometry message.
-   */
-  void CorrectOdometry(
-      const nav_msgs::Odometry &uncorrected_odometry, const tf::Transform &transform,
-      nav_msgs::Odometry *odometry);
-
-  /**
-   * Calculates the correction transform to be applied to an odometry
-   * message to correct for errors introduced by restarts of the micro
-   * controller. This function also takes an offset form the last
-   * corrected odometry to calculate the new correction. This offset
-   * usually comes from laser based ICP to correct for small pose
-   * errors introduced by e.g. exchanging batteries.
-   *
-   * @param last_odometry the newest odometry message
-   * @param last_corrected_odometry the last correct odometry message
-   * @param offset offset of last_corrected_odometry to the real pose
-   * @param correction the new correction tranform
-   */
-  void CalculateCorrectionTransform(const nav_msgs::Odometry &last_odometry,
-                                    const nav_msgs::Odometry &last_corrected_odometry,
-                                    const tf::Transform &offset,
-                                    tf::Transform *correction);
-
-  /**
-   * Calculates the transform between two point clouds using ICP.
-   */
-  bool CalculateLaserCorrectionTransform(const sensor_msgs::PointCloud2 &old_cloud_msg,
-                                         const sensor_msgs::PointCloud2 &new_cloud_msg,
-                                         tf::Transform *transform);
 };
 
 }  // parsec_odometry
