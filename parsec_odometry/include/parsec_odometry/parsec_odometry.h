@@ -47,15 +47,13 @@ class ParsecOdometry {
   ros::Subscriber parsec_odometry_subscriber_;
   ros::Subscriber laser_subscriber_;
   ros::Publisher odometry_publisher_;
-  nav_msgs::Odometry::ConstPtr last_corrected_odometry_;
+  nav_msgs::Odometry::Ptr last_odometry_;
+  nav_msgs::Odometry::Ptr last_corrected_odometry_;
   sensor_msgs::PointCloud2::ConstPtr last_valid_laser_cloud_;
   boost::shared_ptr<tf::Transform> correction_transform_;
 
   void ParsecOdometryCallback(const parsec_msgs::Odometry::ConstPtr &parsec_odometry);
   void LaserCallback(const sensor_msgs::LaserScan::ConstPtr &laser_scan);
-  void ConvertAndCorrectParsecOdometry(const parsec_msgs::Odometry &parsec_odometry,
-                                       const tf::Transform &correction,
-                                       nav_msgs::Odometry *corrected_odometry);
   void OdometryToTransform(const nav_msgs::Odometry &odometry, tf::StampedTransform *transform);
   void TransformToOdometry(const tf::StampedTransform &transform, nav_msgs::Odometry *odometry);
   void ParsecOdometryToOdometry(const parsec_msgs::Odometry &parsec_odometry,
@@ -63,9 +61,13 @@ class ParsecOdometry {
   void CorrectOdometry(
       const nav_msgs::Odometry &uncorrected_odometry, const tf::Transform &transform,
       nav_msgs::Odometry *odometry);
-  bool CalculateCorrectionTransform(const sensor_msgs::PointCloud2 &old_cloud_msg,
-                                    const sensor_msgs::PointCloud2 &new_cloud_msg,
-                                    tf::Transform *transform);
+  void CalculateCorrectionTransform(const nav_msgs::Odometry &last_odometry,
+                                    const nav_msgs::Odometry &last_corrected_odometry,
+                                    const tf::Transform &laser_transform,
+                                    tf::Transform *correction);
+  bool CalculateLaserCorrectionTransform(const sensor_msgs::PointCloud2 &old_cloud_msg,
+                                         const sensor_msgs::PointCloud2 &new_cloud_msg,
+                                         tf::Transform *transform);
 };
 
 }  // parsec_odometry
