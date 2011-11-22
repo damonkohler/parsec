@@ -89,8 +89,8 @@ float PositionController::UpdateVelocity(float velocity) {
   } else if (speed == 0) {
     delta = TravelFromHere(0);
   }
-  // Round up aggresively so that a velocity of 0.0027 m/s results in a speed of 1.
-  SetSpeedMaximum(speed < kMaximumSpeed ? floor(speed + 0.9f) : kMaximumSpeed);
+  // Round up aggresively so that a velocity greater than 0.005 m/s results in a speed of 1.
+  SetSpeedMaximum(speed > 5e-3f ? floor(fmax(1.0f, speed) + 0.5f) : 0);
 
   // Update distance error using actual distance traveled.
   float actual_distance = 1.745329252e-1f /* \pi/18 */ * wheel_radius_ * delta;
