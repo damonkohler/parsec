@@ -199,15 +199,15 @@ void ParsecOdometry::CorrectOdometry(
 void ParsecOdometry::CalculateCorrectionTransform(
     const nav_msgs::Odometry &last_odometry,
     const nav_msgs::Odometry &last_corrected_odometry,
-    const tf::Transform &laser_transform, tf::Transform *correction) {
+    const tf::Transform &offset, tf::Transform *correction) {
   tf::StampedTransform last_odometry_transform;
   OdometryToTransform(last_odometry, &last_odometry_transform);
   tf::StampedTransform last_corrected_odometry_transform;
   OdometryToTransform(last_corrected_odometry, &last_corrected_odometry_transform);
   // We use the following equation to calculate the correction factor:
-  // last_odometry * correction = last_corrected_odometry * laser_transform
+  // last_odometry * correction = last_corrected_odometry * offset
   *correction = last_odometry_transform.inverse() *
-      last_corrected_odometry_transform * laser_transform;
+      last_corrected_odometry_transform * offset;
 }
 
 bool ParsecOdometry::CalculateLaserCorrectionTransform(
