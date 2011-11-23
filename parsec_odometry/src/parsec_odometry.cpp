@@ -54,6 +54,7 @@ void ParsecOdometry::ParsecOdometryCallback(
   // If we see a time difference between subsequent odometry messages,
   // recalculate the correction transform.
   if (last_corrected_odometry_ &&
+      !CompareOdometry(*last_corrected_odometry_, odometry, 1e-2, 1e-2) &&
       parsec_odometry->header.stamp - last_corrected_odometry_->header.stamp >
       ros::Duration(1 / minimal_odometry_rate_)) {
     ROS_INFO("Time difference between two succeeding odometry messages too big. "
@@ -147,6 +148,18 @@ void ParsecOdometry::CalculateCorrectionTransform(
   // the new odometry origin is exactly where stoped receiving
   // odometry messages.
   *correction = last_corrected_odometry_transform * offset;
+}
+
+bool ParsecOdometry::CompareOdometry(
+    const nav_msgs::Odometry &lhs, const nav_msgs::Odometry &rhs,
+    double max_linear_error, double max_angular_error) {
+  return fabs(lhs.pose.pose.position.x - rhs.pose.pose.position.x) < max_linear_error &&
+      fabs(lhs.pose.pose.position.y - rhs.pose.pose.position.y) < max_linear_error &&
+      fabs(lhs.pose.pose.position.z - rhs.pose.pose.position.z) < max_linear_error &&
+      fabs(lhs.pose.pose.orientation.x - rhs.pose.pose.orientation.x) < max_angular_error &&
+      fabs(lhs.pose.pose.orientation.y - rhs.pose.pose.orientation.y) < max_angular_error &&
+      fabs(lhs.pose.pose.orientation.z - rhs.pose.pose.orientation.z) < max_angular_error &&
+      fabs(lhs.pose.pose.orientation.w - rhs.pose.pose.orientation.w) < max_angular_error;
 }
 
 }  // parsec_odometry
