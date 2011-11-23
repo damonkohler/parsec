@@ -16,10 +16,9 @@
 #ifndef PARSEC_ODOMETRY_PARSEC_ODOMETRY_H
 #define PARSEC_ODOMETRY_PARSEC_ODOMETRY_H
 
-#include <ros/ros.h>
-
 #include <nav_msgs/Odometry.h>
 #include <parsec_msgs/Odometry.h>
+#include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_listener.h>
@@ -86,6 +85,8 @@ class ParsecOdometry {
   void TransformToOdometry(const tf::StampedTransform &transform, nav_msgs::Odometry *odometry);
   void ParsecOdometryToOdometry(const parsec_msgs::Odometry &parsec_odometry,
                                 nav_msgs::Odometry *odometry);
+  bool CompareOdometry(const nav_msgs::Odometry &lhs, const nav_msgs::Odometry &rhs,
+                       double max_linear_error, double max_angular_error);
 };
 
 }  // parsec_odometry
