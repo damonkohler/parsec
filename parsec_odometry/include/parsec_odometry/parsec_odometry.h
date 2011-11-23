@@ -34,7 +34,7 @@ class ParsecOdometry {
    */
   ParsecOdometry();
 
-  ParsecOdometry(const ros::NodeHandle &nh);
+  ParsecOdometry(const ros::NodeHandle &node_handle);
 
   /**
    * Apply a correction transform to an odometry message.
@@ -73,7 +73,7 @@ class ParsecOdometry {
   double minimal_odometry_rate_;
   std::string base_frame_;
   std::string odometry_frame_;
-  ros::NodeHandle nh_;
+  ros::NodeHandle node_handle_;
   tf::TransformBroadcaster tf_broadcaster_;
   ros::Subscriber parsec_odometry_subscriber_;
   ros::Publisher odometry_publisher_;

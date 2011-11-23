@@ -34,17 +34,18 @@ ParsecOdometry::ParsecOdometry()
     correction_transform_(tf::Transform::getIdentity()) {
 }
 
-ParsecOdometry::ParsecOdometry(const ros::NodeHandle &nh)
-  : nh_(nh),
+ParsecOdometry::ParsecOdometry(const ros::NodeHandle &node_handle)
+  : node_handle_(node_handle),
     tf_broadcaster_(),
     correction_transform_(tf::Transform::getIdentity()) {
-  nh_.param("publish_tf", publish_tf_, kDefaultPublishTf);
-  nh_.param("minimal_odometry_rate", minimal_odometry_rate_, kDefaultMinimalOdometryRate);
-  nh_.param("base_frame", base_frame_, kDefaultBaseFrame);
-  nh_.param("odometry_frame", odometry_frame_, kDefaultOdometryFrame);
-  parsec_odometry_subscriber_ = nh_.subscribe<parsec_msgs::Odometry>(
+  node_handle_.param("publish_tf", publish_tf_, kDefaultPublishTf);
+  node_handle_.param("minimal_odometry_rate", minimal_odometry_rate_,
+                     kDefaultMinimalOdometryRate);
+  node_handle_.param("base_frame", base_frame_, kDefaultBaseFrame);
+  node_handle_.param("odometry_frame", odometry_frame_, kDefaultOdometryFrame);
+  parsec_odometry_subscriber_ = node_handle_.subscribe<parsec_msgs::Odometry>(
       "odom_simple", 10, boost::bind(&ParsecOdometry::ParsecOdometryCallback, this, _1));
-  odometry_publisher_ = nh_.advertise<nav_msgs::Odometry>("odom", 10);
+  odometry_publisher_ = node_handle_.advertise<nav_msgs::Odometry>("odom", 10);
 }
 
 void ParsecOdometry::ParsecOdometryCallback(
