@@ -104,8 +104,8 @@ TEST(ParsecOdometry, CorrectyOdometryWithTransform) {
   nav_msgs::Odometry corrected_odometry;
   parsec_odometry.CorrectOdometry(
       uncorrected_odometry, transform, &corrected_odometry);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x, 2.0);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x, 1.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y, 1.0);
   EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.z, 0.0);
   EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.x,
                    transform.getRotation().x());
@@ -133,8 +133,8 @@ TEST(ParsecOdometry, CorrectyOdometryWithTransform2) {
   nav_msgs::Odometry corrected_odometry;
   parsec_odometry.CorrectOdometry(
       uncorrected_odometry, transform, &corrected_odometry);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x, 3.0);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x, 1.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y, 2.0);
   EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.z, 0.0);
   EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.x,
                    transform.getRotation().x());
@@ -172,8 +172,8 @@ TEST(ParsecOdometry, CalculateCorrectionTransformNoOffset) {
   tf::Transform offset = tf::Transform::getIdentity();
   tf::Transform correction;
   parsec_odometry.CalculateCorrectionTransform(
-      uncorrected_odometry, last_odometry, offset, &correction);
-  EXPECT_DOUBLE_EQ(correction.getOrigin().x(), 1);
+      last_odometry, offset, &correction);
+  EXPECT_DOUBLE_EQ(correction.getOrigin().x(), 2);
   EXPECT_DOUBLE_EQ(correction.getOrigin().y(), 0);
   EXPECT_DOUBLE_EQ(correction.getOrigin().z(), 0);
   EXPECT_DOUBLE_EQ(correction.getRotation().x(), 0);
@@ -185,20 +185,13 @@ TEST(ParsecOdometry, CalculateCorrectionTransformNoOffset) {
   parsec_odometry.CorrectOdometry(
       uncorrected_odometry, correction, &corrected_odometry);
   
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x,
-                   last_odometry.pose.pose.position.x);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y,
-                   last_odometry.pose.pose.position.y);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.z,
-                   last_odometry.pose.pose.position.z);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.x,
-                   last_odometry.pose.pose.orientation.x);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.y,
-                   last_odometry.pose.pose.orientation.y);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.z,
-                   last_odometry.pose.pose.orientation.z);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.w,
-                   last_odometry.pose.pose.orientation.w);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x, 1.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.z, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.x, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.y, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.z, 1.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.w, 0.0);
 }
 
 // Tests that calculation of the correction transform including offset
@@ -229,8 +222,8 @@ TEST(ParsecOdometry, CalculateCorrectionTransform) {
       btVector3(1, 0, 0));
   tf::Transform correction;
   parsec_odometry.CalculateCorrectionTransform(
-      uncorrected_odometry, last_odometry, offset, &correction);
-  EXPECT_DOUBLE_EQ(correction.getOrigin().x(), 0);
+      last_odometry, offset, &correction);
+  EXPECT_DOUBLE_EQ(correction.getOrigin().x(), 1);
   EXPECT_DOUBLE_EQ(correction.getOrigin().y(), 0);
   EXPECT_DOUBLE_EQ(correction.getOrigin().z(), 0);
   EXPECT_DOUBLE_EQ(correction.getRotation().x(), 0);
@@ -247,20 +240,13 @@ TEST(ParsecOdometry, CalculateCorrectionTransform) {
   parsec_odometry.CorrectOdometry(
       uncorrected_odometry, correction, &corrected_odometry);
 
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x,
-                   corrected_last_odometry.pose.pose.position.x);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y,
-                   corrected_last_odometry.pose.pose.position.y);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.z,
-                   corrected_last_odometry.pose.pose.position.z);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.x,
-                   corrected_last_odometry.pose.pose.orientation.x);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.y,
-                   corrected_last_odometry.pose.pose.orientation.y);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.z,
-                   corrected_last_odometry.pose.pose.orientation.z);
-  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.w,
-                   corrected_last_odometry.pose.pose.orientation.w);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.x, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.position.z, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.x, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.y, 0.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.z, 1.0);
+  EXPECT_DOUBLE_EQ(corrected_odometry.pose.pose.orientation.w, 0.0);
 }
 
 void CheckCalculateCorrectionTransform(

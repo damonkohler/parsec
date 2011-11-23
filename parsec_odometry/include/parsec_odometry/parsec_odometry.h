@@ -58,13 +58,11 @@ class ParsecOdometry {
    *
    * Public for testing.
    *
-   * @param last_odometry the newest odometry message
    * @param last_corrected_odometry the last correct odometry message
    * @param offset offset of last_corrected_odometry to the real pose
    * @param correction the new correction tranform
    */
-  void CalculateCorrectionTransform(const nav_msgs::Odometry &last_odometry,
-                                    const nav_msgs::Odometry &last_corrected_odometry,
+  void CalculateCorrectionTransform(const nav_msgs::Odometry &last_corrected_odometry,
                                     const tf::Transform &offset,
                                     tf::Transform *correction);
 
@@ -93,7 +91,6 @@ class ParsecOdometry {
   ros::Subscriber parsec_odometry_subscriber_;
   ros::Subscriber laser_subscriber_;
   ros::Publisher odometry_publisher_;
-  nav_msgs::Odometry::Ptr last_odometry_;
   nav_msgs::Odometry::Ptr last_corrected_odometry_;
   sensor_msgs::PointCloud2::ConstPtr last_valid_laser_cloud_;
   boost::shared_ptr<tf::Transform> correction_transform_;
