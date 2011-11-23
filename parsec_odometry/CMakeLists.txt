@@ -18,3 +18,6 @@ rosbuild_add_executable(parsec_odometry
   src/parsec_odometry_node.cpp
   src/parsec_odometry.cpp)
 
+rosbuild_add_gtest(parsec_odometry_test
+  test/parsec_odometry_test.cpp
+  src/parsec_odometry.cpp)
