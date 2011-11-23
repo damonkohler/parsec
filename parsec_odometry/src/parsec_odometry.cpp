@@ -240,8 +240,28 @@ bool ParsecOdometry::CalculateLaserCorrectionTransform(
   if (!icp.hasConverged()) {
     return false;
   }
-  MatrixToTransfrom(icp.getFinalTransformation(), transform);
-  
+  btTransform icp_result;
+  MatrixToTransfrom(icp.getFinalTransformation(), &icp_result);
+
+  // In some rare cases the ICP algorithm also returns a z offset
+  // which is definitely wrong because the robot only moves in 2D. To
+  // remove the z offset again and rotations around the x and y axis,
+  // we first set rotations around x and y to zero. Then we project
+  // the transform back to the x-y-plane by setting z to 0 and
+  // changing the x and y components to keep the length of the
+  // original origin vector and the new one equal.
+  double angle_x, angle_y, angle_z;
+  icp_result.getBasis().getEulerYPR(angle_z, angle_y, angle_x);
+  btMatrix3x3 x_y_rotation;
+  x_y_rotation.setEulerYPR(0.0, angle_y, angle_x);
+  *transform = icp_result * btTransform(x_y_rotation).inverse();
+  double x_y_normalization_factor = icp_result.getOrigin().length() /
+      btVector3(icp_result.getOrigin().x(), icp_result.getOrigin().y(), 0).length();
+  transform->setOrigin(
+      btVector3(icp_result.getOrigin().x() * x_y_normalization_factor,
+                icp_result.getOrigin().y() * x_y_normalization_factor,
+                0));
+
   return true;
 }
 
