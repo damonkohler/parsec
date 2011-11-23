@@ -67,24 +67,41 @@ ParsecOdometry::ParsecOdometry(const ros::NodeHandle &nh)
 void ParsecOdometry::ParsecOdometryCallback(
     const parsec_msgs::Odometry::ConstPtr &parsec_odometry) {
   nav_msgs::Odometry odometry;
-  last_odometry_.reset(new nav_msgs::Odometry());
-  ParsecOdometryToOdometry(*parsec_odometry, last_odometry_.get());
+  ParsecOdometryToOdometry(*parsec_odometry, &odometry);
   if (!correction_transform_) {
     return;
   }
   // If we are getting laser scans and we see a time difference
   // between subsequent odometry messages, invalidate the correction
   // transform to recalculate it.
-  if (last_corrected_odometry_ && last_valid_laser_cloud_ &&
+  if (last_corrected_odometry_ &&
       parsec_odometry->header.stamp - last_corrected_odometry_->header.stamp >
       ros::Duration(1 / minimal_odometry_rate_)) {
-    correction_transform_.reset();
     ROS_INFO("Time difference between two succeeding odometry messages too big. "
              "Recalculating error correction.");
-    return;
+    // If we never received a valid laser scan, we cannot use the
+    // laser callback to recalculate the new offset. In that case, we
+    // just calculate the offset by using the old odometry.
+    if  (!last_valid_laser_cloud_) {
+      CalculateCorrectionTransform(*last_corrected_odometry_, tf::Transform::getIdentity(),
+                                   correction_transform_.get());
+      ROS_INFO("Calculated odometry offset transform: (%f, %f, %f), (%f, %f, %f, %f)",
+               correction_transform_->getOrigin().x(),
+               correction_transform_->getOrigin().y(),
+               correction_transform_->getOrigin().z(),
+               correction_transform_->getRotation().x(),
+               correction_transform_->getRotation().y(),
+               correction_transform_->getRotation().z(),
+               correction_transform_->getRotation().w());
+    } else {
+      // Resetting the correction transform will cause the laser
+      // callback to recalculate the correction transform.
+      correction_transform_.reset();
+      return;
+    }
   }
   last_corrected_odometry_.reset(new nav_msgs::Odometry());
-  CorrectOdometry(*last_odometry_, *correction_transform_, last_corrected_odometry_.get());
+  CorrectOdometry(odometry, *correction_transform_, last_corrected_odometry_.get());
   odometry_publisher_.publish(last_corrected_odometry_);
   if (publish_tf_) {
     tf::StampedTransform transform;
@@ -104,7 +121,7 @@ void ParsecOdometry::LaserCallback(const sensor_msgs::LaserScan::ConstPtr &laser
     return;
   }
 
-  if (!last_odometry_ || !last_corrected_odometry_) {
+  if (!last_corrected_odometry_) {
     return;
   }
   if (!last_valid_laser_cloud_) {
@@ -119,24 +136,33 @@ void ParsecOdometry::LaserCallback(const sensor_msgs::LaserScan::ConstPtr &laser
   }
   if (!correction_transform_ && last_valid_laser_cloud_) {
     tf::Transform laser_transform;
+    laser_transform.setIdentity();
     if (!CalculateLaserCorrectionTransform(
-          *last_valid_laser_cloud_, scan_cloud, &laser_transform)) {
+          scan_cloud, *last_valid_laser_cloud_, &laser_transform)) {
       ROS_WARN("Unable to calculate laser scan transform.");
       return;
     }
+    correction_transform_.reset(new tf::Transform);
     tf::Transform new_correction_transform;
-    CalculateCorrectionTransform(*last_odometry_, *last_corrected_odometry_, laser_transform,
-                                 &new_correction_transform);
-    ROS_INFO("Calculated laser scan transform: (%f, %f, %f), (%f, %f, %f, %f)",
-             new_correction_transform.getOrigin().x(),
-             new_correction_transform.getOrigin().y(),
-             new_correction_transform.getOrigin().z(),
-             new_correction_transform.getRotation().x(),
-             new_correction_transform.getRotation().y(),
-             new_correction_transform.getRotation().z(),
-             new_correction_transform.getRotation().w());
-    correction_transform_.reset(new tf::Transform(new_correction_transform));
-    // Clear the old odometry to make the callback publish odometry
+    CalculateCorrectionTransform(*last_corrected_odometry_, laser_transform,
+                                 correction_transform_.get());
+    ROS_INFO("ICP returnd offset transform: (%f, %f, %f), (%f, %f, %f, %f)",
+             laser_transform.getOrigin().x(),
+             laser_transform.getOrigin().y(),
+             laser_transform.getOrigin().z(),
+             laser_transform.getRotation().x(),
+             laser_transform.getRotation().y(),
+             laser_transform.getRotation().z(),
+             laser_transform.getRotation().w());
+    ROS_INFO("Calculated odometry offset transform: (%f, %f, %f), (%f, %f, %f, %f)",
+             correction_transform_->getOrigin().x(),
+             correction_transform_->getOrigin().y(),
+             correction_transform_->getOrigin().z(),
+             correction_transform_->getRotation().x(),
+             correction_transform_->getRotation().y(),
+             correction_transform_->getRotation().z(),
+             correction_transform_->getRotation().w());
+    // Clear the old odometry to make the odometry callback publish
     // again.
     last_corrected_odometry_.reset();
     return;
@@ -194,7 +220,7 @@ void ParsecOdometry::CorrectOdometry(
     nav_msgs::Odometry *odometry) {
   tf::StampedTransform odometry_transform;
   OdometryToTransform(uncorrected_odometry, &odometry_transform);
-  tf::Transform corrected_odometry_transform = odometry_transform * transform;
+  tf::Transform corrected_odometry_transform = transform * odometry_transform;
   TransformToOdometry(
       tf::StampedTransform(corrected_odometry_transform, odometry_transform.stamp_,
                            odometry_transform.frame_id_, odometry_transform.child_frame_id_),
@@ -204,17 +230,18 @@ void ParsecOdometry::CorrectOdometry(
 }
 
 void ParsecOdometry::CalculateCorrectionTransform(
-    const nav_msgs::Odometry &last_odometry,
     const nav_msgs::Odometry &last_corrected_odometry,
     const tf::Transform &offset, tf::Transform *correction) {
-  tf::StampedTransform last_odometry_transform;
-  OdometryToTransform(last_odometry, &last_odometry_transform);
   tf::StampedTransform last_corrected_odometry_transform;
   OdometryToTransform(last_corrected_odometry, &last_corrected_odometry_transform);
   // We use the following equation to calculate the correction factor:
-  // last_odometry * correction = last_corrected_odometry * offset;
-  *correction = last_odometry_transform.inverse() *
-      (last_corrected_odometry_transform * offset);
+  //
+  //   last_odometry * correction = last_corrected_odometry * offset
+  //
+  // last_odometry is the identity transform because we assume that
+  // the new odometry origin is exactly where stoped receiving
+  // odometry messages.
+  *correction = last_corrected_odometry_transform * offset;
 }
 
 bool ParsecOdometry::CalculateLaserCorrectionTransform(
