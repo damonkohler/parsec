@@ -1,0 +1,16 @@
+<package>
+  <description brief="parsec_msgs">
+
+     parsec_msgs
+
+  </description>
+  <author>Damon Kohler</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_msgs</url>
+
+  <depend package="std_msgs" />
+  <depend package="geometry_msgs" />
+</package>
+
+

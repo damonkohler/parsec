@@ -1,0 +1,17 @@
+<package>
+  <description brief="display_parsec_time_offsets">
+
+     display_parsec_time_offsets
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/display_parsec_time_offsets</url>
+  <depend package="rospy"/>
+  <depend package="nav_msgs"/>
+  <depend package="sensor_msgs"/>
+
+</package>
+
+
