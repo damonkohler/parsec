@@ -20,8 +20,6 @@
 
 #include <nav_msgs/Odometry.h>
 #include <parsec_msgs/Odometry.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_listener.h>
@@ -66,15 +64,6 @@ class ParsecOdometry {
                                     const tf::Transform &offset,
                                     tf::Transform *correction);
 
-  /**
-   * Calculates the transform between two point clouds using ICP.
-   *
-   * Public for testing.
-   */
-  bool CalculateLaserCorrectionTransform(const sensor_msgs::PointCloud2 &old_cloud_msg,
-                                         const sensor_msgs::PointCloud2 &new_cloud_msg,
-                                         tf::Transform *transform);
-
  private:
   static const double kDefaultMinimalOdometryRate = 2.0;
   static const bool kDefaultPublishTf = true;
@@ -87,16 +76,12 @@ class ParsecOdometry {
   std::string odometry_frame_;
   ros::NodeHandle nh_;
   tf::TransformBroadcaster tf_broadcaster_;
-  tf::TransformListener tf_;
   ros::Subscriber parsec_odometry_subscriber_;
-  ros::Subscriber laser_subscriber_;
   ros::Publisher odometry_publisher_;
   nav_msgs::Odometry::Ptr last_corrected_odometry_;
-  sensor_msgs::PointCloud2::ConstPtr last_valid_laser_cloud_;
-  boost::shared_ptr<tf::Transform> correction_transform_;
+  tf::Transform correction_transform_;
 
   void ParsecOdometryCallback(const parsec_msgs::Odometry::ConstPtr &parsec_odometry);
-  void LaserCallback(const sensor_msgs::LaserScan::ConstPtr &laser_scan);
   void OdometryToTransform(const nav_msgs::Odometry &odometry, tf::StampedTransform *transform);
   void TransformToOdometry(const tf::StampedTransform &transform, nav_msgs::Odometry *odometry);
   void ParsecOdometryToOdometry(const parsec_msgs::Odometry &parsec_odometry,
