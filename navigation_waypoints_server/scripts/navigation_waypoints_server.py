@@ -33,7 +33,7 @@ import move_base_msgs.msg as move_base_msgs
 import geometry_msgs.msg as geometry_msgs
 
 MOVE_BASE_POLL_TIMEOUT = 0.1
-WAIT_FOR_MOTION_PLAN_SERVICE_TIMEOUT = 2.0
+WAIT_FOR_PLAN_SERVICE_TIMEOUT = 2.0
 PREEMPT_WAIT_FOR_TERMINATION_TIMEOUT = 2.0
 
 
@@ -51,23 +51,17 @@ class WaypointFailed(Exception):
 class MoveBaseProxy(object):
   """Proxy object for calling move_base.
 
-  It also provides the method check_motion_plan to find out if the
+  It also provides the method check_plan to find out if the
   corresponding move_base instance actually will be able to find a
   valid motion plan.
   """
 
-  def __init__(self, action_name, check_motion_plan_service_name=None):
+  def __init__(self, action_name, check_plan_service_name=None):
     self._interrupted = False
-    self._check_motion_plan_service = None
-    self._check_motion_plan_service_name = None
+    self._check_plan_service = None
+    self._check_plan_service_name = check_plan_service_name
     self._move_base_action = actionlib.SimpleActionClient(
         action_name, move_base_msgs.MoveBaseAction)
-    if check_motion_plan_service_name is not None:
-      self._check_motion_plan_service_name = check_motion_plan_service_name
-      rospy.wait_for_service(check_motion_plan_service_name,
-                             WAIT_FOR_MOTION_PLAN_SERVICE_TIMEOUT)
-      self._check_motion_plan_service = rospy.ServiceProxy(
-          check_motion_plan_service_name, nav_msgs.srv.GetPlan)
 
   def interrupt(self):
     """Interrupts execution of the current goal.
@@ -102,7 +96,8 @@ class MoveBaseProxy(object):
     service name has been passed, always returns True. If the service
     call fails for some reason, also returns False.
     """
-    if not self._check_motion_plan_service:
+    self._maybe_initialize_check_plan_service()
+    if not self._check_plan_service:
       return True
     else:
       # We pass an empty PoseStampt as start here. According to the
@@ -110,12 +105,24 @@ class MoveBaseProxy(object):
       # robot's current pose in move_base's reference frame which is
       # exactly what we want.
       try:
-        plan = self._check_motion_plan_service(start=geometry_msgs.PoseStamped(),
+        plan = self._check_plan_service(start=geometry_msgs.PoseStamped(),
                                                goal=goal, tolerance=0.0)
       except rospy.ServiceException:
-        rospy.logwarn('Service call failed: %r' % self._check_motion_plan_service_name)
+        rospy.logwarn('Service call failed: %r' % self._check_plan_service_name)
         return
       return len(plan.plan.poses) > 0
+
+  def _maybe_initialize_check_plan_service(self):
+    if (self._check_plan_service_name is not None and
+        self._check_plan_service is None):
+      try:
+        rospy.wait_for_service(self._check_plan_service_name,
+                               WAIT_FOR_PLAN_SERVICE_TIMEOUT)
+      except rospy.ROSException:
+        rospy.logfatal('Could not connect to service: %r' % self._check_plan_service_name)
+        rospy.signal_shutdown('Fatal error')
+      self._check_plan_service = rospy.ServiceProxy(
+          self._check_plan_service_name, nav_msgs.srv.GetPlan)
 
 
 class NavWaypointsServer(object):
