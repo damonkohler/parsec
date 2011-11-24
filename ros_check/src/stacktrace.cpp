@@ -20,13 +20,15 @@
 
 namespace ros_check {
 
+static const size_t kMaxStacktraceSize = 30;
+
 void PrintStacktrace(FILE *stream, int skip) {
-  void *array[30];
+  void *array[kMaxStacktraceSize];
   size_t size;
   char **strings;
   size_t i;
      
-  size = backtrace(array, 30);
+  size = backtrace(array, kMaxStacktraceSize);
   strings = backtrace_symbols(array, size);
   fprintf(stream, "Stack frames:\n");
   // Skip the first frame always because it will always be
