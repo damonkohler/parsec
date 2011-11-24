@@ -18,7 +18,7 @@ __author__ = 'damonkohler@google.com (Damon Kohler)'
 
 import threading
 
-_SCAN_SAMPLE_SIZE = 50
+_SCAN_SAMPLE_SIZE = 10
 
 
 def calculate_laser_scan_range(data):
@@ -95,7 +95,7 @@ class LaserScanQueue(object):
           return self._scans[first_scan_index:last_scan_index]
       else:
         raise IntervalInvalid('End time not in interval.')
-        
+
 
   def get_oldest_scan(self):
     if self._scans:

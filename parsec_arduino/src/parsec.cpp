@@ -261,8 +261,9 @@ static void MakeUltrasonicSafe(float* velocity) {
 // Position controller stuff
 // ----------------------------------------------------------------------
 
-const float kBaseRadius = .195f;
-const float kWheelRadius = .0762f;  // 6 inch wheels.
+const float kBaseRadius = 0.195f;
+// ~6 inch wheels (calibrated via parsec_calibration/scripts/calibrate_base_controller.py).
+const float kWheelRadius = 0.0712f;
 
 float forward_velocity = 0.0;
 float angular_velocity = 0.0;
