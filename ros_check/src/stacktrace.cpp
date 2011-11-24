@@ -13,9 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <execinfo.h>
+
+#include <cstdio>
+#include <cstdlib>
 
 namespace ros_check {
 
@@ -28,7 +29,7 @@ void PrintStacktrace(FILE *stream, int skip) {
   size = backtrace(array, 30);
   strings = backtrace_symbols(array, size);
   fprintf(stream, "Stack frames:\n");
-  // Skip the first frame always because we that will always be
+  // Skip the first frame always because it will always be
   // PrintStacktrace.
   for (i = skip + 1; i < size; i++) {
     fprintf(stream, "%s\n", strings[i]);
@@ -42,4 +43,4 @@ void PrintStacktraceAndDie(FILE *stream) {
   abort();
 }
 
-}
+}  // namespace ros_check
