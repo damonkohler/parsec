@@ -9,6 +9,7 @@
   <license>Apache 2.0</license>
   <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/ros_check</url>
+  <depend package="roscpp" />
   <depend package="rosconsole" />
 
   <export>
