@@ -14,7 +14,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-"""Estimate rotational and linear acceleration limits."""
+"""Estimate odometry errors."""
 
 __author__ = 'damonkohler@google.com (Damon Kohler)'
 
@@ -28,11 +28,11 @@ from rospy import timer
 
 from parsec_calibration import laser_scans
 
-import sensor_msgs.msg as sensor_msgs
-import nav_msgs.msg as nav_msgs
 import geometry_msgs.msg as geometry_msgs
+import parsec_msgs.msg as parsec_msgs
+import sensor_msgs.msg as sensor_msgs
 
-_MIN_DISTANCE_TO_WALL = 1.0
+_MIN_DISTANCE_TO_WALL = 2.0
 _MAX_LINEAR_VELOCITY = 2.0
 _TWIST_TIMER_PERIOD = rospy.Duration(0.1)
 _MAX_TRAVEL_DISTANCE = 2.0
@@ -59,10 +59,10 @@ class CalibrationResult(object):
     self._calculate_odometry_distance_traveled()
 
   def _calculate_odometry_distance_traveled(self):
-    start_x = self._odometry_messages[0].pose.pose.position.x
-    start_y = self._odometry_messages[0].pose.pose.position.y
-    end_x = self._odometry_messages[-1].pose.pose.position.x
-    end_y = self._odometry_messages[-1].pose.pose.position.y
+    start_x = self._odometry_messages[0].position_x
+    start_y = self._odometry_messages[0].position_y
+    end_x = self._odometry_messages[-1].position_x
+    end_y = self._odometry_messages[-1].position_y
     self.odometry_distance_traveled = math.sqrt(
         (start_x - end_x) ** 2 + (start_y - end_y) ** 2)
 
@@ -70,35 +70,6 @@ class CalibrationResult(object):
     start = laser_scans.calculate_laser_scan_range(self._laser_scan_messages[0])
     end = laser_scans.calculate_laser_scan_range(self._laser_scan_messages[-1])
     self.laser_scan_distance_traveled = abs(start - end)
-
-  def calculate_acceleration(self):
-    start_message = None
-    for start_index, message in enumerate(self._odometry_messages):
-      if abs(message.twist.twist.linear.x) > 0.1:
-        break
-      start_message = message
-    else:
-      print 'Acceleration calculation failed. Velocity is always 0.'
-      return
-    if start_message is None:
-      print 'Acceleration calculation failed. Velocity profile does not start at 0.'
-      return
-    previous_velocity = 0
-    accelerating_odometry_messages = [start_message]
-    for message in self._odometry_messages[start_index:]:
-      new_velocity = abs(message.twist.twist.linear.x)
-      if new_velocity > previous_velocity:
-        previous_velocity = new_velocity
-        accelerating_odometry_messages.append(message)
-      else:
-        break
-    if (not start_index + len(accelerating_odometry_messages) <
-        len(self._odometry_messages)):
-      print 'Acceleration calculation failed. Did not reach maximum velocity.'
-      return
-    dt = (accelerating_odometry_messages[0].header.stamp -
-          accelerating_odometry_messages[-1].header.stamp).to_sec()
-    return abs(accelerating_odometry_messages[-1].twist.twist.linear.x / dt)
 
   def calculate_odometry_error_multiplier(self):
     if self.odometry_distance_traveled > 0:
@@ -112,9 +83,6 @@ class CalibrationResult(object):
       odometry_error_multiplier = self.calculate_odometry_error_multiplier()
       if odometry_error_multiplier is not None:
         stream.write('Error multiplier: %.2f\n' % odometry_error_multiplier)
-      acceleration = self.calculate_acceleration()
-      if acceleration is not None:
-        stream.write('Acceleration: %.2f m/s2\n' % acceleration)
     else:
       stream.write('No data collected.\n')
 
@@ -124,9 +92,9 @@ class CalibrationRoutine(object):
   def __init__(self):
     self._twist_publisher = rospy.Publisher('cmd_vel', geometry_msgs.Twist)
     self._odom_subscriber = rospy.Subscriber(
-        'odom', nav_msgs.Odometry, self._on_odometry)
+        'rosserial/odom_simple', parsec_msgs.Odometry, self._on_odometry)
     self._scan_subscriber = rospy.Subscriber(
-        'base_scan', sensor_msgs.LaserScan, self._on_laser_scan)
+        'parsec/base_scan', sensor_msgs.LaserScan, self._on_laser_scan)
     self._twist_timer = timer.Timer(_TWIST_TIMER_PERIOD, self._publish_twist)
     self._finished = threading.Event()
     self._last_laser_scan = None
@@ -185,7 +153,7 @@ class CalibrationRoutine(object):
 
 
 def main():
-  rospy.init_node('estimate_acceleration_limits_node')
+  rospy.init_node('calibrate_base_controller_node')
 
   calibration_routine = CalibrationRoutine()
   velocity = _MAX_LINEAR_VELOCITY
@@ -200,15 +168,11 @@ def main():
   calibration_routine.shutdown()
 
   error_multipliers = []
-  accelerations = []
   for result in results:
     error_multipliers.append(result.calculate_odometry_error_multiplier())
-    accelerations.append(result.calculate_acceleration())
   sys.stdout.write('\nSummary\n')
   sys.stdout.write('Mean odometry error multiplier: %.2f\n' %
       _mean(filter(None, error_multipliers)))
-  sys.stdout.write('Mean acceleration: %.2f m/s2\n' %
-      _mean(filter(None, accelerations)))
 
 
 if __name__ == '__main__':

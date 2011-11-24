@@ -118,7 +118,6 @@ class PositionController {
   float distance_error_;
   float gain_;
   float acceleration_;
-  float odometry_error_;
 };
 
 #endif  // PARSECLIB_POSITION_CONTROLLER_

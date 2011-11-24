@@ -35,8 +35,7 @@ PositionController::PositionController(
       target_velocity_(0.0f),
       distance_error_(0.0f),
       gain_(0.0f),
-      acceleration_(0.0f),
-      odometry_error_(0.0f) {}
+      acceleration_(0.0f) {}
 
 void PositionController::Initialize(bool reverse) {
   // Three CLRPs are kind of a soft reset to ensure all position
