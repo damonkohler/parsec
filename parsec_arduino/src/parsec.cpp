@@ -229,7 +229,7 @@ static void LoopUltrasonic() {
   static int last_error_count = -1;
   int current_error_count = Ultrasonic::GetErrorCount();
   if (current_error_count != last_error_count) {
-    printf_row(2, "PingerErrs %d", current_error_count);
+    printf_row(5, "PingErrs %d", current_error_count);
     last_error_count = current_error_count;
   }
 }
@@ -273,24 +273,24 @@ Odometry odometry;
 unsigned long last_odometry_update = 0;
 unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
-ros::Publisher odometry_publisher("odom_simple", &odometry_message);
+ros::Publisher odometry_publisher("~odom_simple", &odometry_message);
 
 #ifdef PUBLISH_JOINT_STATES
 unsigned long last_joint_state_message = 0;
 sensor_msgs::JointState joint_state_message;
-ros::Publisher joint_state_publisher("joint_states", &joint_state_message);
+ros::Publisher joint_state_publisher("~joint_states", &joint_state_message);
 #endif
 
 #ifdef DEBUG_BASE_CONTROLLER
 unsigned long last_controller_message = 0;
 std_msgs::Float32 left_velocity_command;
-ros::Publisher left_velocity_cmd_publisher("base_controller/left_command", &left_velocity_command);
+ros::Publisher left_velocity_cmd_publisher("~base_controller/left_command", &left_velocity_command);
 std_msgs::Float32 left_velocity_error;
-ros::Publisher left_velocity_error_publisher("base_controller/left_error", &left_velocity_error);
+ros::Publisher left_velocity_error_publisher("~base_controller/left_error", &left_velocity_error);
 std_msgs::Float32 right_velocity_command;
-ros::Publisher right_velocity_cmd_publisher("base_controller/right_command", &right_velocity_command);
+ros::Publisher right_velocity_cmd_publisher("~base_controller/right_command", &right_velocity_command);
 std_msgs::Float32 right_velocity_error;
-ros::Publisher right_velocity_error_publisher("base_controller/right_error", &right_velocity_error);
+ros::Publisher right_velocity_error_publisher("~base_controller/right_error", &right_velocity_error);
 #endif
 
 static bool IsUART1Available() {
@@ -327,7 +327,7 @@ PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius);
 
 static void SetupPositionControllerParameters() {
-  float gain = 0.025f;
+  float gain = 0.01f;
   float acceleration = 1.0f;
   node_handle.getParam("~gain", &gain);
   node_handle.getParam("~acceleration", &acceleration);
@@ -498,7 +498,6 @@ ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
     "cmd_vel", &VelocityCallback);
 
 static void SetupROSSerial() {
-  node_handle.initNode();
   node_handle.subscribe(velocity_subscriber);
   node_handle.subscribe(tilt_profile_subscriber);
   node_handle.advertise(tilt_signal_pub);
@@ -516,11 +515,29 @@ static void SetupROSSerial() {
 
 static void LoopROSSerial() {
   node_handle.spinOnce();
-  static int last_error_count = -1;
-  int current_error_count = node_handle.getErrorCount();
-  if (current_error_count != last_error_count) {
-    printf_row(1, "ErrorCount %d", current_error_count);
-    last_error_count = current_error_count;
+  static int last_invalid_size_error_count = -1;
+  int current_invalid_size_error_count = node_handle.getInvalidSizeErrorCount();
+  if (current_invalid_size_error_count != last_invalid_size_error_count) {
+    printf_row(1, "SizeErrs %d", current_invalid_size_error_count);
+    last_invalid_size_error_count = current_invalid_size_error_count;
+  }
+  static int last_checksum_error_count = -1;
+  int current_checksum_error_count = node_handle.getChecksumErrorCount();
+  if (current_checksum_error_count != last_checksum_error_count) {
+    printf_row(2, "CksmErrs %d", current_checksum_error_count);
+    last_checksum_error_count = current_checksum_error_count;
+  }
+  static int last_state_error_count = -1;
+  int current_state_error_count = node_handle.getChecksumErrorCount();
+  if (current_state_error_count != last_state_error_count) {
+    printf_row(3, "StateErrs %d", current_state_error_count);
+    last_state_error_count = current_state_error_count;
+  }
+  static int last_malformed_message_error_count = -1;
+  int current_malformed_message_error_count = node_handle.getMalformedMessageErrorCount();
+  if (current_malformed_message_error_count != last_malformed_message_error_count) {
+    printf_row(4, "MsgErrs %d", current_malformed_message_error_count);
+    last_malformed_message_error_count = current_malformed_message_error_count;
   }
 }
 
@@ -582,11 +599,13 @@ void setup() {
   SetupPositionControllers();
 
   // Wait until we've connected to the host.
-  printf_row(0, "Waiting");
+  printf_row(7, "Waiting");
+  hardware.init();
   while (!node_handle.connected()) {
-    node_handle.spinOnce();
+    LoopROSSerial();
+    LoopDisplay();
   }
-  printf_row(0, "Connected");
+  printf_row(7, "Connected");
 
   SetupPositionControllerParameters();
   SetupServoSweep();
