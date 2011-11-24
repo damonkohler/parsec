@@ -64,13 +64,13 @@ class ParsecOdometry {
                                     tf::Transform *correction);
 
  private:
-  static const double kDefaultMinimalOdometryRate = 2.0;
   static const bool kDefaultPublishTf = true;
+  static const double kDefaultMinimalOdometryRate = 2.0;
   static const std::string kDefaultBaseFrame;
   static const std::string kDefaultOdometryFrame;
 
   bool publish_tf_;
-  double minimal_odometry_rate_;
+  double minimal_odometry_rate_;  
   std::string base_frame_;
   std::string odometry_frame_;
   ros::NodeHandle node_handle_;
@@ -85,8 +85,11 @@ class ParsecOdometry {
   void TransformToOdometry(const tf::StampedTransform &transform, nav_msgs::Odometry *odometry);
   void ParsecOdometryToOdometry(const parsec_msgs::Odometry &parsec_odometry,
                                 nav_msgs::Odometry *odometry);
-  bool CompareOdometry(const nav_msgs::Odometry &lhs, const nav_msgs::Odometry &rhs,
-                       double max_linear_error, double max_angular_error);
+  /**
+   * Returns if the odometry message is (almost) zero, i.e. has an
+   * identity rotation and na identity vector.
+   */
+  bool OdometryIsZero(const nav_msgs::Odometry &odometry);
 };
 
 }  // parsec_odometry
