@@ -1,9 +1,8 @@
 <package>
   <description brief="ros_check">
 
-    Macros for checking pre-condititions in C++ and printing a nice
-    stack trace in case of failure. The backtrace code has been taken
-    from Google's glog library.
+    Macros for checking condititions in C++ and printing a nice stack
+    trace in case of failure.
 
   </description>
   <author>Lorenz Moesenlechner</author>
