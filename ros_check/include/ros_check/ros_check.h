@@ -20,22 +20,26 @@
 
 #include <boost/typeof/typeof.hpp>
 #include <ros/console.h>
+#include <ros/ros.h>
 
 // We cannot create a function or class to prevent evaluation of
 // rhs and lhs because we would lose line and file information in
 // ROS_FATAL. Instead, we will bind lhs and rhs to variables
 // inside the while loop.
-#define CHECK_OP(name, value1, value2, operation)  \
+#define CHECK_OP(name, value1, value2, operation) \
     do { \
       BOOST_AUTO(__ros_check_lhs_evaluated, value1); \
       BOOST_AUTO(__ros_check_rhs_evaluated, value2); \
       if (!(__ros_check_lhs_evaluated operation \
-            __ros_check_rhs_evaluated)) {       \
+            __ros_check_rhs_evaluated)) { \
         ROS_FATAL_STREAM(__FILE__ ":" << __LINE__ << \
                          " CHECK" #name " failed: " \
                          #value1 " " #operation " " #value2 << \
                          " (" << __ros_check_lhs_evaluated << " vs. " << \
                          __ros_check_rhs_evaluated << ")"); \
+        if (ros::isInitialized()) { \
+          ros::shutdown(); \
+        } \
         ros_check::PrintStacktraceAndDie(stderr); \
       } \
     } while (0)
@@ -43,7 +47,10 @@
 #define CHECK(condition) \
     do { \
       if (!(condition)) { \
-        ROS_FATAL(__FILE__ ":%d Check " #condition " failed", __LINE__);  \
+        ROS_FATAL(__FILE__ ":%d Check " #condition " failed", __LINE__); \
+        if (ros::isInitialized()) { \
+          ros::shutdown(); \
+        } \
         ros_check::PrintStacktraceAndDie(stderr); \
       } \
     } while (0)
@@ -56,7 +63,6 @@
 #define CHECK_GT(lhs, rhs) CHECK_OP(_GT, lhs, rhs, >)
 
 namespace ros_check {
-
 
 void PrintStacktrace(FILE *stream, int skip);
 void PrintStacktraceAndDie(FILE *stream);
