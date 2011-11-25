@@ -158,7 +158,7 @@ def main():
   for result in results:
     error_multipliers.append(result.calculate_odometry_error_multiplier())
   sys.stdout.write('\nSummary\n')
-  sys.stdout.write('Mean odometry error multiplier: %.2f\n' %
+  sys.stdout.write('Mean wheel radius multiplier: %.2f\n' %
       _mean(filter(None, error_multipliers)))
 
 
