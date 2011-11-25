@@ -27,17 +27,17 @@ const std::string ParsecOdometry::kDefaultBaseFrame = "base_link";
 const std::string ParsecOdometry::kDefaultOdometryFrame = "odom";
 
 ParsecOdometry::ParsecOdometry()
-  : publish_tf_(false),
-    minimal_odometry_rate_(kDefaultMinimalOdometryRate),
-    base_frame_(kDefaultBaseFrame),
-    odometry_frame_(kDefaultOdometryFrame),
-    correction_transform_(tf::Transform::getIdentity()) {
+    : publish_tf_(false),
+      minimal_odometry_rate_(kDefaultMinimalOdometryRate),
+      base_frame_(kDefaultBaseFrame),
+      odometry_frame_(kDefaultOdometryFrame),
+      correction_transform_(tf::Transform::getIdentity()) {
 }
 
 ParsecOdometry::ParsecOdometry(const ros::NodeHandle &node_handle)
-  : node_handle_(node_handle),
-    tf_broadcaster_(),
-    correction_transform_(tf::Transform::getIdentity()) {
+    : node_handle_(node_handle),
+      tf_broadcaster_(),
+      correction_transform_(tf::Transform::getIdentity()) {
   node_handle_.param("publish_tf", publish_tf_, kDefaultPublishTf);
   node_handle_.param("minimal_odometry_rate", minimal_odometry_rate_,
                      kDefaultMinimalOdometryRate);
@@ -153,12 +153,12 @@ void ParsecOdometry::CalculateCorrectionTransform(
 
 bool ParsecOdometry::OdometryIsZero(const nav_msgs::Odometry &odometry) {
   return fabs(odometry.pose.pose.position.x) < 1e-2 &&
-    fabs(odometry.pose.pose.position.y) < 1e-2 &&
-    fabs(odometry.pose.pose.position.z) < 1e-2 &&
-    fabs(odometry.pose.pose.orientation.x) < 1e-6 &&
-    fabs(odometry.pose.pose.orientation.y) < 1e-6 &&
-    fabs(odometry.pose.pose.orientation.z) < 0.1 &&
-    fabs(odometry.pose.pose.orientation.w - 1.0) < 0.1;
+      fabs(odometry.pose.pose.position.y) < 1e-2 &&
+      fabs(odometry.pose.pose.position.z) < 1e-2 &&
+      fabs(odometry.pose.pose.orientation.x) < 1e-6 &&
+      fabs(odometry.pose.pose.orientation.y) < 1e-6 &&
+      fabs(odometry.pose.pose.orientation.z) < 0.1 &&
+      fabs(odometry.pose.pose.orientation.w - 1.0) < 0.1;
 }
 
 }  // parsec_odometry
