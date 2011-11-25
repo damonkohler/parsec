@@ -37,10 +37,7 @@ class TwistController(object):
     self.angular_velocity = 0
 
   def _publish_twist(self, unused_event):
-    twist = geometry_msgs.Twist()
-    twist.linear.x = self.linear_velocity
-    twist.angular.z = self.angular_velocity
-    self._twist_publisher.publish(twist)
+    self.step(self.linear_velocity, self.angular_velocity)
 
   def stop(self):
     self.linear_velocity = 0
@@ -49,6 +46,12 @@ class TwistController(object):
   def go(self, linear_velocity, angular_velocity):
     self.linear_velocity = linear_velocity
     self.angular_velocity = angular_velocity
+
+  def step(self, linear_velocity, angular_velocity):
+    twist = geometry_msgs.Twist()
+    twist.linear.x = linear_velocity
+    twist.angular.z = angular_velocity
+    self._twist_publisher.publish(twist)
 
   def shutdown(self):
     self._twist_timer.shutdown()

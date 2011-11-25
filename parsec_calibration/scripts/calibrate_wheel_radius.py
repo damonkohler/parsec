@@ -151,7 +151,7 @@ def main():
     velocity *= -1
     sys.stdout.write('Run %d\n' % index)
     results[-1].write(sys.stdout)
-    rospy.sleep(5)  # HACK(damonkohler): Ensure that our velocity starts at 0.
+    rospy.sleep(5)
   calibration_routine.shutdown()
 
   error_multipliers = []
