@@ -27,17 +27,17 @@ const std::string ParsecOdometry::kDefaultBaseFrame = "base_link";
 const std::string ParsecOdometry::kDefaultOdometryFrame = "odom";
 
 ParsecOdometry::ParsecOdometry()
-  : publish_tf_(false),
-    minimal_odometry_rate_(kDefaultMinimalOdometryRate),
-    base_frame_(kDefaultBaseFrame),
-    odometry_frame_(kDefaultOdometryFrame),
-    correction_transform_(tf::Transform::getIdentity()) {
+    : publish_tf_(false),
+      minimal_odometry_rate_(kDefaultMinimalOdometryRate),
+      base_frame_(kDefaultBaseFrame),
+      odometry_frame_(kDefaultOdometryFrame),
+      correction_transform_(tf::Transform::getIdentity()) {
 }
 
 ParsecOdometry::ParsecOdometry(const ros::NodeHandle &node_handle)
-  : node_handle_(node_handle),
-    tf_broadcaster_(),
-    correction_transform_(tf::Transform::getIdentity()) {
+    : node_handle_(node_handle),
+      tf_broadcaster_(),
+      correction_transform_(tf::Transform::getIdentity()) {
   node_handle_.param("publish_tf", publish_tf_, kDefaultPublishTf);
   node_handle_.param("minimal_odometry_rate", minimal_odometry_rate_,
                      kDefaultMinimalOdometryRate);
@@ -52,13 +52,13 @@ void ParsecOdometry::ParsecOdometryCallback(
     const parsec_msgs::Odometry::ConstPtr &parsec_odometry) {
   nav_msgs::Odometry odometry;
   ParsecOdometryToOdometry(*parsec_odometry, &odometry);
-  // If we see a time difference between subsequent odometry messages,
-  // recalculate the correction transform.
-  if (last_corrected_odometry_ &&
-      !CompareOdometry(*last_corrected_odometry_, odometry, 1e-2, 1e-2) &&
+  // If the odometry is reset, i.e. turns to be the identity transform
+  // and the minimal update rate expired, recalculate the error
+  // transform.
+  if (last_corrected_odometry_ && OdometryIsZero(odometry) &&
       parsec_odometry->header.stamp - last_corrected_odometry_->header.stamp >
       ros::Duration(1 / minimal_odometry_rate_)) {
-    ROS_INFO("Time difference between two succeeding odometry messages too big. "
+    ROS_INFO("Odometry message reset. "
              "Recalculating error correction.");
     CalculateCorrectionTransform(*last_corrected_odometry_, tf::Transform::getIdentity(),
                                  &correction_transform_);
@@ -151,16 +151,14 @@ void ParsecOdometry::CalculateCorrectionTransform(
   *correction = last_corrected_odometry_transform * offset;
 }
 
-bool ParsecOdometry::CompareOdometry(
-    const nav_msgs::Odometry &lhs, const nav_msgs::Odometry &rhs,
-    double max_linear_error, double max_angular_error) {
-  return fabs(lhs.pose.pose.position.x - rhs.pose.pose.position.x) < max_linear_error &&
-      fabs(lhs.pose.pose.position.y - rhs.pose.pose.position.y) < max_linear_error &&
-      fabs(lhs.pose.pose.position.z - rhs.pose.pose.position.z) < max_linear_error &&
-      fabs(lhs.pose.pose.orientation.x - rhs.pose.pose.orientation.x) < max_angular_error &&
-      fabs(lhs.pose.pose.orientation.y - rhs.pose.pose.orientation.y) < max_angular_error &&
-      fabs(lhs.pose.pose.orientation.z - rhs.pose.pose.orientation.z) < max_angular_error &&
-      fabs(lhs.pose.pose.orientation.w - rhs.pose.pose.orientation.w) < max_angular_error;
+bool ParsecOdometry::OdometryIsZero(const nav_msgs::Odometry &odometry) {
+  return fabs(odometry.pose.pose.position.x) < 1e-2 &&
+      fabs(odometry.pose.pose.position.y) < 1e-2 &&
+      fabs(odometry.pose.pose.position.z) < 1e-2 &&
+      fabs(odometry.pose.pose.orientation.x) < 1e-6 &&
+      fabs(odometry.pose.pose.orientation.y) < 1e-6 &&
+      fabs(odometry.pose.pose.orientation.z) < 0.1 &&
+      fabs(odometry.pose.pose.orientation.w - 1.0) < 0.1;
 }
 
 }  // parsec_odometry

@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="laser_filters" type="scan_to_cloud_filter_chain" name="scan_to_base_cloud">
+    <remap from="scan" to="base_scan" />
+    <remap from="cloud_filtered" to="base_cloud" />
+    <param name="target_frame" value="base_footprint" />
+    <param name="high_fidelity" value="true" />
+    <rosparam>
+      scan_filter_chain: []
+      cloud_filter_chain: []
+    </rosparam>
+  </node>
+</launch>
