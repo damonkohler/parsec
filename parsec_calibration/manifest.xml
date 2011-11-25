@@ -8,10 +8,11 @@
   <license>Apache 2.0</license>
   <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/parsec_calibration</url>
+
   <depend package="geometry_msgs" />
-  <depend package="nav_msgs" />
   <depend package="rospy" />
   <depend package="sensor_msgs" />
   <depend package="parsec_msgs" />
+  <depend package="kdl" />
 
 </package>

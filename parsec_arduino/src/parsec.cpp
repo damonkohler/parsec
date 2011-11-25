@@ -261,9 +261,11 @@ static void MakeUltrasonicSafe(float* velocity) {
 // Position controller stuff
 // ----------------------------------------------------------------------
 
-const float kBaseRadius = 0.195f;
-// ~6 inch wheels (calibrated via parsec_calibration/scripts/calibrate_base_controller.py).
-const float kWheelRadius = 0.0712f;
+
+// ~16 inch base (calibrated via parsec_calibration/scripts/calibrate_base_radius.py).
+const float kBaseRadius = 0.18f;
+// ~6 inch wheels (calibrated via parsec_calibration/scripts/calibrate_wheel_radius.py).
+const float kWheelRadius = 0.07f;
 
 float forward_velocity = 0.0;
 float angular_velocity = 0.0;
@@ -328,7 +330,7 @@ PositionController left_controller(&ReadUART1, &WriteUART1, 1, kWheelRadius);
 PositionController right_controller(&ReadUART1, &WriteUART1, 2, kWheelRadius);
 
 static void SetupPositionControllerParameters() {
-  float gain = 0.01f;
+  float gain = 0.075f;
   float acceleration = 1.0f;
   node_handle.getParam("~gain", &gain);
   node_handle.getParam("~acceleration", &acceleration);
