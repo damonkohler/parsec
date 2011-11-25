@@ -1,0 +1,21 @@
+<launch>
+  <include file="$(find parsec_navigation)/config/gmapping_parsec.launch" />
+
+  <include file="$(find parsec_simulation_stage)/launch/parsec_stage_willow.launch" />
+  <include file="$(find parsec_navigation)/config/move_base_parsec_dynamic.launch" />
+
+  <!-- Disable all observation sources but the base laser since a
+       tilting laser is not supported by stage. -->
+  <rosparam>
+    move_base:
+      global_costmap:
+        observation_sources: base_laser
+      local_costmap:
+        observation_sources: base_laser
+    move_base_dynamic:
+      global_costmap:
+        observation_sources: base_laser
+      local_costmap:
+        observation_sources: base_laser
+  </rosparam>
+</launch>
