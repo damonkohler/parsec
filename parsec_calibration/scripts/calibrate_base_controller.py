@@ -24,18 +24,16 @@ import threading
 
 import roslib; roslib.load_manifest('parsec_calibration')
 import rospy
-from rospy import timer
 
 from parsec_calibration import laser_scans
+from parsec_calibration import twist_controller
 
-import geometry_msgs.msg as geometry_msgs
 import parsec_msgs.msg as parsec_msgs
 import sensor_msgs.msg as sensor_msgs
 
-_MIN_DISTANCE_TO_WALL = 2.0
-_MAX_LINEAR_VELOCITY = 2.0
-_TWIST_TIMER_PERIOD = rospy.Duration(0.1)
-_MAX_TRAVEL_DISTANCE = 2.0
+_MIN_DISTANCE_TO_WALL = 1.0
+_MAX_LINEAR_VELOCITY = 0.5
+_MAX_TRAVEL_DISTANCE = 1.0
 
 
 def _mean(values):
@@ -90,31 +88,18 @@ class CalibrationResult(object):
 class CalibrationRoutine(object):
 
   def __init__(self):
-    self._twist_publisher = rospy.Publisher('cmd_vel', geometry_msgs.Twist)
     self._odom_subscriber = rospy.Subscriber(
         'rosserial/odom_simple', parsec_msgs.Odometry, self._on_odometry)
     self._scan_subscriber = rospy.Subscriber(
         'parsec/base_scan', sensor_msgs.LaserScan, self._on_laser_scan)
-    self._twist_timer = timer.Timer(_TWIST_TIMER_PERIOD, self._publish_twist)
+    self._twist_controller = twist_controller.TwistController()
     self._finished = threading.Event()
     self._last_laser_scan = None
 
   def _clear(self):
-    self._linear_velocity = 0
-    self._angular_velocity = 0
+    self._twist_controller.stop()
     self._result = CalibrationResult()
     self._finished.clear()
-
-  def _publish_twist(self, unused_event):
-    if (self._last_laser_scan is None or
-        rospy.Time.now() - self._last_laser_scan > rospy.Duration(0.25)):
-      rospy.logerr('Laser not coming in fast enough. '
-                   'Last laser scan received at %s' % self._last_laser_scan)
-      return
-    twist = geometry_msgs.Twist()
-    twist.linear.x = self._linear_velocity
-    twist.angular.z = self._angular_velocity
-    self._twist_publisher.publish(twist)
 
   def _on_odometry(self, data):
     if self._finished.is_set():
@@ -129,37 +114,39 @@ class CalibrationRoutine(object):
       return
     self._result.add_laser_message(data)
     if (laser_scans.calculate_laser_scan_range(data) < _MIN_DISTANCE_TO_WALL and
-        self._linear_velocity > 0):
+        self._twist_controller.linear_velocity > 0):
       print 'Too close to wall, stopping.'
       self._finish()
 
   def _finish(self):
-    self._linear_velocity = 0
-    self._angular_velocity = 0
+    self._twist_controller.stop()
     self._finished.set()
 
-  def run(self, linear_velocity, angular_velocity):
+  def run(self, linear_velocity):
     self._clear()
-    self._linear_velocity = linear_velocity
-    self._angular_velocity = angular_velocity
+    while (self._last_laser_scan is None or
+           rospy.Time.now() - self._last_laser_scan > rospy.Duration(0.25)):
+      rospy.logerr('Laser scans are not coming in fast enough. '
+                   'Last laser scan received at %s' % self._last_laser_scan)
+      rospy.sleep(1)
+    self._twist_controller.go(linear_velocity, 0)
 
   def wait_for_result(self):
     self._finished.wait()
     return self._result
 
   def shutdown(self):
-    self._twist_timer.shutdown()
-    self._twist_timer.join()
+    self._twist_controller.shutdown()
 
 
 def main():
-  rospy.init_node('calibrate_base_controller_node')
+  rospy.init_node('calibrate_wheel_radius_node')
 
   calibration_routine = CalibrationRoutine()
   velocity = _MAX_LINEAR_VELOCITY
   results = []
   for index in range(8):
-    calibration_routine.run(velocity, 0)
+    calibration_routine.run(velocity)
     results.append(calibration_routine.wait_for_result())
     velocity *= -1
     sys.stdout.write('Run %d\n' % index)
