@@ -51,8 +51,10 @@ class LogStreamPrinter {
   std::string format_string_;
   ros::Subscriber log_subscriber_;
 
-  // To make this copyable, we need to use a pointer for our
-  // NodeHandle.
+  // This class should not be copyable. ROS subscriber callbacks are
+  // bound to their instance by using boost bind which means that
+  // copied subscribers stoped working as soon as the original class
+  // is destructed.
   LogStreamPrinter(const LogStreamPrinter &other);
 
   void LogCallback(const rosgraph_msgs::Log::ConstPtr &log);
