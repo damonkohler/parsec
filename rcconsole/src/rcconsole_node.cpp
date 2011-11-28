@@ -28,7 +28,7 @@ namespace rcconsole {
 static const std::string kDefaultFormatString = "[%t %l %n] %m";
 static const int kFormatStringArgument = RcConsole::EXCLUDE_MESSAGE_FILTER + 1;
 
-static option program_options[] = {
+static const option program_options[] = {
   {"include-name", required_argument, NULL, RcConsole::INCLUDE_NAME_FILTER},
   {"include-message", required_argument, NULL, RcConsole::INCLUDE_MESSAGE_FILTER},
   {"exclude-name", required_argument, NULL, RcConsole::EXCLUDE_NAME_FILTER},
@@ -39,7 +39,7 @@ static option program_options[] = {
 
 static void PrintUsage(const std::string &program_name) {
   std::cout << "Usage: " << program_name << " [OPTION]" << std::endl;
-  std::cout << std::endl <<
+  std::cout << std::endl << "Program options:" << std::endl <<
       "  --include-name=regex" << std::endl <<
       "\t only print if logger name matches regex" << std::endl <<
       "  --include-message=regex" << std::endl <<
