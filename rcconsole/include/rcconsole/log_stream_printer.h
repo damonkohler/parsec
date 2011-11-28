@@ -45,6 +45,8 @@ class LogStreamPrinter {
       const ros::NodeHandle &node_handle, const std::string &topic,
       std::ostream &stream, const std::string &format_string);
 
+  void Reconnect(const std::string &topic);
+
  private:
   ros::NodeHandle node_handle_;
   std::ostream &stream_;

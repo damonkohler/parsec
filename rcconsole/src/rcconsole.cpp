@@ -39,6 +39,9 @@ void RcConsole::AddFilter(LogFilterType type, const std::string &regex) {
   remappings[name + "/rosout"] = current_output_topic_;
   CHECK(nodelet_loader_.load(name, nodelet_type_name, remappings, argv));
   current_output_topic_ = name + "/rosout_filtered";
+  if (stream_printer_) {
+    stream_printer_->Reconnect(current_output_topic_);
+  }
 }
 
 void RcConsole::SetOutputStream(
