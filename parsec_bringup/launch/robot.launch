@@ -38,13 +38,16 @@
       relayed_topics:
         - input_topic: /parsec/base_scan
           output_topic: /base_scan
-          expected_frequency: 5.0
+          expected_frequency: 1.0
         - input_topic: /parsec/tilt_scan
           output_topic: /tilt_scan
-          expected_frequency: 5.0
+          expected_frequency: 1.0
         - input_topic: /rosserial/odom_simple
           output_topic: /odom_simple
-          expected_frequency: 5.0
+          expected_frequency: 1.0
+        - input_topic: /rosserial/signal
+          output_topic: /laser_tilt_controller/signal
+          expected_frequency: 0.1
     </rosparam>
   </node>
 </launch>
