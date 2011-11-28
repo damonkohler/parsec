@@ -1,22 +1,19 @@
 <package>
-  <description brief="parsec_parception">
+  <description brief="rcconsole">
 
-     parsec_perception
+     rcconsole
 
   </description>
   <author>Lorenz Moesenlechner</author>
   <license>Apache 2.0</license>
   <review status="unreviewed" notes="" />
-  <url>http://ros.org/wiki/floor_filter</url>
+  <url>http://ros.org/wiki/rcconsole</url>
   <depend package="roscpp" />
-  <depend package="laser_geometry" />
-  <depend package="pcl" />
-  <depend package="pcl_ros" />
-  <depend package="nodelet" />
+  <depend package="rosgraph_msgs" />
   <depend package="ros_check" />
+  <depend package="nodelet" />
 
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />
   </export>
 </package>
-
