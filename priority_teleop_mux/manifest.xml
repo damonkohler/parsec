@@ -11,7 +11,7 @@
 
   <depend package="rospy" />
   <depend package="geometry_msgs" />
-  <depend package="priority_teleop_mux_msgs" />
+  <depend package="priority_mux_msgs" />
 
 </package>
 
