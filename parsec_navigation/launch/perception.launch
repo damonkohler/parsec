@@ -5,9 +5,18 @@
         args="load parsec_perception/LaserToPointCloudConverter parsec_perception_nodelet_manager">
     <remap from="~input" to="tilt_scan" />
   </node>
+  <node pkg="nodelet" type="nodelet" name="outlier_removal_filter"
+        args="load pcl/StatisticalOutlierRemoval parsec_perception_nodelet_manager">
+    <remap from="~input" to="laser_scan_converter/output" />
+    <rosparam>
+      mean_k: 5
+      stddev: 1
+      negative: false
+    </rosparam>
+  </node>
   <node pkg="nodelet" type="nodelet" name="robot_self_filter"
         args="load parsec_perception/CircularRobotSelfFilter parsec_perception_nodelet_manager">
-    <remap from="~input" to="laser_scan_converter/output" />
+    <remap from="~input" to="outlier_removal_filter/output" />
     <rosparam>
       base_frame: base_footprint
       radius: 0.23
@@ -23,8 +32,8 @@
       line_distance_threshold: 0.05
       sensor_frame: tilt_laser
       reference_frame: base_footprint
-      max_floor_y_rotation: 0.05
-      max_floor_x_rotation: 1.00
+      max_floor_y_rotation: 0.05  # ~2.35 degrees
+      max_floor_x_rotation: 0.10  # ~5.7 degrees
       floor_z_distance: 0.05
     </rosparam>
   </node>
