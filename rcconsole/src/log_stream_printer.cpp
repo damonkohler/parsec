@@ -24,6 +24,13 @@ LogStreamPrinter::LogStreamPrinter(
     std::ostream &stream, const std::string &format_string)
     : node_handle_(node_handle),
       stream_(stream), format_string_(format_string) {
+  Reconnect(topic);
+}
+
+void LogStreamPrinter::Reconnect(const std::string &topic) {
+  if (log_subscriber_) {
+    log_subscriber_.shutdown();
+  }
   log_subscriber_ = node_handle_.subscribe<rosgraph_msgs::Log>(
       topic, 100, boost::bind(&LogStreamPrinter::LogCallback, this, _1));
 }
