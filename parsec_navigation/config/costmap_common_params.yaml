@@ -20,7 +20,7 @@ ground_object_cloud:
   expected_update_rate: 5.0
   # observation_persistance is necessary when clearing is
   # enabled. Otherwise, subsequent scans clear lower voxels too early.
-  observation_persistence: 10.0
+  observation_persistence: 5.0
   marking: true
   # Clearing is necessary to set voxels to free if the laser scanner
   # clearly could see through it. This is particularly important for
