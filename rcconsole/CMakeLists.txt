@@ -28,3 +28,8 @@ rosbuild_add_executable(rcconsole
   src/rcconsole.cpp
   src/rcconsole_node.cpp)
 target_link_libraries(rcconsole rcconsole_nodelets)
+
+rosbuild_add_gtest(rcconsole_test
+  src/rcconsole.cpp
+  test/rcconsole_test.cpp)
+target_link_libraries(rcconsole_test rcconsole_nodelets)
