@@ -142,6 +142,8 @@ bool FloorFilter::FindLine(
   ransac_line_finder.setModelType(pcl::SACMODEL_LINE);
   ransac_line_finder.setMethodType(pcl::SAC_RANSAC);
   ransac_line_finder.setDistanceThreshold(line_distance_threshold_);
+  ransac_line_finder.setAxis(Eigen::Vector3f(0, 1, 0));
+  ransac_line_finder.setEpsAngle(max_floor_x_rotation_);
   ransac_line_finder.setMaxIterations(100);
 
   ransac_line_finder.setInputCloud(input_cloud);
