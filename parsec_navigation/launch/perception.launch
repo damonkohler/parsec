@@ -57,7 +57,7 @@
       reference_frame: base_footprint
       max_floor_y_rotation: 0.05  # ~2.35 degrees
       max_floor_x_rotation: 0.175  # ~10 degrees
-      floor_z_distance: 0.02
+      floor_z_distance: 0.03
     </rosparam>
   </node>
 
@@ -83,8 +83,8 @@
       line_distance_threshold: 0.04
       sensor_frame: fixed_angle_laser
       reference_frame: base_footprint
-      max_floor_y_rotation: 0.02
-      max_floor_x_rotation: 0.875  # ~10 degrees
+      max_floor_y_rotation: 0.02  # ~1.1 degrees
+      max_floor_x_rotation: 0.0875  # ~5 degrees
       floor_z_distance: 0.02
     </rosparam>
   </node>
