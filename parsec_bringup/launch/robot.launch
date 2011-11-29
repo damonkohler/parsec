@@ -6,6 +6,9 @@
       laser_frame: base_laser
       laser_topic: parsec/base_scan
     anonymous_2:
+      laser_frame: fixed_angle_laser
+      laser_topic: parsec/fixed_angle_scan
+    anonymous_3:
       laser_frame: tilt_laser
       laser_topic: parsec/tilt_scan
   </rosparam>
@@ -38,6 +41,9 @@
       relayed_topics:
         - input_topic: /parsec/base_scan
           output_topic: /base_scan
+          expected_frequency: 1.0
+        - input_topic: /parsec/fixed_angle_scan
+          output_topic: /fixed_angle_scan
           expected_frequency: 1.0
         - input_topic: /parsec/tilt_scan
           output_topic: /tilt_scan
