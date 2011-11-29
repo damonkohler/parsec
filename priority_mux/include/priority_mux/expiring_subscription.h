@@ -24,9 +24,9 @@ namespace priority_mux {
 
 class ExpiringSubscription {
  public:
-  ExpiringSubscription(const std::string name, int priority,
-                 ros::Duration timeout,
-                 const ros::Subscriber &subscriber);
+  ExpiringSubscription(
+      const std::string name, int priority, ros::Duration timeout,
+      const ros::Subscriber &subscriber);
   bool IsExpired();
   void Ping();
 
