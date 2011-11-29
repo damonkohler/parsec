@@ -34,7 +34,8 @@ static const option program_options[] = {
   {"exclude-name", required_argument, NULL, RcConsole::EXCLUDE_NAME_FILTER},
   {"exclude-message", required_argument, NULL, RcConsole::EXCLUDE_MESSAGE_FILTER},
   {"format-string", required_argument, NULL, kFormatStringArgument},
-  {"help", no_argument, NULL, 'h'}
+  {"help", no_argument, NULL, 'h'},
+  {0, 0, 0, 0}  
 };
 
 static void PrintUsage(const std::string &program_name) {
@@ -66,7 +67,7 @@ static void PrintUsage(const std::string &program_name) {
 static bool SetupFromCommandLine(
     int argc, char *argv[], RcConsole &rcconsole) {
   while (true) {
-    int option = getopt_long(argc, argv, "", program_options, NULL);
+    int option = getopt_long(argc, argv, "h", program_options, NULL);
     switch (option) {
       case -1:
         if (!rcconsole.HasOutputStream()) {
@@ -83,9 +84,8 @@ static bool SetupFromCommandLine(
         rcconsole.SetOutputStream(optarg, std::cout);
         break;
       case 'h':
-        PrintUsage(argv[0]);
-        return false;
       default:
+        PrintUsage(argv[0]);
         return false;
     }
   }

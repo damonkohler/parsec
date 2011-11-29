@@ -27,7 +27,8 @@ static const option program_options[] = {
   {"repeat", required_argument, NULL, 'r'},
   {"list-nodes", no_argument, NULL, 'n'},
   {"list-loggers", required_argument, NULL, 'l'},
-  {"help", no_argument, NULL, 'h'}
+  {"help", no_argument, NULL, 'h'},
+  {0, 0, 0, 0}  
 };
 
 void PrintUsage(const std::string &program_name) {
