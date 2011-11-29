@@ -16,5 +16,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(priority_mux
   src/priority_mux.cpp
+  src/expiring_subscription.cpp
   src/priority_mux_node.cpp)
 

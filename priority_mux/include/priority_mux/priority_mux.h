@@ -22,6 +22,8 @@
 #include <ros/ros.h>
 #include <topic_tools/shape_shifter.h>
 
+#include "priority_mux/expiring_subscription.h"
+
 namespace priority_mux {
 
 class PriorityMux {
@@ -30,52 +32,12 @@ class PriorityMux {
   void AddTopic(const std::string &topic);
 
  private:
-  class PriorizedTopic {
-   public:
-    PriorizedTopic(const std::string name, int priority,
-                   ros::Duration timeout,
-                   const ros::Subscriber &subscriber)
-        : name_(name), priority_(priority), timeout_(timeout),
-          subscriber_(subscriber),
-          runtime_(0.0) {}
-    
-    bool IsExpired() {
-      return last_ping_time_ != ros::Time() &&
-          ros::Time::now() - last_ping_time_ > timeout_;
-    }
-
-    void Ping() {
-      ros::Time now = ros::Time::now();
-      if (!IsExpired() && last_ping_time_ != ros::Time()) {
-        runtime_ += now - last_ping_time_;
-      }
-      last_ping_time_ = now;
-    }
-
-    const std::string &name() const {
-      return name_;
-    }
-    size_t priority() const {
-      return priority_;
-    }
-    const ros::Duration &runtime() const {
-      return runtime_;
-    }
-
-    std::string name_;
-    size_t priority_;
-    ros::Duration timeout_;
-    ros::Subscriber subscriber_;
-    ros::Time last_ping_time_;
-    ros::Duration runtime_;
-  };
-
   static const double kDefaultTimeout = 3.0;
-  static const double kDefaultLogRate = 5.0;
+  static const double kDefaultLogRate = 30.0;
 
   ros::NodeHandle global_node_handle_;
   ros::NodeHandle private_node_handle_;
-  std::vector<PriorizedTopic> priorized_topics_;
+  std::vector<ExpiringSubscription> expiring_subscriptions_;
   ros::Publisher output_publisher_;
   ros::Publisher log_publisher_;
   ros::Timer log_timer_;
