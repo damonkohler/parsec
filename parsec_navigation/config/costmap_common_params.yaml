@@ -4,8 +4,8 @@ robot_radius: 0.22
 inflation_radius: 0.4
 observation_sources: "base_laser tilt_laser ground_object_cloud"
 base_laser:
-  data_type: LaserScan
-  topic: /base_scan
+  data_type: PointCloud
+  topic: /base_cloud
   marking: true
   clearing: true
   observation_persistance: 0.5
