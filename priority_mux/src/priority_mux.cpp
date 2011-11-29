@@ -77,7 +77,7 @@ size_t PriorityMux::FindActivePriority() {
   boost::mutex::scoped_lock lock(mutex_);
   size_t i;
   for(i = 0; i < expiring_subscriptions_.size(); i++) {
-    if (expiring_subscriptions_[i].IsExpired()) {
+    if (!expiring_subscriptions_[i].IsExpired()) {
       break;
     }
   }

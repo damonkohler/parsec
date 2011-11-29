@@ -26,7 +26,7 @@ ExpiringSubscription::ExpiringSubscription(
 }
 
 bool ExpiringSubscription::IsExpired() {
-  return last_ping_time_ != ros::Time() &&
+  return last_ping_time_ == ros::Time() ||
       ros::Time::now() - last_ping_time_ > timeout_;
 }
 
