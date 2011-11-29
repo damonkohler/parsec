@@ -5,8 +5,6 @@ controller_frequency: 10
 controller_patience: 5.0
 base_local_planner: dwa_local_planner/DWAPlannerROS
 recovery_behaviors:
-  - name: rotate_recovery
-    type: rotate_recovery/RotateRecovery
   - name: aggressive_reset
     type: clear_costmap_recovery/ClearCostmapRecovery
 
