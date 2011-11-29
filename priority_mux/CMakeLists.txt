@@ -19,3 +19,11 @@ rosbuild_add_executable(priority_mux
   src/expiring_subscription.cpp
   src/priority_mux_node.cpp)
 
+rosbuild_add_gtest(expiring_subscription_test
+  src/expiring_subscription.cpp
+  test/expiring_subscription_test.cpp)
+
+rosbuild_add_gtest(priority_mux_test
+  src/priority_mux.cpp
+  src/expiring_subscription.cpp
+  test/priority_mux_test.cpp)

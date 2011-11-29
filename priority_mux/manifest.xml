@@ -6,10 +6,11 @@
   </description>
   <author>Lorenz Moesenlechner</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/priority_mux</url>
-  <depend package="roscpp"/>
-  <depend package="topic_tools"/>
+  <depend package="roscpp" />
+  <depend package="topic_tools" />
+  <depend package="std_msgs" />
   <depend package="priority_mux_msgs" />  
 
 </package>
