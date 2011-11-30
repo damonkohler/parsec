@@ -25,7 +25,7 @@
   <node name="servo_joint_state_publisher" type="publish_servo_joint_state.py"
         pkg="publish_servo_joint_state">
     <remap from="~signal" to="laser_tilt_controller/signal" />
-    <remap from="~profile" to="laser_tilt_controller/profile" />
+    <remap from="~profile" to="rosserial/profile" />
   </node>
   <node name="cmd_vel_mux" type="priority_mux" pkg="priority_mux">
     <remap from="~output" to="/cmd_vel" />
