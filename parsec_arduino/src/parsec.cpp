@@ -433,7 +433,7 @@ static void PublishJointState() {
 // ----------------------------------------------------------------------
 
 parsec_msgs::LaserTiltSignal tilt_signal;
-ros::Publisher tilt_signal_pub("laser_tilt_controller/signal", &tilt_signal);
+ros::Publisher tilt_signal_pub("~signal", &tilt_signal);
 
 void PublishLaserSignal(int signal) {
   tilt_signal.header.stamp = node_handle.now();
@@ -456,7 +456,7 @@ void TiltProfileCallback(const parsec_msgs::LaserTiltProfile &tilt_profile_msg) 
 }
 
 ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
-  "laser_tilt_controller/profile", &TiltProfileCallback);
+  "~profile", &TiltProfileCallback);
 
 // These are constants are configured for the Modelcraft MC-621.
 // kMinAngle and kMaxAngle should correspond to the servo's position at
