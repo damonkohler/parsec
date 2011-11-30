@@ -27,10 +27,20 @@
     <remap from="~signal" to="laser_tilt_controller/signal" />
     <remap from="~profile" to="rosserial/profile" />
   </node>
+  <node name="joystick_safety_filter" type="cmd_vel_safety_filter" pkg="cmd_vel_safety_filter"
+        output="screen">
+    <remap from="~cmd_vel" to="virtual_joystick/cmd_vel" />
+    <remap from="~scan" to="/base_scan" />
+    <rosparam>
+      radius: 0.25
+      stop_distance: 0.45
+      max_acceleration: 0.5
+    </rosparam>
+  </node>
   <node name="cmd_vel_mux" type="priority_mux" pkg="priority_mux">
     <remap from="~output" to="/cmd_vel" />
     <rosparam>
-      incoming_topics: ["estop/cmd_vel", "virtual_joystick/cmd_vel", "move_base/cmd_vel"]
+      incoming_topics: ["estop/cmd_vel", "joystick_safety_filter/cmd_vel_filtered", "move_base/cmd_vel"]
     </rosparam>
   </node>
   <node name="cmd_vel_mux_log" type="rosbag" pkg="rosbag"
