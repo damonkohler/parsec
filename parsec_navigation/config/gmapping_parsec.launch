@@ -18,10 +18,6 @@
         lsigma: 0.075
         ogain: 3.0
         lskip: 0
-        srr: 0.02
-        srt: 0.04
-        str: 0.02
-        stt: 0.04
         linearUpdate: 0.5
         angularUpdate: 0.436
         temporalUpdate: -1.0
