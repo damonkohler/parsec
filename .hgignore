@@ -1,6 +1,6 @@
 parsec_arduino/src/ros_lib
 parsec_msgs/src
-priority_teleop_mux_msgs/src
+priority_mux_msgs/src
 build
 msg_gen
 srv_gen

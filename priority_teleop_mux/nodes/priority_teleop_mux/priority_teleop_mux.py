@@ -23,7 +23,7 @@ import roslib; roslib.load_manifest('priority_teleop_mux')
 import rospy
 
 import geometry_msgs.msg as geometry_msgs
-import priority_teleop_mux_msgs.msg as priority_teleop_mux_msgs
+import priority_mux_msgs.msg as priority_mux_msgs
 
 _TIMEOUT_TIMER_PERIOD = rospy.Duration(0.1)
 _PRIORITY_TIMEOUT = rospy.Duration(3)
@@ -52,7 +52,7 @@ class PriorityTeleopMux(object):
 
   def __init__(self, outgoing_topic):
     self._twist_publisher = rospy.Publisher(outgoing_topic, geometry_msgs.Twist)
-    self._log_publisher = rospy.Publisher('~log', priority_teleop_mux_msgs.LogEntry)
+    self._log_publisher = rospy.Publisher('~log', priority_mux_msgs.LogEntry)
     self._topics = []
     self._publisher_count = 0
     self._current_topic = None
@@ -61,9 +61,9 @@ class PriorityTeleopMux(object):
     self._log_timer = rospy.Timer(_LOG_TIMER_PERIOD, self._publish_log)
 
   def _publish_log(self, unused_event):
-    log_entry = priority_teleop_mux_msgs.LogEntry()
+    log_entry = priority_mux_msgs.LogEntry()
     for topic in self._topics:
-      topic_entry = priority_teleop_mux_msgs.TopicEntry()
+      topic_entry = priority_mux_msgs.TopicEntry()
       topic_entry.name = topic.name
       topic_entry.priority = topic.priority
       topic_entry.duration = topic.duration

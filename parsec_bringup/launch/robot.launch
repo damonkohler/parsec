@@ -6,6 +6,9 @@
       laser_frame: base_laser
       laser_topic: parsec/base_scan
     anonymous_2:
+      laser_frame: fixed_angle_laser
+      laser_topic: parsec/fixed_angle_scan
+    anonymous_3:
       laser_frame: tilt_laser
       laser_topic: parsec/tilt_scan
   </rosparam>
@@ -24,9 +27,9 @@
     <remap from="~signal" to="laser_tilt_controller/signal" />
     <remap from="~profile" to="laser_tilt_controller/profile" />
   </node>
-  <node name="cmd_vel_mux" type="priority_teleop_mux.py" pkg="priority_teleop_mux">
+  <node name="cmd_vel_mux" type="priority_mux" pkg="priority_mux">
+    <remap from="~output" to="/cmd_vel" />
     <rosparam>
-      outgoing_topic: cmd_vel
       incoming_topics: ["estop/cmd_vel", "virtual_joystick/cmd_vel", "move_base/cmd_vel"]
     </rosparam>
   </node>
@@ -38,13 +41,19 @@
       relayed_topics:
         - input_topic: /parsec/base_scan
           output_topic: /base_scan
-          expected_frequency: 5.0
+          expected_frequency: 1.0
+        - input_topic: /parsec/fixed_angle_scan
+          output_topic: /fixed_angle_scan
+          expected_frequency: 1.0
         - input_topic: /parsec/tilt_scan
           output_topic: /tilt_scan
-          expected_frequency: 5.0
+          expected_frequency: 1.0
         - input_topic: /rosserial/odom_simple
           output_topic: /odom_simple
-          expected_frequency: 5.0
+          expected_frequency: 1.0
+        - input_topic: /rosserial/signal
+          output_topic: /laser_tilt_controller/signal
+          expected_frequency: 0.1
     </rosparam>
   </node>
 </launch>
