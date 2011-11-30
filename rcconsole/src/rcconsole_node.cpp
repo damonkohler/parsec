@@ -28,18 +28,19 @@ namespace rcconsole {
 static const std::string kDefaultFormatString = "[%t %l %n] %m";
 static const int kFormatStringArgument = RcConsole::EXCLUDE_MESSAGE_FILTER + 1;
 
-static option program_options[] = {
+static const option program_options[] = {
   {"include-name", required_argument, NULL, RcConsole::INCLUDE_NAME_FILTER},
   {"include-message", required_argument, NULL, RcConsole::INCLUDE_MESSAGE_FILTER},
   {"exclude-name", required_argument, NULL, RcConsole::EXCLUDE_NAME_FILTER},
   {"exclude-message", required_argument, NULL, RcConsole::EXCLUDE_MESSAGE_FILTER},
   {"format-string", required_argument, NULL, kFormatStringArgument},
-  {"help", no_argument, NULL, 'h'}
+  {"help", no_argument, NULL, 'h'},
+  {0, 0, 0, 0}  
 };
 
 static void PrintUsage(const std::string &program_name) {
   std::cout << "Usage: " << program_name << " [OPTION]" << std::endl;
-  std::cout << std::endl <<
+  std::cout << std::endl << "Program options:" << std::endl <<
       "  --include-name=regex" << std::endl <<
       "\t only print if logger name matches regex" << std::endl <<
       "  --include-message=regex" << std::endl <<
@@ -66,7 +67,7 @@ static void PrintUsage(const std::string &program_name) {
 static bool SetupFromCommandLine(
     int argc, char *argv[], RcConsole &rcconsole) {
   while (true) {
-    int option = getopt_long(argc, argv, "", program_options, NULL);
+    int option = getopt_long(argc, argv, "h", program_options, NULL);
     switch (option) {
       case -1:
         if (!rcconsole.HasOutputStream()) {
@@ -83,9 +84,8 @@ static bool SetupFromCommandLine(
         rcconsole.SetOutputStream(optarg, std::cout);
         break;
       case 'h':
-        PrintUsage(argv[0]);
-        return false;
       default:
+        PrintUsage(argv[0]);
         return false;
     }
   }

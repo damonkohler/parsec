@@ -4,8 +4,8 @@ robot_radius: 0.22
 inflation_radius: 0.4
 observation_sources: "base_laser tilt_laser ground_object_cloud"
 base_laser:
-  data_type: LaserScan
-  topic: /base_scan
+  data_type: PointCloud
+  topic: /base_cloud
   marking: true
   clearing: true
   observation_persistance: 0.5
@@ -20,7 +20,7 @@ ground_object_cloud:
   expected_update_rate: 5.0
   # observation_persistance is necessary when clearing is
   # enabled. Otherwise, subsequent scans clear lower voxels too early.
-  observation_persistence: 10.0
+  observation_persistence: 5.0
   marking: true
   # Clearing is necessary to set voxels to free if the laser scanner
   # clearly could see through it. This is particularly important for

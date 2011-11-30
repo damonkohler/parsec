@@ -18,6 +18,7 @@ __author__ = 'damonkohler@google.com (Damon Kohler)'
 
 import threading
 
+
 _SCAN_SAMPLE_SIZE = 10
 
 
