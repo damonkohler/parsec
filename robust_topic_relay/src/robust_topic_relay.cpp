@@ -59,7 +59,7 @@ void RobustTopicRelay::MessageCallback(
   {
     boost::mutex::scoped_lock lock(mutex_);
     if (!relayed_topic.connected) {
-      ROS_INFO("Connected to topic: %s", topic_name.c_str());
+      ROS_DEBUG("Connected to topic: %s", topic_name.c_str());
       relayed_topic.connected = true;
     }
     ros::Time next_expiration_time = ros::Time::now() + relayed_topic.expected_delay;
@@ -91,7 +91,7 @@ void RobustTopicRelay::ReconnectExpiredTopics() {
   while (!expiring_topics_.empty() &&
          expiring_topics_.begin()->first < ros::Time::now()) {
     std::string topic_name = expiring_topics_.begin()->second;
-    ROS_INFO("Reconnecting expired topic: %s", topic_name.c_str());
+    ROS_DEBUG("Reconnecting expired topic: %s", topic_name.c_str());
     relayed_topics_[topic_name].subscriber.shutdown();
     expiring_topics_.erase(expiring_topics_.begin());
     ConnectRelayedTopic(topic_name);

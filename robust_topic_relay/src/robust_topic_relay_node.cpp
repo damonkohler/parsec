@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
   for (std::list<robust_topic_relay::TopicConfiguration>::iterator it =
            relay_configuration.begin();
        it != relay_configuration.end(); it++) {
+    ROS_INFO("Adding topic: %s", it->input_topic.c_str());
     robust_topic_relay.AddTopic(it->input_topic, it->output_topic, it->expected_frequency,
                                 it->reconnect_frequency);
   }
