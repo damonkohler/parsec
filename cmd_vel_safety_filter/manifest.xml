@@ -1,0 +1,18 @@
+<package>
+  <description brief="cmd_vel_safety_filter">
+
+     cmd_vel_safety_filter
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/cmd_vel_safety_filter</url>
+  <depend package="roscpp"/>
+  <depend package="laser_geometry" />
+  <depend package="geometry_msgs" />
+  <depend package="sensor_msgs" />
+  <depend package="ros_check" />
+</package>
+
+

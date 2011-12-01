@@ -4,7 +4,7 @@
   - Make sure all USB devices are unplugged, in particular the base
     Hokuyo.
 
-  - execute `roslaunch parsec_bringup parsec.launch` on your PC.
+  - execute `roslaunch parsec_bringup robot.launch` on your PC.
 
     This loads a few ROS parameters required by the nodes running on
     the tablet and the robot description, a few bridge nodes
