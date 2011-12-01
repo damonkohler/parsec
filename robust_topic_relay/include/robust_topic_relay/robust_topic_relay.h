@@ -30,7 +30,7 @@ class RobustTopicRelay {
   RobustTopicRelay(const ros::NodeHandle &node_handle);
   void AddTopic(
       const std::string &input_topic_name, const std::string &output_topic_name,
-      double expected_frequency);
+      double expected_frequency, double reconnect_frequency);
   void Run();
 
  private:
@@ -41,14 +41,19 @@ class RobustTopicRelay {
     ros::Publisher publisher;
     ros::Time expiration_time;
     ros::Duration expected_delay;
+    ros::Duration reconnect_delay;
+    bool connected;
 
     RelayedTopic() {}
     RelayedTopic(const std::string &input_topic_name,
                  const std::string &output_topic_name,
-                 const ros::Duration &expected_delay)
+                 const ros::Duration &expected_delay,
+                 const ros::Duration &reconnect_delay)
       : input_topic_name(input_topic_name),
         output_topic_name(output_topic_name),
-        expected_delay(expected_delay) {}
+        expected_delay(expected_delay),
+        reconnect_delay(reconnect_delay),
+        connected(false) {}
   };
 
   ros::NodeHandle node_handle_;
