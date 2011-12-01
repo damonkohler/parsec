@@ -70,6 +70,7 @@ class PositionController {
  private:
   static const unsigned int kMaximumSpeed;
   static const float kMaximumVelocity;
+  static const float kMinimumVelocity;
 
   // Read successfully or crash.
   inline unsigned char ReadSafely();

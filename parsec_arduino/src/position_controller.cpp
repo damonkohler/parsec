@@ -21,6 +21,7 @@ void Check(bool assertion, const char *format, ...);  // TODO(whess): Move this.
 
 const unsigned int PositionController::kMaximumSpeed = 60;
 const float PositionController::kMaximumVelocity = 1.0f;
+const float PositionController::kMinimumVelocity = 2e-2f;
 
 PositionController::PositionController(
     int (*read)(), void (*write)(unsigned char),
@@ -70,8 +71,11 @@ float PositionController::UpdateVelocity(float velocity) {
   // velocity to the current error.
   distance_error_ += time_delta * clamped_velocity;
 
-  // Correct velocity via our P controller.
-  float corrected_velocity = clamped_velocity + gain_ * distance_error_;
+  float corrected_velocity = clamped_velocity;
+  if (clamped_velocity > kMinimumVelocity) {
+    // Correct velocity via our P controller.
+    corrected_velocity = clamped_velocity + gain_ * distance_error_;
+  }
 
   // Adjust the target velocity according to our acceleration limit and maximum
   // velocity limit.
@@ -89,7 +93,7 @@ float PositionController::UpdateVelocity(float velocity) {
     delta = TravelFromHere(0);
   }
   // Round up aggresively so that a velocity greater than 0.02 m/s results in a speed of 1.
-  SetSpeedMaximum(speed > 2e-2f ? floor(fmax(1.0f, speed) + 0.5f) : 0);
+  SetSpeedMaximum(speed > kMinimumVelocity ? floor(fmax(1.0f, speed) + 0.5f) : 0);
 
   // Update distance error using actual distance traveled.
   float actual_distance = 1.745329252e-1f /* \pi/18 */ * wheel_radius_ * delta;
