@@ -1,0 +1,17 @@
+<package>
+  <description brief="publish_servo_joint_state">
+
+     publish_servo_joint_state
+
+  </description>
+  <author>Lorenz Mosenlechner</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/publish_servo_joint_state</url>
+  <depend package="rospy" />
+  <depend package="sensor_msgs" />
+  <depend package="parsec_msgs" />
+
+</package>
+
+

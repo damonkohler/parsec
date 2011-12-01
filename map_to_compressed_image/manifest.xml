@@ -1,0 +1,15 @@
+<package>
+  <description brief="map_to_compressed_image">
+
+     map_to_compressed_image
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/map_to_compressed_image</url>
+  <depend package="nav_msgs" />
+  <depend package="rospy" />
+  <depend package="sensor_msgs" />
+
+</package>
