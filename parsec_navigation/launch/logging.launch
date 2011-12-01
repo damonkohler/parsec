@@ -1,0 +1,43 @@
+<launch>
+  <group ns="move_base_log">
+    <node name="log_manager" type="nodelet" pkg="nodelet" args="manager" />
+    <node name="include_move_base_log" type="nodelet" pkg="nodelet"
+          args="load rcconsole/IncludeNameFilter log_manager">
+      <remap from="~rosout" to="/rosout_agg" />
+      <remap from="~rosout_filtered" to="rosout_move_base" />
+      <rosparam>
+        regex: /move_base
+      </rosparam>
+    </node>
+    <node name="include_move_base_dynamic_log" type="nodelet" pkg="nodelet"
+          args="load rcconsole/IncludeNameFilter log_manager">
+      <remap from="~rosout" to="/rosout_agg" />
+      <remap from="~rosout_filtered" to="rosout_move_base" />
+      <rosparam>
+        regex: /move_base_dynamic
+      </rosparam>
+    </node>
+    <node name="exclude_odometry_messages" type="nodelet" pkg="nodelet"
+          args="load rcconsole/ExcludeMessageFilter log_manager">
+      <remap from="~rosout" to="rosout_move_base" />
+      <rosparam>
+        regex: "In the odometry callback.*"
+      </rosparam>
+    </node>
+    <node name="move_base_log_file" type="nodelet" pkg="nodelet"
+          args="load rcconsole/LogFilePrinter log_manager">
+      <remap from="~rosout" to="exclude_odometry_messages/rosout_filtered" />
+      <!-- We use param here because in rosparam we cannot use $(env
+           ...) and $(anon ...) -->
+      <param name="filename" value="$(env HOME)/.ros/log/$(anon move_base_log).log"/>
+    </node>
+    <node name="set_move_base_logger" type="set_logger_level" pkg="rcconsole"
+          args="-r 15 /move_base ros.move_base DEBUG" />
+    <node name="set_move_base_dwa_logger" type="set_logger_level" pkg="rcconsole"
+          args="-r 15 /move_base ros.dwa_local_planner DEBUG" />
+    <node name="set_move_base_dynamic_logger" type="set_logger_level" pkg="rcconsole"
+          args="-r 15 /move_base_dynamic ros.move_base DEBUG" />
+    <node name="set_move_base_dynamic_dwa_logger" type="set_logger_level" pkg="rcconsole"
+          args="-r 15 /move_base_dynamic ros.dwa_local_planner DEBUG" />
+  </group>
+</launch>

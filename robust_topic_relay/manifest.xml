@@ -1,0 +1,17 @@
+<package>
+  <description brief="robust_topic_relay">
+
+     robust_topic_relay
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/robust_topic_relay</url>
+  <depend package="roscpp" />
+  <depend package="topic_tools" />
+  <depend package="ros_check" />
+
+</package>
+
+
