@@ -163,12 +163,15 @@ const int kNumPingers = 10;
 Ultrasonic pings[kNumPingers];
 int current_ping = 0;
 int next_ping = 0;
-const float kStopDistance = 0.05f;  // Stop at 5cm. Parallax PING))) sensors work down to 2cm.
-const float kStopTime = 3.0f;  // Adapt speed to not have to stop before (in seconds).
+const float kStopDistance = 0.15f;  // Stop at 15cm. Parallax PING))) sensors work down to 2cm.
+// Adapt speed to not have to stop before (in seconds). This should be roughly
+// equal to (max speed / max acceleration).
+const float kStopTime = 1.5f;
+bool not_moving = true;
 float ping_distance[kNumPingers] = {
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 const char kGreen = 0, kYellow = 1, kRed = 2, kWhite = 3, kWhiteOrange = 4,
-           kRedYellow = 5;
+           kRedYellow = 5, kBlue = 6;
 char ping_state[kNumPingers] = {
     kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed};
 const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
@@ -232,7 +235,10 @@ static void MakeUltrasonicSafe(float* velocity) {
         distance + ping_delta >= 0.0f) {
       // Either its already moving away, or even after kStopTime this velocity
       // is not enough for this pinger reading to drop below kStopDistance.
-      ping_state[i] = distance <= 0.0f ? kRed : kGreen;
+      bool front = (kPingerDirection[i] <= 0.0f);
+      bool free = (distance > 0.0f);
+      ping_state[i] = free ? (front ? kBlue : kGreen)
+                           : (front ? kRed : kRed);
     } else {
       if (distance <= 0.0f) {
         ping_state[i] = kRed;
@@ -248,10 +254,10 @@ static void MakeUltrasonicSafe(float* velocity) {
 
 static void ShowUltrasonicState() {
   for (int i = 0; i != kNumPingers; ++i) {
-    bool front = (kPingerDirection[i] >= 0.0f);
+    bool front = (kPingerDirection[i] <= 0.0f);
     bool free = (ping_distance[i] > 0.6f);  // Obstacle closer than 60cm?
-    ping_state[i] = free ? (front ? kWhite : kRed)
-                         : (front ? kWhiteOrange : kRedYellow);
+    ping_state[i] = free ? (front ? kGreen : kBlue)
+                         : (front ? kRed : kRed);
   }
 }
 
@@ -376,12 +382,24 @@ static void LoopPositionController() {
     last_update = micros();
   }
   float safe_velocity = forward_velocity;
+  if (abs(safe_velocity) > 2e-1f) {
+    not_moving = false;
+  } else if (abs(safe_velocity) < 2e-2f) {
+    not_moving = true;
+  }
   if (safe_velocity >= 0.0f) {
     // Moving forward, i.e., move_base-controlled. We just show where we see
     // obstacles.
     ShowUltrasonicState();
   } else {
     MakeUltrasonicSafe(&safe_velocity);
+  }
+  if (not_moving && abs(angular_velocity) > 1e-6f) {
+    for (int i = 0; i != kNumPingers; ++i) {
+      if (ping_state[i] != kRed) {
+        ping_state[i] = kBlue;
+      }
+    }
   }
   float left_velocity = safe_velocity - kBaseRadius * angular_velocity;
   float right_velocity = safe_velocity + kBaseRadius * angular_velocity;
@@ -605,10 +623,16 @@ static void LoopShiftBrite() {
         blue[i] = 0;
         break;
       }
-      default: {
+      case kBlue: {
         red[i] = 0;
         green[i] = 0;
         blue[i] = 1023;
+        break;
+      }
+      default: {
+        red[i] = 0;
+        green[i] = 0;
+        blue[i] = 0;
         break;
       }
     }
