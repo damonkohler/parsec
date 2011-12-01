@@ -8,6 +8,7 @@
   <license>Apache 2.0</license>
   <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/floor_filter</url>
+
   <depend package="roscpp" />
   <depend package="laser_geometry" />
   <depend package="pcl" />
@@ -18,5 +19,6 @@
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />
   </export>
+
 </package>
 

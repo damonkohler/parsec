@@ -1,7 +1,5 @@
 <launch>
-
-  <include file="$(find parsec_navigation)/launch/perception.launch" />
+  <include file="$(find parsec_navigation)/launch/navigation_perception.launch" />
   <include file="$(find parsec_navigation)/config/gmapping_parsec.launch" />
   <include file="$(find parsec_navigation)/config/move_base_parsec_dynamic.launch" />
-
 </launch>
