@@ -28,7 +28,7 @@ int Ultrasonic::debug_id_ = -1;
 int Ultrasonic::error_count_ = 0;
 
 Ultrasonic::Ultrasonic()
-    : last_micros_(0), value_(32767) {}
+    : last_micros_(0), values_(32767) {}
 
 bool Ultrasonic::IsReady() {
   if (state_ != kStateReady) {
@@ -62,15 +62,11 @@ void Ultrasonic::SendTriggerPulse(int debug_id) {
 }
 
 int Ultrasonic::QueryValue() {
-  return value_;
+  return values_.GetMedian();
 }
 
 float Ultrasonic::QueryDistance() {
   return 1.72e-4f * QueryValue();
-}
-
-int Ultrasonic::DebugTime() {
-  return last_micros_ / 1000000;
 }
 
 int Ultrasonic::GetErrorCount() {
@@ -95,11 +91,12 @@ void Ultrasonic::UpdateValue() {
   // Answer is expected after 750 us.
   LogIfCheck(delta_micros > 650 && delta_micros < 850,
              "Ping%d at %lu", debug_id_, delta_micros);
-  value_ = done_micros_ - receiving_micros_;
+  int value = done_micros_ - receiving_micros_;
   // Answer should be between 115 us and 18500 us.
-  LogIfCheck(value_ > 100 && value_ < 25000,
-             "Ping%d is %lu", debug_id_, value_);
+  LogIfCheck(value > 100 && value < 25000,
+             "Ping%d is %lu", debug_id_, value);
   last_micros_ = done_micros_;
+  values_.PushValue(value);
 }
 
 void Ultrasonic::LogIfCheck(bool assertion, const char *format, ...) {
