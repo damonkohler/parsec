@@ -8,11 +8,15 @@
   <license>Apache 2.0</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/parsec_navigation</url>
-  <depend package="move_base" />
-  <depend package="base_local_planner" />
-  <depend package="navfn" />
-  <depend package="gmapping" />
+
   <depend package="amcl" />
+  <depend package="base_local_planner" />
+  <depend package="gmapping" />
+  <depend package="move_base" />
+  <depend package="navfn" />
   <depend package="parsec_perception" />
+  <depend package="point_cloud_converter" />
   <depend package="rcconsole" />
+
 </package>
+
