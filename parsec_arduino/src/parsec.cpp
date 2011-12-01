@@ -167,7 +167,8 @@ const float kStopDistance = 0.05f;  // Stop at 5cm. Parallax PING))) sensors wor
 const float kStopTime = 3.0f;  // Adapt speed to not have to stop before (in seconds).
 float ping_distance[kNumPingers] = {
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-const char kGreen = 0, kYellow = 1, kRed = 2;
+const char kGreen = 0, kYellow = 1, kRed = 2, kWhite = 3, kWhiteOrange = 4,
+           kRedYellow = 5;
 char ping_state[kNumPingers] = {
     kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed};
 const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
@@ -243,6 +244,15 @@ static void MakeUltrasonicSafe(float* velocity) {
     }
   }
   *velocity *= fmaxf(safety_factor, 0.0f);
+}
+
+static void ShowUltrasonicState() {
+  for (int i = 0; i != kNumPingers; ++i) {
+    bool front = (kPingerDirection[i] >= 0.0f);
+    bool free = (ping_distance[i] > 0.6f);  // Obstacle closer than 60cm?
+    ping_state[i] = free ? (front ? kWhite : kRed)
+                         : (front ? kWhiteOrange : kRedYellow);
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -366,7 +376,13 @@ static void LoopPositionController() {
     last_update = micros();
   }
   float safe_velocity = forward_velocity;
-  //MakeUltrasonicSafe(&safe_velocity);
+  if (safe_velocity >= 0.0f) {
+    // Moving forward, i.e., move_base-controlled. We just show where we see
+    // obstacles.
+    ShowUltrasonicState();
+  } else {
+    MakeUltrasonicSafe(&safe_velocity);
+  }
   float left_velocity = safe_velocity - kBaseRadius * angular_velocity;
   float right_velocity = safe_velocity + kBaseRadius * angular_velocity;
   float left_odometry = left_controller.UpdateVelocity(-left_velocity);
@@ -550,16 +566,51 @@ static void LoopShiftBrite() {
   static int red[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   static int green[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   static int blue[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  bool blink_phase(micros() & (1ul << 18));
   for (int i = 0; i != 10; ++i) {
-    if (ping_state[i] == kGreen) {
-      red[i] = 0;
-      green[i] = 1023;
-    } else if (ping_state[i] == kYellow) {
-      red[i] = 1023;
-      green[i] = 1023;
-    } else {
-      red[i] = 1023;
-      green[i] = 0;
+    switch (ping_state[i]) {
+      case kWhiteOrange: {
+        red[i] = 1023;
+        green[i] = blink_phase ? 1023 : 511;
+        blue[i] = blink_phase ? 1023 : 0;
+        break;
+      }
+      case kRedYellow: {
+        red[i] = 1023;
+        green[i] = blink_phase ? 0 : 1023;
+        blue[i] = 0;
+        break;
+      }
+      case kGreen: {
+        red[i] = 0;
+        green[i] = 1023;
+        blue[i] = 0;
+        break;
+      }
+      case kYellow: {
+        red[i] = 1023;
+        green[i] = 1023;
+        blue[i] = 0;
+        break;
+      }
+      case kWhite: {
+        red[i] = 1023;
+        green[i] = 1023;
+        blue[i] = 1023;
+        break;
+      }
+      case kRed: {
+        red[i] = 1023;
+        green[i] = 0;
+        blue[i] = 0;
+        break;
+      }
+      default: {
+        red[i] = 0;
+        green[i] = 0;
+        blue[i] = 1023;
+        break;
+      }
     }
   }
   // Only initialize every so often to double performance, cutting time from
