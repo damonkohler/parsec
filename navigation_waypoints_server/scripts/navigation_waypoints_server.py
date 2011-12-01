@@ -32,6 +32,7 @@ import nav_msgs.srv
 import move_base_msgs.msg as move_base_msgs
 import geometry_msgs.msg as geometry_msgs
 
+
 MOVE_BASE_POLL_TIMEOUT = 0.1
 WAIT_FOR_PLAN_SERVICE_TIMEOUT = 2.0
 PREEMPT_WAIT_FOR_TERMINATION_TIMEOUT = 2.0
@@ -144,7 +145,7 @@ class NavWaypointsServer(object):
         '~update_waypoints', navigation_waypoints_server.srv.UpdateWaypoints, self._update_waypoints)
     self._move_base_proxies = [MoveBaseProxy(param['action'], param.get('check_plan'))
                                for param in self._params['move_base_actions']]
-        
+
   def _parse_params(self):
     """Currently, we support the following parameters:
 

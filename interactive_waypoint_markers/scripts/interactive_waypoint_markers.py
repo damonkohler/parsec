@@ -18,11 +18,11 @@
 
 __author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
+import threading
+
 import roslib; roslib.load_manifest("interactive_waypoint_markers")
 import rospy
 import actionlib
-
-import threading
 
 import navigation_waypoints_server.msg
 import navigation_waypoints_server.srv
