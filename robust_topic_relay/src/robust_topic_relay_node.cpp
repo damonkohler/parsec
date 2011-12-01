@@ -21,6 +21,7 @@
 #include <ros/ros.h>
 
 static const int kDefaultSpinThreadCount = 10;
+static const double kDefaultReconnectFrequency = 0.5;
 
 namespace robust_topic_relay {
 
@@ -28,15 +29,18 @@ struct TopicConfiguration {
   std::string input_topic;
   std::string output_topic;
   double expected_frequency;
+  double reconnect_frequency;
   
   TopicConfiguration()
     : expected_frequency(0.0) {}
   TopicConfiguration(const std::string &input_topic,
                      const std::string &output_topic,
-                     double expected_frequency)
+                     double expected_frequency,
+                     double reconnect_frequency)
     : input_topic(input_topic),
       output_topic(output_topic),
-      expected_frequency(expected_frequency) {}
+      expected_frequency(expected_frequency),
+      reconnect_frequency(reconnect_frequency) {}
 };
 
 static bool ParseParams(
@@ -85,8 +89,16 @@ static bool ParseParams(
                 "relayed_topics[%d]/expected_frequency", i);
       return false;
     }
+
+    double reconnect_frequency = kDefaultReconnectFrequency;
+    if (relayed_topics[i]["reconnect_frequency"].getType() ==
+        XmlRpc::XmlRpcValue::TypeDouble) {
+      reconnect_frequency = static_cast<double>(relayed_topics[i]["reconnect_frequency"]);
+    }
+    
     relay_configuration->push_back(
-      TopicConfiguration(input_topic, output_topic, expected_frequency));
+        TopicConfiguration(
+            input_topic, output_topic, expected_frequency, reconnect_frequency));
   }
   return true;
 }
@@ -108,7 +120,9 @@ int main(int argc, char *argv[]) {
   for (std::list<robust_topic_relay::TopicConfiguration>::iterator it =
            relay_configuration.begin();
        it != relay_configuration.end(); it++) {
-    robust_topic_relay.AddTopic(it->input_topic, it->output_topic, it->expected_frequency);
+    ROS_INFO("Adding topic: %s", it->input_topic.c_str());
+    robust_topic_relay.AddTopic(it->input_topic, it->output_topic, it->expected_frequency,
+                                it->reconnect_frequency);
   }
   robust_topic_relay.Run();
 
