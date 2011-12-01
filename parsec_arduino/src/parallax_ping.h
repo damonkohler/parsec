@@ -16,11 +16,14 @@
 #ifndef PARSECLIB_PARALLAX_PING_
 #define PARSECLIB_PARALLAX_PING_
 
+#include "median_queue.h"
+
 // Class for Parallax Inc. PING))) devices.
 class Ultrasonic {
  public:
   static const int kPulsePin = 2;  // Pulses are sent through pin 2.
   static const int kPulsePinInterrupt = 0;  // The interrupt for kInputPin.
+  static const int kKeepValues = 5;  // Median computed of last few values.
 
   // Creates an ultrasonic object. All sensors use the same pin for their
   // pulses and are expected to be multiplexed.
@@ -35,15 +38,12 @@ class Ultrasonic {
   // The new data is returned after IsReady() returned true.
   void SendTriggerPulse(int debug_id);
 
-  // Queries the last reading in us.
+  // Queries the current value in us. The current value is the median of the
+  // last kKeepValues readings.
   int QueryValue();
 
-  // Queries the last reading in meters, i.e., 1.72e-4 * queryValue().
+  // Queries the current value in meters, i.e., 1.72e-4 * QueryValue().
   float QueryDistance();
-
-  // For debugging only. Return the seconds since reset to the last event.
-  // TODO(whess): Remove.
-  int DebugTime();
 
   // Returns the number of errors that we have seen so far.
   static int GetErrorCount();
@@ -58,7 +58,7 @@ class Ultrasonic {
   static void LogIfCheck(bool assertion, const char *format, ...);
 
   unsigned long last_micros_;
-  int value_;
+  MedianQueue<int, kKeepValues> values_;
 
   static Ultrasonic *measuring_;
   static volatile char state_;

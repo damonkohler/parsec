@@ -167,8 +167,6 @@ const float kStopDistance = 0.05f;  // Stop at 5cm. Parallax PING))) sensors wor
 const float kStopTime = 3.0f;  // Adapt speed to not have to stop before (in seconds).
 float ping_distance[kNumPingers] = {
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-float last_distance[kNumPingers] = {
-    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 const char kGreen = 0, kYellow = 1, kRed = 2;
 char ping_state[kNumPingers] = {
     kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed};
@@ -205,19 +203,9 @@ static void SetupUltrasonic() {
 
 static void LoopUltrasonic() {
   if (pings[next_ping].IsReady()) {
-    // Interpret the last reading. We take the median of this reading, the
-    // last reading and the stored value to make it more robust. Two consistent
-    // readings will be stored into ping_distance and a single outlier just
-    // gets ignored.
-    float new_distance = pings[current_ping].QueryDistance();
-    float min_distance = fminf(new_distance, last_distance[current_ping]);
-    float max_distance = fmaxf(new_distance, last_distance[current_ping]);
-    if (ping_distance[current_ping] < min_distance) {
-      ping_distance[current_ping] = min_distance;
-    } else if (ping_distance[current_ping] > max_distance) {
-      ping_distance[current_ping] = max_distance;
-    }
-    last_distance[current_ping] = new_distance;
+    // Interpret the last reading. This is the median of the last 5 readings,
+    // so that outliers are ignored.
+    ping_distance[current_ping] = pings[current_ping].QueryDistance();
 
     // Continue with the next ultrasonic sensor.
     current_ping = next_ping;
