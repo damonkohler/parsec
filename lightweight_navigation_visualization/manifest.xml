@@ -6,11 +6,11 @@
   </description>
   <author>Lorenz Moesenlechner</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="unreviewed" notes="" />
   <url>http://ros.org/wiki/lightweight_navigation_visualization</url>
-  <depend package="rospy"/>
-  <depend package="nav_msgs"/>
-
+  <depend package="roscpp" />
+  <depend package="rospy" />
+  <depend package="tf" />
+  <depend package="nav_msgs" />
+  <depend package="geometry_msgs" />
 </package>
-
-
