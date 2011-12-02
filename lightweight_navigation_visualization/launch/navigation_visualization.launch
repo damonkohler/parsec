@@ -1,0 +1,16 @@
+<launch>
+  <node name="scaled_occupancy_grid" type="scale_occupancy_grid.py"
+        pkg="lightweight_navigation_visualization">
+    <remap from="~scaled_map" to="/android/map_view/map" />
+    <rosparam>
+      width: 1024
+    </rosparam>
+  </node>
+  <node name="robot_map_pose_publisher" type="tf_frame_map_pose_publisher"
+        pkg="lightweight_navigation_visualization">
+    <remap from="~frame_pose" to="/android/map_view/pose" />
+    <rosparam>
+      frame_id: base_footprint
+    </rosparam>
+  </node>
+</launch>
