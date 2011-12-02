@@ -24,6 +24,7 @@
 
 namespace cmd_vel_safety_filter {
 
+const double CmdVelSafetyFilter::kDefaultScanTimeout = 1.0;
 const std::string CmdVelSafetyFilter::kDefaultBaseFrame = "base_link";
 
 CmdVelSafetyFilter::CmdVelSafetyFilter(const ros::NodeHandle &node_handle)

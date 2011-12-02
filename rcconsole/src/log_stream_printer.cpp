@@ -15,6 +15,9 @@
 
 #include "rcconsole/log_stream_printer.h"
 
+#include <iostream>
+#include <iomanip>
+
 #include <ros_check/ros_check.h>
 
 namespace rcconsole {
