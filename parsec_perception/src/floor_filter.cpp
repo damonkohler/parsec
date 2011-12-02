@@ -317,10 +317,8 @@ bool FloorFilter::IntersectWithSightline(
 }
 
 bool FloorFilter::GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point) {
-  tf::Stamped<tf::Point> sensor_point;
+  tf::Stamped<tf::Point> sensor_point(btVector3(0, 0, 0), time, sensor_frame_);
   tf::Stamped<tf::Point> viewpoint;
-  sensor_point.frame_id_ = sensor_frame_;
-  sensor_point.stamp_ = time;
   if (!WaitForTransformToReferenceFrame(sensor_frame_, time)) {
     ROS_WARN("Cannot get sensor transform (%s -> %s).",
              reference_frame_.c_str(), sensor_frame_.c_str());
@@ -371,8 +369,12 @@ bool FloorFilter::GetSensorPlane(
   if (!GetViewpointPoint(time, &viewpoint)) {
     return false;
   }
+  // Eigen seems to have a bug. This prevents us from using the
+  // constructor that takes a normal and a point on the
+  // plane. Instead, we calculate the distance of the plane from the
+  // origin similar to Eigen but without the negative sign.
   *sensor_plane = Eigen::Hyperplane<float, 3>(
-      normal, sqrt(viewpoint.getVector3fMap().norm()));
+      normal, normal.dot(viewpoint.getVector3fMap()));
   return true;
 }
 
@@ -409,7 +411,7 @@ bool FloorFilter::IntersectLines(
   // Check if the lines are skew, i.e. if the minimum distance between the two
   // lines is > 0.
   double distance;
-  if (!LineToLineDistance(line1, line2, &distance) || distance > 1e-6) {
+  if (!LineToLineDistance(line1, line2, &distance) || distance > 0.001) {
     return false;
   }
   // This formular can be derived from setting the two line equations
