@@ -274,6 +274,14 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   bool FindSensorPlaneIntersection(
       const ros::Time &time, Eigen::ParametrizedLine<float, 3> *intersection_line);
 
+  /**
+   * Checks if a transform to the reference frame is available.
+   */
+  bool WaitForTransformToReferenceFrame(
+      const std::string source_frame, const ros::Time &time) {
+    return tf_listener_.waitForTransform(
+        reference_frame_, source_frame, time, ros::Duration(0.2));
+  }
 };
 
 }  // namespace parsec_perception

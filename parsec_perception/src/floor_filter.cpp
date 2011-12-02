@@ -67,9 +67,7 @@ void FloorFilter::onInit() {
 void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {
   pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(
       new pcl::PointCloud<pcl::PointXYZ>);
-  if (!tf_listener_.waitForTransform(
-          reference_frame_, cloud->header.frame_id, cloud->header.stamp,
-          ros::Duration(0.2))) {
+  if (!WaitForTransformToReferenceFrame(cloud->header.frame_id, cloud->header.stamp)) {
     ROS_WARN("Cannot transform pointcloud to reference frame (%s -> %s).",
              cloud->header.frame_id.c_str(), reference_frame_.c_str());
     return;
@@ -316,8 +314,7 @@ bool FloorFilter::GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point)
   tf::Stamped<tf::Point> viewpoint;
   sensor_point.frame_id_ = sensor_frame_;
   sensor_point.stamp_ = time;
-  if (!tf_listener_.waitForTransform(
-          reference_frame_, sensor_frame_, time, ros::Duration(0.2))) {
+  if (!WaitForTransformToReferenceFrame(sensor_frame_, time)) {
     ROS_WARN("Cannot get sensor transform (%s -> %s).",
              reference_frame_.c_str(), sensor_frame_.c_str());
     return false;
@@ -349,8 +346,7 @@ bool FloorFilter::GetSensorPlane(
   z_axis.setY(0.0);
   z_axis.setZ(1.0);
   tf::Stamped<tf::Vector3> z_axis_in_reference;
-  if (!tf_listener_.waitForTransform(
-          reference_frame_, sensor_frame_, time, ros::Duration(0.2))) {
+  if (!WaitForTransformToReferenceFrame(sensor_frame_, time)) {
     ROS_WARN("Cannot get sensor transform to calculate sensor plane (%s -> %s).",
              reference_frame_.c_str(), sensor_frame_.c_str());
     return false;
