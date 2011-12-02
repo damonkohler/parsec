@@ -15,55 +15,44 @@
 
 #include "lightweight_navigation_visualization/tf_frame_map_pose_publisher.h"
 
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 
 namespace lightweight_navigation_visualization {
 
-const std::string TfFrameMapPosePublisher::kDefaultFrameId = "base_link";
+const std::string TfFrameMapPosePublisher::kDefaultFrame = "base_link";
+const std::string TfFrameMapPosePublisher::kDefaultMapOriginFrame = "map_origin";
 
 TfFrameMapPosePublisher::TfFrameMapPosePublisher(
     const ros::NodeHandle &node_handle)
     : node_handle_(node_handle),
       publish_rate_(kDefaultPublishRate) {
-  node_handle_.param("frame_id", frame_id_, kDefaultFrameId);
+  node_handle_.param("frame_id", frame_id_, kDefaultFrame);
+  node_handle_.param("map_origin_frame_id", map_origin_frame_id_,
+                     kDefaultMapOriginFrame);
   double publish_rate;
   if (node_handle_.getParam("publish_rate", publish_rate)) {
     publish_rate_ = ros::Rate(publish_rate);
   }
   map_subscriber_ = node_handle_.subscribe<nav_msgs::OccupancyGrid>(
       "/map", 10, boost::bind(&TfFrameMapPosePublisher::MapCallback, this, _1));
-  pose_publisher_ = node_handle_.advertise<geometry_msgs::Pose>(
+  pose_publisher_ = node_handle_.advertise<geometry_msgs::PoseStamped>(
       "frame_pose", 10);
 }
 
 void TfFrameMapPosePublisher::Run() {
   while(ros::ok()) {
     publish_rate_.sleep();
-    boost::mutex::scoped_lock lock(mutex_);
-    if (!current_map_) {
-      ROS_WARN("No map received so far.");
-      continue;
+    {
+      boost::mutex::scoped_lock lock(mutex_);
+      if (!current_map_) {
+        ROS_WARN("No map received so far.");
+        continue;
+      }
     }
-    std::string reference_frame = current_map_->header.frame_id;
+    
     ros::Time now = ros::Time::now();
-    if (!tf_listener_.waitForTransform(reference_frame, frame_id_, now,
-                                       ros::Duration(0.2))) {
-      ROS_WARN("Unable to transform frame into reference frame (%s -> %s).",
-               frame_id_.c_str(), reference_frame.c_str());
-      continue;
-    }
-    tf::Stamped<tf::Pose> pose;
-    pose.stamp_ = now;
-    pose.frame_id_ = frame_id_;
-    pose.setIdentity();
-    tf::Stamped<tf::Pose> transformed_pose;
-    tf_listener_.transformPose(reference_frame, pose, transformed_pose);
-    tf::Pose map_origin;
-    tf::poseMsgToTF(current_map_->info.origin, map_origin);
-    tf::Pose pose_in_map_origin = transformed_pose * map_origin.inverse();
-    geometry_msgs::Pose pose_in_map_origin_msg;
-    tf::poseTFToMsg(pose_in_map_origin, pose_in_map_origin_msg);
-    pose_publisher_.publish(pose_in_map_origin_msg);
+    PublishMapOriginTransform(now);
+    PublishFramePose(now);
   }
 }
 
@@ -71,6 +60,33 @@ void TfFrameMapPosePublisher::MapCallback(
     const nav_msgs::OccupancyGrid::ConstPtr &map) {
   boost::mutex::scoped_lock lock(mutex_);
   current_map_ = map;
+}
+
+void TfFrameMapPosePublisher::PublishMapOriginTransform(const ros::Time &time) {
+  boost::mutex::scoped_lock lock(mutex_);
+  tf::Pose origin;
+  tf::poseMsgToTF(current_map_->info.origin, origin);
+  tf::StampedTransform transform(
+      origin, time,
+      current_map_->header.frame_id,
+      map_origin_frame_id_);
+  tf_broadcaster_.sendTransform(transform);
+}
+
+void TfFrameMapPosePublisher::PublishFramePose(const ros::Time &time) {
+  geometry_msgs::PoseStamped pose;
+  pose.header.stamp = time;
+  pose.header.frame_id = frame_id_;
+  pose.pose.orientation.w = 1.0;
+  geometry_msgs::PoseStamped transformed_pose;
+  if (!tf_listener_.waitForTransform(
+          map_origin_frame_id_, frame_id_, time, ros::Duration(0.2))) {
+    ROS_WARN("Unable to transform frame into reference frame (%s -> %s).",
+             frame_id_.c_str(), map_origin_frame_id_.c_str());
+    return;
+  }
+  tf_listener_.transformPose(map_origin_frame_id_, pose, transformed_pose);
+  pose_publisher_.publish(transformed_pose);
 }
 
 }  // namespace lightweight_navigation_visualization
