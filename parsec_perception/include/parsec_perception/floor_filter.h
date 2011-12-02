@@ -95,7 +95,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   static const double kDefaultMaxFloorYRotation = 0.035;  // 2 degrees
   static const double kDefaultMaxFloorXRotation = 0.087;  // 5 degrees
   static const double kDefaultLineDistanceThreshold = 0.03;
-  static const double kDefaultCliffDistanceThreshold = 0.1;
+  static const double kDefaultCliffDistanceThreshold = 0.02;
   static const std::string kDefaultReferenceFrame;
   
   ros::Subscriber input_cloud_subscriber_;
