@@ -65,7 +65,15 @@ void FloorFilter::onInit() {
 }
 
 void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(
+      new pcl::PointCloud<pcl::PointXYZ>);
+  if (!tf_listener_.waitForTransform(
+          reference_frame_, cloud->header.frame_id, cloud->header.stamp,
+          ros::Duration(0.2))) {
+    ROS_WARN("Cannot transform pointcloud to reference frame (%s -> %s).",
+             cloud->header.frame_id.c_str(), reference_frame_.c_str());
+    return;
+  }
   try {
     pcl_ros::transformPointCloud(reference_frame_, *cloud, *transformed_cloud, tf_listener_);
   } catch (tf::TransformException e) {
@@ -196,7 +204,10 @@ bool FloorFilter::GetFloorLine(
 
 bool FloorFilter::FindSensorPlaneIntersection(
     const ros::Time &time, Eigen::ParametrizedLine<float, 3> *intersection_line) {
-  Eigen::Hyperplane<float, 3> sensor_plane = GetSensorPlane(time);
+  Eigen::Hyperplane<float, 3> sensor_plane;
+  if (!GetSensorPlane(time, &sensor_plane)) {
+    return false;
+  }
   // The sensor plane and the floor plane will intersect behind the
   // robot when the x component of its normal is smaller than zero.
   if (sensor_plane.normal()(0) < 0) {
@@ -215,7 +226,7 @@ bool FloorFilter::FindSensorPlaneIntersection(
   return true;
 }
 
-void FloorFilter::GenerateCliffCloud(
+bool FloorFilter::GenerateCliffCloud(
     const Eigen::ParametrizedLine<float, 3> &floor_line,
     const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
     const std::vector<int> &input_indices,
@@ -226,7 +237,10 @@ void FloorFilter::GenerateCliffCloud(
   cliff_cloud->is_dense = false;
   cliff_cloud->points.clear();
 
-  pcl::PointXYZ viewpoint = GetViewpointPoint(input_cloud->header.stamp);
+  pcl::PointXYZ viewpoint;
+  if (!GetViewpointPoint(input_cloud->header.stamp, &viewpoint)) {
+    return false;
+  }
   for (size_t i = 0; i < input_indices.size(); i++) {
     pcl::PointXYZ cliff_point;
     if (!IntersectWithSightline(input_cloud->header.stamp, floor_line, input_cloud->points[i],
@@ -250,6 +264,7 @@ void FloorFilter::GenerateCliffCloud(
     }
   }
   cliff_cloud->width = cliff_cloud->points.size();
+  return true;
 }
 
 void FloorFilter::MakeCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &input_cloud,
@@ -280,7 +295,11 @@ void FloorFilter::PublishCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &
 bool FloorFilter::IntersectWithSightline(
     const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point,
     pcl::PointXYZ *intersection_point) {
-  Eigen::ParametrizedLine<float, 3>::VectorType viewpoint = GetViewpointPoint(time).getVector3fMap();
+  pcl::PointXYZ viewpoint_pcl;
+  if (!GetViewpointPoint(time, &viewpoint_pcl)) {
+    return false;
+  }
+  Eigen::ParametrizedLine<float, 3>::VectorType viewpoint = viewpoint_pcl.getVector3fMap();
   Eigen::ParametrizedLine<float, 3> viewpoint_line(viewpoint, point.getVector3fMap() - viewpoint);
   Eigen::ParametrizedLine<float, 3>::VectorType intersection;
   if (IntersectLines(line, viewpoint_line, &intersection)) {
@@ -292,16 +311,28 @@ bool FloorFilter::IntersectWithSightline(
   }
 }
 
-pcl::PointXYZ FloorFilter::GetViewpointPoint(const ros::Time &time) {
+bool FloorFilter::GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point) {
   tf::Stamped<tf::Point> sensor_point;
   tf::Stamped<tf::Point> viewpoint;
   sensor_point.frame_id_ = sensor_frame_;
   sensor_point.stamp_ = time;
-  tf_listener_.transformPoint(reference_frame_, sensor_point, viewpoint);
-  return pcl::PointXYZ(viewpoint.x(), viewpoint.y(), viewpoint.z());
+  if (!tf_listener_.waitForTransform(
+          reference_frame_, sensor_frame_, time, ros::Duration(0.2))) {
+    ROS_WARN("Cannot get sensor transform (%s -> %s).",
+             reference_frame_.c_str(), sensor_frame_.c_str());
+    return false;
+  }
+  try {
+    tf_listener_.transformPoint(reference_frame_, sensor_point, viewpoint);
+  } catch (tf::TransformException e) {
+    return false;
+  }
+  *point = pcl::PointXYZ(viewpoint.x(), viewpoint.y(), viewpoint.z());
+  return true;
 }
 
-Eigen::ParametrizedLine<float, 3> FloorFilter::LineFromCoefficients(const pcl::ModelCoefficients &line_coefficients) {
+Eigen::ParametrizedLine<float, 3> FloorFilter::LineFromCoefficients(
+    const pcl::ModelCoefficients &line_coefficients) {
   Eigen::ParametrizedLine<float, 3>::VectorType point_on_line(
       line_coefficients.values[0], line_coefficients.values[1], line_coefficients.values[2]);
   Eigen::ParametrizedLine<float, 3>::VectorType direction(
@@ -309,7 +340,8 @@ Eigen::ParametrizedLine<float, 3> FloorFilter::LineFromCoefficients(const pcl::M
   return Eigen::ParametrizedLine<float, 3>(point_on_line, direction);
 }
 
-Eigen::Hyperplane<float, 3> FloorFilter::GetSensorPlane(const ros::Time &time) {
+bool FloorFilter::GetSensorPlane(
+    const ros::Time &time, Eigen::Hyperplane<float, 3> *sensor_plane) {
   tf::Stamped<tf::Vector3> z_axis;
   z_axis.stamp_ = time;
   z_axis.frame_id_ = sensor_frame_;
@@ -317,12 +349,28 @@ Eigen::Hyperplane<float, 3> FloorFilter::GetSensorPlane(const ros::Time &time) {
   z_axis.setY(0.0);
   z_axis.setZ(1.0);
   tf::Stamped<tf::Vector3> z_axis_in_reference;
-  tf_listener_.transformVector(reference_frame_, z_axis, z_axis_in_reference);
+  if (!tf_listener_.waitForTransform(
+          reference_frame_, sensor_frame_, time, ros::Duration(0.2))) {
+    ROS_WARN("Cannot get sensor transform to calculate sensor plane (%s -> %s).",
+             reference_frame_.c_str(), sensor_frame_.c_str());
+    return false;
+  }
+  try {
+    tf_listener_.transformVector(reference_frame_, z_axis, z_axis_in_reference);
+  } catch (tf::TransformException e) {
+    return false;
+  }
   Eigen::Hyperplane<float, 3>::VectorType normal(
       z_axis_in_reference.x(),
       z_axis_in_reference.y(),
       z_axis_in_reference.z());
-  return Eigen::Hyperplane<float, 3>(normal, sqrt(GetViewpointPoint(time).getVector3fMap().norm()));
+  pcl::PointXYZ viewpoint;
+  if (!GetViewpointPoint(time, &viewpoint)) {
+    return false;
+  }
+  *sensor_plane = Eigen::Hyperplane<float, 3>(
+      normal, sqrt(viewpoint.getVector3fMap().norm()));
+  return true;
 }
 
 void FloorFilter::GetIndicesDifference(size_t cloud_size, const std::vector<int> &indices,

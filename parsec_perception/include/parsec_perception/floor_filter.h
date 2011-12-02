@@ -213,7 +213,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    *     that were used to generate cliff points, i.e. points below
    *     the floor
    */
-  void GenerateCliffCloud(const Eigen::ParametrizedLine<float, 3> &floor_line,
+  bool GenerateCliffCloud(const Eigen::ParametrizedLine<float, 3> &floor_line,
                           const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
                           const std::vector<int> &input_indices,
                           pcl::PointCloud<pcl::PointXYZ> *cliff_cloud,
@@ -228,8 +228,8 @@ class FloorFilter : public pcl_ros::PCLNodelet {
                                ros::Publisher &publisher);
 
   /**
-   * Calculates the intersection point between the sight line, i.e. the line between the view point and point,
-   * and line.
+   * Calculates the intersection point between the sight line,
+   * i.e. the line between the view point and point, and line.
    *
    * @param time the time at which to take the viewpoint
    * @param line the Eigen representation of the line
@@ -240,7 +240,8 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    * @return true if valid intersection could be found, false otherwise
    */
   bool IntersectWithSightline(
-      const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line, const pcl::PointXYZ &point,
+      const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line,
+      const pcl::PointXYZ &point,
       pcl::PointXYZ *intersection_point);
 
   /**
@@ -251,9 +252,10 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    *
    * @return the viewpoint at a specific time
    */
-  pcl::PointXYZ GetViewpointPoint(const ros::Time &time);
+  bool GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point);
 
-  Eigen::ParametrizedLine<float, 3> LineFromCoefficients(const pcl::ModelCoefficients &line_coefficients);
+  Eigen::ParametrizedLine<float, 3> LineFromCoefficients(
+      const pcl::ModelCoefficients &line_coefficients);
 
   /**
    * Returns the plane in which all 2D sensor measurements
@@ -263,7 +265,7 @@ class FloorFilter : public pcl_ros::PCLNodelet {
    *
    * @param time indicates which sensor pose to use
    */ 
-  Eigen::Hyperplane<float, 3> GetSensorPlane(const ros::Time &time);
+  bool GetSensorPlane(const ros::Time &time, Eigen::Hyperplane<float, 3> *sensor_plane);
 
   /**
    * Calculates the intersection line between the sensor plane with
