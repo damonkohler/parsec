@@ -302,6 +302,13 @@ bool FloorFilter::IntersectWithSightline(
   Eigen::ParametrizedLine<float, 3>::VectorType intersection;
   if (IntersectLines(line, viewpoint_line, &intersection)) {
     *intersection_point = pcl::PointXYZ(intersection[0], intersection[1], intersection[2]);
+    // If the point is actually closer to the viewpoint than the
+    // intersection point we have no real intersection because the
+    // point is above the floor.
+    if (pcl::euclideanDistance(viewpoint_pcl, *intersection_point) >
+        pcl::euclideanDistance(viewpoint_pcl, point)) {
+      return false;
+    }
     return true;
   }
   else {
