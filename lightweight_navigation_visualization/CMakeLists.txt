@@ -23,3 +23,8 @@ rosbuild_add_executable(tf_frame_map_pose_publisher
   src/tf_frame_map_pose_publisher.cpp
   src/tf_frame_map_pose_publisher_node.cpp)
 rosbuild_link_boost(tf_frame_map_pose_publisher thread)
+
+rosbuild_add_executable(map_pose_to_pose_stamped
+  src/map_pose_to_pose_stamped.cpp
+  src/map_pose_to_pose_stamped_node.cpp)
+rosbuild_link_boost(tf_frame_map_pose_publisher thread)
