@@ -50,7 +50,8 @@
   <node type="nodelet" pkg="nodelet" name="tilt_floor_filter"
         args="load parsec_perception/FloorFilter parsec_perception_nodelet_manager">
     <remap from="~input" to="tilt_robot_self_filter/output" />
-    <remap from="~output" to="floor_filter/output" />    
+    <remap from="~output" to="floor_filter/output" />
+    <remap from="~cliff_cloud" to="floor_filter/cliff_cloud" />
     <rosparam>
       line_distance_threshold: 0.07
       sensor_frame: tilt_laser
@@ -58,6 +59,7 @@
       max_floor_y_rotation: 0.05  # ~2.35 degrees
       max_floor_x_rotation: 0.175  # ~10 degrees
       floor_z_distance: 0.03
+      cliff_distance_threshold: 0.07
     </rosparam>
   </node>
 
@@ -90,6 +92,7 @@
         args="load parsec_perception/FloorFilter parsec_perception_nodelet_manager">
     <remap from="~input" to="fixed_angle_robot_self_filter/output" />
     <remap from="~output" to="floor_filter/output" />
+    <remap from="~cliff_cloud" to="floor_filter/cliff_cloud" />
     <rosparam>
       line_distance_threshold: 0.04
       sensor_frame: fixed_angle_laser
@@ -97,11 +100,16 @@
       max_floor_y_rotation: 0.02  # ~1.1 degrees
       max_floor_x_rotation: 0.0875  # ~5 degrees
       floor_z_distance: 0.02
+      cliff_distance_threshold: 0.04
     </rosparam>
   </node>
   <node name="floor_filter_converter" type="point_cloud_converter" pkg="point_cloud_converter">
     <remap from="points2_in" to="floor_filter/output" />
     <remap from="points_out" to="floor_filter/filtered_cloud_points1" />
+  </node>
+  <node name="cliff_converter" type="point_cloud_converter" pkg="point_cloud_converter">
+    <remap from="points2_in" to="floor_filter/cliff_cloud" />
+    <remap from="points_out" to="floor_filter/cliff_cloud_points1" />
   </node>
   
 </launch>
