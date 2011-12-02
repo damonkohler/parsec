@@ -24,6 +24,7 @@
 #include "geometry_msgs/Twist.h"
 #include "odometry.h"
 #include "parallax_ping.h"
+#include "parsec_msgs/Colors.h"
 #include "parsec_msgs/LaserTiltProfile.h"
 #include "parsec_msgs/LaserTiltSignal.h"
 #include "parsec_msgs/Odometry.h"
@@ -170,10 +171,6 @@ const float kStopTime = 1.5f;
 bool not_moving = true;
 float ping_distance[kNumPingers] = {
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-const char kGreen = 0, kYellow = 1, kRed = 2, kWhite = 3, kWhiteOrange = 4,
-           kRedYellow = 5, kBlue = 6;
-char ping_state[kNumPingers] = {
-    kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed};
 // All pingers, changing between front and back from one ping to another:
 // const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
 const int kPingSuccessor[] = {2, 3, 4, 0, 1};  // Just the backwards pingers.
@@ -192,6 +189,80 @@ const int kPingSuccessor[] = {2, 3, 4, 0, 1};  // Just the backwards pingers.
 const float kPingerDirection[kNumPingers] = {
     0.25f, 0.5f, 1.0f, 0.5f, 0.25f,
     -0.25f, -0.5f, -1.0f, -0.5f, -0.25f};
+
+class ColorState {
+ public:
+  enum ColorType {
+    kGreen, kRed, kBlue
+  };
+
+  ColorState() {
+    for (int i = 0; i != 10; ++i) {
+      red_[i] = 0;
+      green_[i] = 0;
+      blue_[i] = 0;
+      best_before_[i] = 0;
+    }
+  }
+
+  // Updates the color if it hasn't recently been set over ROS.
+  void Update(int i, ColorType color) {
+    unsigned long current = micros();
+    if (static_cast<long>(current - best_before_[i]) >= 0) {
+      switch (color) {
+        case kGreen: {
+          red_[i] = 0;
+          green_[i] = 1023;
+          blue_[i] = 0;
+          break;
+        }
+        case kRed: {
+          red_[i] = 1023;
+          green_[i] = 0;
+          blue_[i] = 0;
+          break;
+        }
+        case kBlue: {
+          red_[i] = 0;
+          green_[i] = 0;
+          blue_[i] = 1023;
+          break;
+        }
+      }
+      best_before_[i] = current;
+    }
+  }
+
+  // Updates the color from elements of a parsec_msgs/Colors message.
+  void UpdateFromMessage(const parsec_msgs::Colors& color_message) {
+    unsigned long best_before = micros() + 100000ul;  // 100ms timeout.
+    for (int i = 0; i != 10; ++i) {
+      if (color_message.a[i]) {
+        red_[i] = color_message.r[i] << 2;
+        green_[i] = color_message.g[i] << 2;
+        blue_[i] = color_message.b[i] << 2;
+        best_before_[i] = best_before;
+      }
+    }
+  }
+
+  const int *GetRed() const { return red_; }
+  const int *GetGreen() const { return green_; }
+  const int *GetBlue() const { return blue_; }
+
+ private:
+  int red_[10];
+  int green_[10];
+  int blue_[10];
+  unsigned long best_before_[10];
+} color_state;
+
+void PingerColorCallback(const parsec_msgs::Colors& color_message) {
+  color_state.UpdateFromMessage(color_message);
+}
+
+ros::Subscriber<parsec_msgs::Colors> pinger_color_subscriber(
+    "pinger_color", &PingerColorCallback);
 
 // Put an ultrasonic sensor reading in a ROS sensor_msgs::Range message.
 void UltrasonicToMessage(float range, sensor_msgs::Range *range_message) {
@@ -239,14 +310,15 @@ static void MakeUltrasonicSafe(float* velocity) {
       // is not enough for this pinger reading to drop below kStopDistance.
       bool front = (kPingerDirection[i] <= 0.0f);
       bool free = (distance > 0.0f);
-      ping_state[i] = free ? (front ? kBlue : kGreen)
-                           : (front ? kRed : kRed);
+      color_state.Update(
+          i, free ? (front ? ColorState::kBlue : ColorState::kGreen)
+                  : (front ? ColorState::kRed : ColorState::kRed));
     } else {
       if (distance <= 0.0f) {
-        ping_state[i] = kRed;
+        color_state.Update(i, ColorState::kRed);
         safety_factor = 0;
       } else {
-        ping_state[i] = kRed;
+        color_state.Update(i, ColorState::kRed);
         safety_factor = fminf(safety_factor, -distance / ping_delta);
       }
     }
@@ -258,8 +330,9 @@ static void ShowUltrasonicState() {
   for (int i = 0; i != kNumPingers; ++i) {
     bool front = (kPingerDirection[i] <= 0.0f);
     bool free = (ping_distance[i] > 0.6f);  // Obstacle closer than 60cm?
-    ping_state[i] = free ? (front ? kGreen : kBlue)
-                         : (front ? kRed : kRed);
+    color_state.Update(
+        i, free ? (front ? ColorState::kGreen : ColorState::kBlue)
+                : (front ? ColorState::kRed : ColorState::kRed));
   }
 }
 
@@ -398,8 +471,8 @@ static void LoopPositionController() {
   }
   if (not_moving && abs(angular_velocity) > 1e-6f) {
     for (int i = 0; i != kNumPingers; ++i) {
-      if (ping_state[i] != kRed) {
-        ping_state[i] = kBlue;
+      if (color_state.GetRed()[i] == 0) {
+        color_state.Update(i, ColorState::kBlue);
       }
     }
   }
@@ -527,6 +600,7 @@ ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
 static void SetupROSSerial() {
   node_handle.subscribe(velocity_subscriber);
   node_handle.subscribe(tilt_profile_subscriber);
+  node_handle.subscribe(pinger_color_subscriber);
   node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
 #ifdef PUBLISH_JOINT_STATES
@@ -582,63 +656,6 @@ static void SetupShiftBrite() {
 }
 
 static void LoopShiftBrite() {
-  // Static saves about 20 us.
-  static int red[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  static int green[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  static int blue[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  bool blink_phase(micros() & (1ul << 18));
-  for (int i = 0; i != 10; ++i) {
-    switch (ping_state[i]) {
-      case kWhiteOrange: {
-        red[i] = 1023;
-        green[i] = blink_phase ? 1023 : 511;
-        blue[i] = blink_phase ? 1023 : 0;
-        break;
-      }
-      case kRedYellow: {
-        red[i] = 1023;
-        green[i] = blink_phase ? 0 : 1023;
-        blue[i] = 0;
-        break;
-      }
-      case kGreen: {
-        red[i] = 0;
-        green[i] = 1023;
-        blue[i] = 0;
-        break;
-      }
-      case kYellow: {
-        red[i] = 1023;
-        green[i] = 1023;
-        blue[i] = 0;
-        break;
-      }
-      case kWhite: {
-        red[i] = 1023;
-        green[i] = 1023;
-        blue[i] = 1023;
-        break;
-      }
-      case kRed: {
-        red[i] = 1023;
-        green[i] = 0;
-        blue[i] = 0;
-        break;
-      }
-      case kBlue: {
-        red[i] = 0;
-        green[i] = 0;
-        blue[i] = 1023;
-        break;
-      }
-      default: {
-        red[i] = 0;
-        green[i] = 0;
-        blue[i] = 0;
-        break;
-      }
-    }
-  }
   // Only initialize every so often to double performance, cutting time from
   // 1276 us to 700 us.
   static int initialize_next_at = 0;
@@ -648,7 +665,8 @@ static void LoopShiftBrite() {
   } else {
     --initialize_next_at;
   }
-  shift_brite.UpdateColors(10, red, green, blue);
+  shift_brite.UpdateColors(
+      10, color_state.GetRed(), color_state.GetGreen(), color_state.GetBlue());
 }
 
 // ----------------------------------------------------------------------

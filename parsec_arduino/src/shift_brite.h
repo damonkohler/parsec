@@ -31,7 +31,8 @@ class ShiftBrite {
 
   // Updates the colors of daisy-chained ShiftBrites.
   // Red, green and blue are 0--1023.
-  void UpdateColors(int n, int red[], int green[], int blue[]);
+  void UpdateColors(
+      int n, const int red[], const int green[], const int blue[]);
 
  private:
   inline void UpdateColor(int red, int green, int blue);
