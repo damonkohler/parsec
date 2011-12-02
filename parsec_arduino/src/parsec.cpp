@@ -170,7 +170,7 @@ const float kStopDistance = 0.15f;  // Stop at 15cm. Parallax PING))) sensors wo
 const float kStopTime = 1.5f;
 bool not_moving = true;
 float ping_distance[kNumPingers] = {
-    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 25.0f, 25.0f, 25.0f, 25.0f, 25.0f};
 // All pingers, changing between front and back from one ping to another:
 // const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
 const int kPingSuccessor[] = {2, 3, 4, 0, 1};  // Just the backwards pingers.
