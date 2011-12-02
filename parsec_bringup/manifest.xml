@@ -1,0 +1,20 @@
+<package>
+  <description brief="parsec_bringup">
+
+     parsec_bringup
+
+  </description>
+  <author>Lorenz Mosenlechner</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_bringup</url>
+
+  <depend package="parsec_description" />
+  <depend package="parsec_odometry" />
+  <depend package="robot_state_publisher" />
+  <depend package="rospy" />
+  <depend package="geometry_msgs" />
+  <depend package="priority_mux" />
+
+</package>
+
