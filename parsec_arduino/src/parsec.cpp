@@ -174,7 +174,9 @@ const char kGreen = 0, kYellow = 1, kRed = 2, kWhite = 3, kWhiteOrange = 4,
            kRedYellow = 5, kBlue = 6;
 char ping_state[kNumPingers] = {
     kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed, kRed};
-const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
+// All pingers, changing between front and back from one ping to another:
+// const int kPingSuccessor[kNumPingers] = {5, 6, 7, 8, 9, 1, 2, 3, 4, 0};
+const int kPingSuccessor[] = {2, 3, 4, 0, 1};  // Just the backwards pingers.
 // >>> print ', '.join(map(str, (
 // ... math.cos(2 * math.pi * i / 12)
 // ... for i in (4, 5, 6, 7, 8, 10, 11, 0, 1, 2))))
