@@ -19,15 +19,12 @@
 
 namespace lightweight_navigation_visualization {
 
-const std::string TfFrameMapPosePublisher::kDefaultReferenceFrameId = "map";
 const std::string TfFrameMapPosePublisher::kDefaultFrameId = "base_link";
 
 TfFrameMapPosePublisher::TfFrameMapPosePublisher(
     const ros::NodeHandle &node_handle)
     : node_handle_(node_handle),
       publish_rate_(kDefaultPublishRate) {
-  node_handle_.param(
-      "reference_frame_id", reference_frame_id_, kDefaultReferenceFrameId);
   node_handle_.param("frame_id", frame_id_, kDefaultFrameId);
   double publish_rate;
   if (node_handle_.getParam("publish_rate", publish_rate)) {
@@ -47,11 +44,12 @@ void TfFrameMapPosePublisher::Run() {
       ROS_WARN("No map received so far.");
       continue;
     }
+    std::string reference_frame = current_map_->header.frame_id;
     ros::Time now = ros::Time::now();
-    if (!tf_listener_.waitForTransform(reference_frame_id_, frame_id_, now,
+    if (!tf_listener_.waitForTransform(reference_frame, frame_id_, now,
                                        ros::Duration(0.2))) {
       ROS_WARN("Unable to transform frame into reference frame (%s -> %s).",
-               frame_id_.c_str(), reference_frame_id_.c_str());
+               frame_id_.c_str(), reference_frame.c_str());
       continue;
     }
     tf::Stamped<tf::Pose> pose;
@@ -59,7 +57,7 @@ void TfFrameMapPosePublisher::Run() {
     pose.frame_id_ = frame_id_;
     pose.setIdentity();
     tf::Stamped<tf::Pose> transformed_pose;
-    tf_listener_.transformPose(reference_frame_id_, pose, transformed_pose);
+    tf_listener_.transformPose(reference_frame, pose, transformed_pose);
     tf::Pose map_origin;
     tf::poseMsgToTF(current_map_->info.origin, map_origin);
     tf::Pose pose_in_map_origin = transformed_pose * map_origin.inverse();

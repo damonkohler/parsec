@@ -33,12 +33,10 @@ class TfFrameMapPosePublisher {
   void Run();
 
  private:
-  static const std::string kDefaultReferenceFrameId;
   static const std::string kDefaultFrameId;
   static const double kDefaultPublishRate = 10;
 
   ros::NodeHandle node_handle_;
-  std::string reference_frame_id_;
   std::string frame_id_;
   ros::Rate publish_rate_;
   tf::TransformListener tf_listener_;
