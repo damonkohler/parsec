@@ -51,7 +51,7 @@ class CmdVelSafetyFilter {
       btVector3 direction, double radius, std::vector<tf::Point> points,
       std::vector<tf::Point> *filtered_points);
  private:
-  static const double kDefaultScanTimeout = 1.0;
+  static const double kDefaultScanTimeout;
   static const std::string kDefaultBaseFrame;
 
   ros::NodeHandle node_handle_;
