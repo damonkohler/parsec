@@ -38,7 +38,8 @@ void ShiftBrite::Enable(int enable_pin) {
   digitalWrite(enable_pin, LOW);
 }
 
-void ShiftBrite::UpdateColors(int n, int red[], int green[], int blue[]) {
+void ShiftBrite::UpdateColors(
+    int n, const int red[], const int green[], const int blue[]) {
   for (int i = 0; i != n; ++i) {
     UpdateColor(red[i], green[i], blue[i]);
   }
