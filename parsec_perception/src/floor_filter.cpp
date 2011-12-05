@@ -31,7 +31,6 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_ros/transforms.h>
-#include <pluginlib/class_list_macros.h>
 #include <ros_check/ros_check.h>
 
 #include "parsec_perception/geometry.h"
@@ -40,38 +39,39 @@ namespace parsec_perception {
 
 const std::string FloorFilter::kDefaultReferenceFrame("base_link");
 
-void FloorFilter::onInit() {
-  if (!getPrivateNodeHandle().getParam("sensor_frame", sensor_frame_)) {
+FloorFilter::FloorFilter(const ros::NodeHandle &node_handle)
+    : node_handle_(node_handle) {
+  if (!node_handle_.getParam("sensor_frame", sensor_frame_)) {
     ROS_FATAL("Parameter 'sensor_frame' not found.");
     return;
   }
-  getPrivateNodeHandle().param(
+  node_handle_.param(
       "reference_frame", reference_frame_, kDefaultReferenceFrame);
-  getPrivateNodeHandle().param(
+  node_handle_.param(
       "floor_z_distance", floor_z_distance_, kDefaultFloorZDistance);
-  getPrivateNodeHandle().param(
+  node_handle_.param(
       "max_floor_y_rotation", max_floor_y_rotation_, kDefaultMaxFloorYRotation);
-  getPrivateNodeHandle().param(
+  node_handle_.param(
       "max_floor_x_rotation", max_floor_x_rotation_, kDefaultMaxFloorXRotation);
-  getPrivateNodeHandle().param(
+  node_handle_.param(
       "line_distance_threshold", line_distance_threshold_, kDefaultLineDistanceThreshold);
-  getPrivateNodeHandle().param(
+  node_handle_.param(
       "cliff_distance_threshold", cliff_distance_threshold_, kDefaultCliffDistanceThreshold);
       
   input_cloud_subscriber_ =
-      getPrivateNodeHandle().subscribe<pcl::PointCloud<pcl::PointXYZ> >(
+      node_handle_.subscribe<pcl::PointCloud<pcl::PointXYZ> >(
           "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
   filtered_cloud_publisher_ =
-      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+      node_handle_.advertise<pcl::PointCloud<pcl::PointXYZ> >(
           "output", 10);
   floor_cloud_publisher_ =
-      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+      node_handle_.advertise<pcl::PointCloud<pcl::PointXYZ> >(
           "floor_cloud", 10);
   cliff_cloud_publisher_ =
-      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+      node_handle_.advertise<pcl::PointCloud<pcl::PointXYZ> >(
           "cliff_cloud", 10);
   cliff_generating_cloud_publisher_ =
-      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+      node_handle_.advertise<pcl::PointCloud<pcl::PointXYZ> >(
           "cliff_generating_cloud", 10);
 }
 
@@ -400,5 +400,3 @@ void FloorFilter::GetIndicesDifference(size_t cloud_size, const std::vector<int>
 }
 
 }  // namespace parsec_perception
-
-PLUGINLIB_DECLARE_CLASS(parsec_perception, FloorFilter, parsec_perception::FloorFilter, nodelet::Nodelet);
