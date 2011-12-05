@@ -173,7 +173,7 @@ private:
    *     the floor
    */
   bool GenerateCliffCloud(const Eigen::ParametrizedLine<float, 3> &floor_line,
-                          const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
+                          const pcl::PointCloud<pcl::PointXYZ> &input_cloud,
                           const std::vector<int> &input_indices,
                           pcl::PointCloud<pcl::PointXYZ> *cliff_cloud,
                           std::vector<int> *cliff_indices);
