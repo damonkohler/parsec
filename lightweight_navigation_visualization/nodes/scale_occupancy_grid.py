@@ -41,38 +41,55 @@ class ScaleOccupancyGrid(object):
   """
 
   def __init__(self):
+    self._resolution = None
+    self._width = None
+    self._height = None
+    self._scaled_map_publisher = None
+
+  def run(self):
     self._resolution = rospy.get_param('~resolution', None)
     self._width = rospy.get_param('~width', None)
-    if self._resolution is None and self._width is None:
+    self._height = rospy.get_param('~height', None)
+    if (self._resolution is None and
+        (self._width is None or self._height is None)):
       raise ParameterError(
         'Required parameters not found. ' +
-        'Either resolution or width need to be set.')
-    if self._resolution and self._width:
+        'Either resolution or width and height need to be set.')
+    if self._resolution and (self._width or self._height):
       raise ParameterError(
-        'Parametrs resolution and width are both set. ' +
-        'Please use either resolution or width.')
-    self._map_subscriber = rospy.Subscriber(
+        'Parametrs resolution and width and height are both set. ' +
+        'Please use either resolution or width and height.')
+    map_subscriber = rospy.Subscriber(
         'map', nav_msgs.OccupancyGrid, self._map_callback)
     self._scaled_map_publisher = rospy.Publisher(
         '~scaled_map', nav_msgs.OccupancyGrid, latch=True)
-
+    rospy.spin()
+    
   def _map_callback(self, data):
     resolution = self._resolution
     if resolution is None:
       resolution = self._calculate_resolution(
-        self._width, data.info.width, data.info.resolution)
+          (self._width, self._height), (data.info.width, data.info.height),
+          data.info.resolution)
     scaled_map = occupancy_grid.scale_occupancy_grid(
         data, resolution)
     self._scaled_map_publisher.publish(scaled_map)
 
   def _calculate_resolution(
-      self, goal_width, current_width, current_resolution):
-    return float(current_width) / float(goal_width) * current_resolution
+      self, goal_size, current_size, current_resolution):
+    goal_width, goal_height = goal_size
+    current_width, current_height = current_size
+    # always use the smallest possible resolution
+    width_resolution = (
+      float(current_width) / float(goal_width) * current_resolution)
+    height_resolution = (
+      float(current_height) / float(goal_height) * current_resolution)
+    return max(width_resolution, height_resolution)
 
 
 def main():
   rospy.init_node('scale_occupancy_grid')
-  scale_occupancy_grid = ScaleOccupancyGrid()
+  ScaleOccupancyGrid().run()
   rospy.spin()
 
 

@@ -50,8 +50,8 @@ class PublishServoJointStateTest(unittest.TestCase):
                      publish_servo_joint_state._JointState(0, 2))
     self.assertEqual(self._publish_servo_joint_state._extrapolate_decreasing_angle(-0.5),
                      publish_servo_joint_state._JointState(0, 2))
-    
+
 
 if __name__ == '__main__':
   unittest.main()
-  
+
