@@ -114,7 +114,7 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
   GetIndicesDifference(transformed_cloud->size(), line_inlier_indices, &indices_without_floor);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cliff_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   std::vector<int> cliff_indices;
-  GenerateCliffCloud(line, transformed_cloud, indices_without_floor,
+  GenerateCliffCloud(line, *transformed_cloud, indices_without_floor,
                      cliff_cloud.get(), &cliff_indices);
 
 
@@ -237,31 +237,31 @@ bool FloorFilter::FindSensorPlaneIntersection(
 
 bool FloorFilter::GenerateCliffCloud(
     const Eigen::ParametrizedLine<float, 3> &floor_line,
-    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &input_cloud,
+    const pcl::PointCloud<pcl::PointXYZ> &input_cloud,
     const std::vector<int> &input_indices,
     pcl::PointCloud<pcl::PointXYZ> *cliff_cloud,
     std::vector<int> *cliff_indices) {
-  cliff_cloud->header = input_cloud->header;
+  cliff_cloud->header = input_cloud.header;
   cliff_cloud->height = 1;
   cliff_cloud->is_dense = false;
   cliff_cloud->points.clear();
 
   pcl::PointXYZ viewpoint;
-  if (!GetViewpointPoint(input_cloud->header.stamp, &viewpoint)) {
+  if (!GetViewpointPoint(input_cloud.header.stamp, &viewpoint)) {
     return false;
   }
   for (size_t i = 0; i < input_indices.size(); i++) {
     pcl::PointXYZ cliff_point;
-    if (!IntersectWithSightline(input_cloud->header.stamp, floor_line, input_cloud->points[i],
+    if (!IntersectWithSightline(input_cloud.header.stamp, floor_line, input_cloud.points[i],
                                 &cliff_point)) {
       continue;
     }
-    double distance_to_input_point = pcl::euclideanDistance(viewpoint, input_cloud->points[i]);
+    double distance_to_input_point = pcl::euclideanDistance(viewpoint, input_cloud.points[i]);
     double distance_to_cliff_point = pcl::euclideanDistance(viewpoint, cliff_point);
     double distance_cliff_from_point_xy =
       pcl::euclideanDistance(cliff_point,
-                        pcl::PointXYZ(input_cloud->points[i].x,
-                                      input_cloud->points[i].y,
+                        pcl::PointXYZ(input_cloud.points[i].x,
+                                      input_cloud.points[i].y,
                                       cliff_point.z));
     double distance_from_floor =
       sqrt((distance_to_input_point - distance_to_cliff_point) *
