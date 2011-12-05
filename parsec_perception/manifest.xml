@@ -15,6 +15,7 @@
   <depend package="pcl_ros" />
   <depend package="nodelet" />
   <depend package="ros_check" />
+  <depend package="tf" />
 
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />

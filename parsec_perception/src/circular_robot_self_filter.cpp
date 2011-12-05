@@ -23,25 +23,26 @@
 namespace parsec_perception {
 
 void CircularRobotSelfFilter::onInit() {
-  PCLNodelet::onInit();
-
-  pnh_->param("base_frame", base_frame_, std::string("base_link"));
-  if (!pnh_->getParam("radius", radius_)) {
+  getPrivateNodeHandle().param(
+      "base_frame", base_frame_, std::string("base_link"));
+  if (!getPrivateNodeHandle().getParam("radius", radius_)) {
     ROS_FATAL("Parameter 'radius' not found.");
     return;
   }
-  if (!pnh_->getParam("minimal_z_value", minimal_z_value_)) {
+  if (!getPrivateNodeHandle().getParam("minimal_z_value", minimal_z_value_)) {
     ROS_FATAL("Parameter 'minimal_z_value' not found.");
     return;
   }
-  if (!pnh_->getParam("maximal_z_value", maximal_z_value_)) {
+  if (!getPrivateNodeHandle().getParam("maximal_z_value", maximal_z_value_)) {
     ROS_FATAL("Parameter 'maximal_z_value' not found.");
     return;
   }
-  input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
-      "input", 100, boost::bind(&CircularRobotSelfFilter::CloudCallback, this, _1));
-  output_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
-      "output", 100);
+  input_cloud_subscriber_ =
+      getPrivateNodeHandle().subscribe<pcl::PointCloud<pcl::PointXYZ> >(
+          "input", 100, boost::bind(&CircularRobotSelfFilter::CloudCallback, this, _1));
+  output_cloud_publisher_ =
+      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+          "output", 100);
 }
 
 void CircularRobotSelfFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {

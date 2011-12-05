@@ -18,20 +18,19 @@
 
 #include <string>
 
+#include <nodelet/nodelet.h>
+#include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl_ros/pcl_nodelet.h>
 #include <ros/ros.h>
+#include <tf/transform_listener.h>
 
 namespace parsec_perception {
 
-class CircularRobotSelfFilter : public pcl_ros::PCLNodelet {
+class CircularRobotSelfFilter : public nodelet::Nodelet {
  public:
   CircularRobotSelfFilter()
-    : PCLNodelet() {}
+    : Nodelet() {}
 
- protected:
-  virtual void onInit();
-  
  private:
   /**
    * The base frame of the robot. Default: base_link
@@ -52,7 +51,9 @@ class CircularRobotSelfFilter : public pcl_ros::PCLNodelet {
   double maximal_z_value_;
   ros::Subscriber input_cloud_subscriber_;
   ros::Publisher output_cloud_publisher_;
+  tf::TransformListener tf_listener_;
 
+  virtual void onInit();
   void CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
 };
 

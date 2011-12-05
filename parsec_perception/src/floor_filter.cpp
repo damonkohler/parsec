@@ -41,29 +41,38 @@ namespace parsec_perception {
 const std::string FloorFilter::kDefaultReferenceFrame("base_link");
 
 void FloorFilter::onInit() {
-  PCLNodelet::onInit();
-  
-  if (!pnh_->getParam("sensor_frame", sensor_frame_)) {
+  if (!getPrivateNodeHandle().getParam("sensor_frame", sensor_frame_)) {
     ROS_FATAL("Parameter 'sensor_frame' not found.");
     return;
   }
-  pnh_->param("reference_frame", reference_frame_, kDefaultReferenceFrame);
-  pnh_->param("floor_z_distance", floor_z_distance_, kDefaultFloorZDistance);
-  pnh_->param("max_floor_y_rotation", max_floor_y_rotation_, kDefaultMaxFloorYRotation);
-  pnh_->param("max_floor_x_rotation", max_floor_x_rotation_, kDefaultMaxFloorXRotation);
-  pnh_->param("line_distance_threshold", line_distance_threshold_, kDefaultLineDistanceThreshold);
-  pnh_->param("cliff_distance_threshold", cliff_distance_threshold_, kDefaultCliffDistanceThreshold);
+  getPrivateNodeHandle().param(
+      "reference_frame", reference_frame_, kDefaultReferenceFrame);
+  getPrivateNodeHandle().param(
+      "floor_z_distance", floor_z_distance_, kDefaultFloorZDistance);
+  getPrivateNodeHandle().param(
+      "max_floor_y_rotation", max_floor_y_rotation_, kDefaultMaxFloorYRotation);
+  getPrivateNodeHandle().param(
+      "max_floor_x_rotation", max_floor_x_rotation_, kDefaultMaxFloorXRotation);
+  getPrivateNodeHandle().param(
+      "line_distance_threshold", line_distance_threshold_, kDefaultLineDistanceThreshold);
+  getPrivateNodeHandle().param(
+      "cliff_distance_threshold", cliff_distance_threshold_, kDefaultCliffDistanceThreshold);
       
-  input_cloud_subscriber_ = pnh_->subscribe<pcl::PointCloud<pcl::PointXYZ> >(
-      "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
-  filtered_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
-      "output", 10);
-  floor_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
-      "floor_cloud", 10);
-  cliff_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
-      "cliff_cloud", 10);
-  cliff_generating_cloud_publisher_ = pnh_->advertise<pcl::PointCloud<pcl::PointXYZ> >(
-      "cliff_generating_cloud", 10);
+  input_cloud_subscriber_ =
+      getPrivateNodeHandle().subscribe<pcl::PointCloud<pcl::PointXYZ> >(
+          "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
+  filtered_cloud_publisher_ =
+      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+          "output", 10);
+  floor_cloud_publisher_ =
+      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+          "floor_cloud", 10);
+  cliff_cloud_publisher_ =
+      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+          "cliff_cloud", 10);
+  cliff_generating_cloud_publisher_ =
+      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
+          "cliff_generating_cloud", 10);
 }
 
 void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {
