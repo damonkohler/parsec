@@ -29,10 +29,9 @@
 
 namespace parsec_perception {
 
-class FloorFilter : public nodelet::Nodelet {
+class FloorFilter {
  public:
-  FloorFilter()
-    : Nodelet() {}
+  FloorFilter(const ros::NodeHandle &node_handle);
 
   /**
    * Generates the indices of all points that are not in indices.
@@ -45,15 +44,33 @@ class FloorFilter : public nodelet::Nodelet {
    */
   void GetIndicesDifference(size_t cloud_size, const std::vector<int> &indices,
                             std::vector<int> *difference);
+ 
+  /**
+   * Get the indices of points that are possibly the floor. Uses a
+   * threshold and a slope parameter and returns only the indices of
+   * points that are in the corresponding area.
+   *
+   * Candidates that are possibly the floor need to have a z
+   * coordinate close to 0 (the z axis is pointing upwards) but if we
+   * have slope on the floor which might be caused by bad calibration
+   * of the sensor, the z-distance for points further away might be
+   * bigger. Thus, we need to take into account a maximal slope.
+   *
+   * Public for testing.
+   */
+  void FilterFloorCandidates(double floor_z_distance, double max_slope,
+                             pcl::PointCloud<pcl::PointXYZ> &cloud,
+                             std::vector<int> *indices);
 
- private:
+private:
   static const double kDefaultFloorZDistance = 0.05;
   static const double kDefaultMaxFloorYRotation = 0.035;  // 2 degrees
   static const double kDefaultMaxFloorXRotation = 0.087;  // 5 degrees
   static const double kDefaultLineDistanceThreshold = 0.03;
   static const double kDefaultCliffDistanceThreshold = 0.02;
   static const std::string kDefaultReferenceFrame;
-  
+
+  ros::NodeHandle node_handle_;
   ros::Subscriber input_cloud_subscriber_;
   ros::Publisher floor_cloud_publisher_;
   ros::Publisher filtered_cloud_publisher_;
@@ -61,8 +78,6 @@ class FloorFilter : public nodelet::Nodelet {
   ros::Publisher cliff_generating_cloud_publisher_;
   tf::TransformListener tf_listener_;
 
-  virtual void onInit();
-  
   /**
    * The maximal distance from the x-y-planes points can have to be
    * considered as floor candidates.
@@ -110,21 +125,6 @@ class FloorFilter : public nodelet::Nodelet {
   std::string reference_frame_;
 
   void CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
-
-  /**
-   * Get the indices of points that are possibly the floor. Uses a
-   * threshold and a slope parameter and returns only the indices of
-   * points that are in the corresponding area.
-   *
-   * Candidates that are possibly the floor need to have a z
-   * coordinate close to 0 (the z axis is pointing upwards) but if we
-   * have slope on the floor which might be caused by bad calibration
-   * of the sensor, the z-distance for points further away might be
-   * bigger. Thus, we need to take into account a maximal slope.
-   */
-  void FilterFloorCandidates(double floor_z_distance, double max_slope,
-                             pcl::PointCloud<pcl::PointXYZ> &cloud,
-                             std::vector<int> *indices);
 
   /**
    * Takes an input cloud and point indices and returns the

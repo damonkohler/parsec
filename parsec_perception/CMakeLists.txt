@@ -24,6 +24,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_library(parsec_perception_nodelet
   src/geometry.cpp
   src/floor_filter.cpp
+  src/floor_filter_nodelet.cpp
   src/laser_to_pointcloud_converter.cpp
   src/circular_robot_self_filter.cpp)
 

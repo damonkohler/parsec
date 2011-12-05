@@ -11,7 +11,7 @@
       approximately cylindric.
     </description>
   </class>
-  <class name="parsec_perception/FloorFilter" type="parsec_perception::FloorFilter" base_class_type="nodelet::Nodelet">
+  <class name="parsec_perception/FloorFilter" type="parsec_perception::FloorFilterNodelet" base_class_type="nodelet::Nodelet">
     <description>
       FloorFilter removes the floor from point clouds and generates
       cliff points.
