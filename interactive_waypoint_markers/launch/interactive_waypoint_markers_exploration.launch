@@ -1,4 +1,5 @@
 <launch>
+  <include file="$(find interactive_waypoint_markers)/launch/simple_waypoints_server.launch" />
   <node name="interactive_waypoint_markers" type="interactive_waypoint_markers.py" pkg="interactive_waypoint_markers" />
   <node name="navigation_waypoints_server" type="navigation_waypoints_server.py" pkg="navigation_waypoints_server">
     <rosparam>
