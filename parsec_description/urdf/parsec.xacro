@@ -36,7 +36,7 @@
   </macro>
 
   <include filename="$(find parsec_description)/urdf/colors.xacro" />
-  <include filename="$(find parsec_description)/urdf/calibration.xacro" />
+  <include filename="$(find parsec_description)/urdf/parameters.xacro" />
   <include filename="$(find parsec_description)/urdf/gazebo.xacro" />
 
   <dummy-link name="base_footprint" />
