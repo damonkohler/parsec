@@ -62,6 +62,84 @@ class FloorFilter {
                              pcl::PointCloud<pcl::PointXYZ> &cloud,
                              std::vector<int> *indices);
 
+  /**
+   * Calculates the intersection point between the sight line,
+   * i.e. the line between the view point and point, and line.
+   *
+   * Public for testing.
+   *
+   * @param time the time at which to take the viewpoint
+   * @param line the Eigen representation of the line
+   * @param point the point to project
+   * @param intersection_point
+   *     the point where line and the view point line intersect
+   *
+   * @return true if valid intersection could be found, false otherwise
+   */
+  bool IntersectWithSightline(
+      const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line,
+      const pcl::PointXYZ &point,
+      pcl::PointXYZ *intersection_point);
+
+  /**
+   * Returns the position of the view point, i.e. the sensor frame, at
+   * a specific time in reference frame.
+   *
+   * Public for testing.
+   *
+   * @param time indicates when to take the view point position
+   *
+   * @return the viewpoint at a specific time
+   */
+  bool GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point);
+
+  /**
+   * Returns the plane in which all 2D sensor measurements
+   * (e.g. laser) are supposed to be in. Uses the time to look up the
+   * position of the sensor in TF and returns the plane created by the
+   * sensor frame along its x- and y-axis in reference_frame_.
+   *
+   * Public for testing.
+   *
+   * @param time indicates which sensor pose to use
+   */ 
+  bool GetSensorPlane(
+      const ros::Time &time, Eigen::Hyperplane<float, 3> *sensor_plane);
+
+  /**
+   * Calculates the intersection line between the sensor plane with
+   * the x-y-plane. If the line is behind the robot, returns false.
+   * 
+   * Public for testing.
+   */
+  bool FindSensorPlaneIntersection(
+      const ros::Time &time,
+      Eigen::ParametrizedLine<float, 3> *intersection_line);
+
+  /**
+   * Generates cliff points by calculating the intersection between
+   * the sightline to a point and the floor line. This method assumes
+   * that the sensor is pointing in the direction of the floor line at
+   * the time input_indices was collected.
+   *
+   * Public for testing.
+   * 
+   * @param floor_line the Eigen representation of the floor line
+   * @param input_cloud input point cloud
+   * @param input_indices
+   *     indices of points in the input cloud to consider
+   * @param cliff_cloud generated points indicating cliffs
+   * @param cliff_indices indices in input_cloud indicating points
+   *     that were used to generate cliff points, i.e. points below
+   *     the floor
+   */
+  bool GenerateCliffCloud(
+      const Eigen::ParametrizedLine<float, 3> &floor_line,
+      const pcl::PointCloud<pcl::PointXYZ> &input_cloud,
+      const std::vector<int> &input_indices,
+      pcl::PointCloud<pcl::PointXYZ> *cliff_cloud,
+      std::vector<int> *cliff_indices);
+
 private:
   static const double kDefaultFloorZDistance = 0.05;
   static const double kDefaultMaxFloorYRotation = 0.035;  // 2 degrees
@@ -157,27 +235,6 @@ private:
                     Eigen::ParametrizedLine<float, 3> *line,
                     std::vector<int> *inlier_indices);
 
-  /**
-   * Generates cliff points by calculating the intersection between
-   * the sightline to a point and the floor line. This method assumes
-   * that the sensor is pointing in the direction of the floor line at
-   * the time input_indices was collected.
-   *
-   * @param floor_line the Eigen representation of the floor line
-   * @param input_cloud input point cloud
-   * @param input_indices
-   *     indices of points in the input cloud to consider
-   * @param cliff_cloud generated points indicating cliffs
-   * @param cliff_indices indices in input_cloud indicating points
-   *     that were used to generate cliff points, i.e. points below
-   *     the floor
-   */
-  bool GenerateCliffCloud(const Eigen::ParametrizedLine<float, 3> &floor_line,
-                          const pcl::PointCloud<pcl::PointXYZ> &input_cloud,
-                          const std::vector<int> &input_indices,
-                          pcl::PointCloud<pcl::PointXYZ> *cliff_cloud,
-                          std::vector<int> *cliff_indices);
-
   void MakeCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &input_cloud,
                             const std::vector<int> &input_indices,
                             pcl::PointCloud<pcl::PointXYZ> *output_cloud);
@@ -186,52 +243,8 @@ private:
                                const std::vector<int> &indices,
                                ros::Publisher &publisher);
 
-  /**
-   * Calculates the intersection point between the sight line,
-   * i.e. the line between the view point and point, and line.
-   *
-   * @param time the time at which to take the viewpoint
-   * @param line the Eigen representation of the line
-   * @param point the point to project
-   * @param intersection_point
-   *     the point where line and the view point line intersect
-   *
-   * @return true if valid intersection could be found, false otherwise
-   */
-  bool IntersectWithSightline(
-      const ros::Time &time, const Eigen::ParametrizedLine<float, 3> &line,
-      const pcl::PointXYZ &point,
-      pcl::PointXYZ *intersection_point);
-
-  /**
-   * Returns the position of the view point, i.e. the sensor frame, at
-   * a specific time in reference frame.
-   *
-   * @param time indicates when to take the view point position
-   *
-   * @return the viewpoint at a specific time
-   */
-  bool GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point);
-
   Eigen::ParametrizedLine<float, 3> LineFromCoefficients(
       const pcl::ModelCoefficients &line_coefficients);
-
-  /**
-   * Returns the plane in which all 2D sensor measurements
-   * (e.g. laser) are supposed to be in. Uses the time to look up the
-   * position of the sensor in TF and returns the plane created by the
-   * sensor frame along its x- and y-axis in reference_frame_.
-   *
-   * @param time indicates which sensor pose to use
-   */ 
-  bool GetSensorPlane(const ros::Time &time, Eigen::Hyperplane<float, 3> *sensor_plane);
-
-  /**
-   * Calculates the intersection line between the sensor plane with
-   * the x-y-plane. If the line is behind the robot, returns false.
-   */
-  bool FindSensorPlaneIntersection(
-      const ros::Time &time, Eigen::ParametrizedLine<float, 3> *intersection_line);
 
   /**
    * Checks if a transform to the reference frame is available.
