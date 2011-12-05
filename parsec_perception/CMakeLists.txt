@@ -22,9 +22,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 
 rosbuild_add_library(parsec_perception_nodelet
+  src/geometry.cpp
   src/floor_filter.cpp
   src/laser_to_pointcloud_converter.cpp
   src/circular_robot_self_filter.cpp)
 
 rosbuild_add_gtest(floor_filter_test test/floor_filter_test.cpp)
 target_link_libraries(floor_filter_test parsec_perception_nodelet)
+
+rosbuild_add_gtest(geometry_test test/geometry_test.cpp)
+target_link_libraries(geometry_test parsec_perception_nodelet)
