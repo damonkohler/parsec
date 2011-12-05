@@ -31,51 +31,6 @@ class FloorFilter : public pcl_ros::PCLNodelet {
     : PCLNodelet() {}
 
   /**
-   * Checks if two vectors are (almost) parallel with respect to a
-   * maximal angle between them.
-   *
-   * Public for testing only.
-   */
-  template<typename T>
-  bool VectorsParallel(const T& vector1, const T& vector2, double angle_threshold) {
-    return fabs(vector1.dot(vector2) / (vector1.norm() * vector2.norm())) >= cos(angle_threshold);
-  }
-
-  /**
-   * Calculates the intersection between two lines in
-   * three-dimensional space. Note: the two lines must not be parallel
-   * to the z axis.
-   *
-   * Public for testing.
-   *
-   * @return true if a valid intersection could be found, false otherwise
-   */
-  bool IntersectLines(
-      const Eigen::ParametrizedLine<float, 3> &line1, const Eigen::ParametrizedLine<float, 3> &line2,
-      Eigen::ParametrizedLine<float, 3>::VectorType *interection_point);
-
-  /**
-   * Calculates the minimum distance between the two lines. If the
-   * lines are parallel, returns false.
-   *
-   * Public for testing.
-   */
-  bool LineToLineDistance(const Eigen::ParametrizedLine<float, 3> &line1,
-                          const Eigen::ParametrizedLine<float, 3> &line2,
-                          double *distance);
-
-  /**
-   * Intersects two planes and returns the intersecting line. If the
-   * calculation fails, i.e. if the two planes are paralle, return
-   * false.
-   *
-   * Public for testing.
-   */
-  bool IntersectPlanes(const Eigen::Hyperplane<float, 3> &plane1,
-                       const Eigen::Hyperplane<float, 3> &plane2,
-                       Eigen::ParametrizedLine<float, 3> *intersection);
-
-  /**
    * Generates the indices of all points that are not in indices.
    *
    * Public for testing.

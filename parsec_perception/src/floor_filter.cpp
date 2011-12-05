@@ -34,6 +34,8 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros_check/ros_check.h>
 
+#include "parsec_perception/geometry.h"
+
 namespace parsec_perception {
 
 const std::string FloorFilter::kDefaultReferenceFrame("base_link");
@@ -191,7 +193,7 @@ bool FloorFilter::GetFloorLine(
     ROS_DEBUG("RANSAC couldn't find a floor line.");
     *line = sensor_floor_intersection_line;
   }
-  else if (!VectorsParallel(line->direction(), y_axis, max_floor_x_rotation_)) {
+  else if (!geometry::VectorsParallel(line->direction(), y_axis, max_floor_x_rotation_)) {
     ROS_DEBUG("The angle between the found floor line and the x-y-plane above threshold."
               "Rejecting the line and using the intersection between x-y-plane and sensor plane.");
     inlier_indices->clear();
@@ -217,7 +219,7 @@ bool FloorFilter::FindSensorPlaneIntersection(
   Eigen::Hyperplane<float, 3> floor_plane(Eigen::Hyperplane<float, 3>::VectorType(0, 0, 1), 0.0);
   // Clear all line inliers because even if we found a line we
   // rejected it because it was not parallel to the x-y-plane.
-  if (!IntersectPlanes(sensor_plane, floor_plane, intersection_line)) {
+  if (!geometry::IntersectPlanes(sensor_plane, floor_plane, intersection_line)) {
     ROS_DEBUG("No intersection between sensor plane and x-y-plane.");
     return false;
   }
@@ -282,9 +284,6 @@ void FloorFilter::MakeCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &inp
 void FloorFilter::PublishCloudFromIndices(const pcl::PointCloud<pcl::PointXYZ> &cloud,
                                           const std::vector<int> &indices,
                                           ros::Publisher &publisher) {
-  if (indices.size() == 0) {
-    return;
-  }
   pcl::PointCloud<pcl::PointXYZ>::Ptr indices_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   MakeCloudFromIndices(cloud, indices, indices_cloud.get());
   publisher.publish(indices_cloud);
@@ -300,7 +299,7 @@ bool FloorFilter::IntersectWithSightline(
   Eigen::ParametrizedLine<float, 3>::VectorType viewpoint = viewpoint_pcl.getVector3fMap();
   Eigen::ParametrizedLine<float, 3> viewpoint_line(viewpoint, point.getVector3fMap() - viewpoint);
   Eigen::ParametrizedLine<float, 3>::VectorType intersection;
-  if (IntersectLines(line, viewpoint_line, &intersection)) {
+  if (geometry::IntersectLines(line, viewpoint_line, &intersection)) {
     *intersection_point = pcl::PointXYZ(intersection[0], intersection[1], intersection[2]);
     // If the point is actually closer to the viewpoint than the
     // intersection point we have no real intersection because the
@@ -389,80 +388,6 @@ void FloorFilter::GetIndicesDifference(size_t cloud_size, const std::vector<int>
   std::set_difference(all_indices.begin(), all_indices.end(),
                       copied_indices.begin(), copied_indices.end(),
                       std::back_insert_iterator<std::vector<int> >(*difference));
-}
-
-bool FloorFilter::IntersectLines(
-    const Eigen::ParametrizedLine<float, 3> &line1, const Eigen::ParametrizedLine<float, 3> &line2,
-    Eigen::ParametrizedLine<float, 3>::VectorType *intersection_point) {
-  Eigen::ParametrizedLine<float, 3>::VectorType z_direction(0, 0, 1);
-  // If one of our lines is parallel to the z axis we needed to use a
-  // different formula.
-  // TODO(moesenle): handle the case when one of the lines is parallel
-  // to the z axis.
-  CHECK(!VectorsParallel(line1.direction(), z_direction, 1e-6));
-  CHECK(!VectorsParallel(line2.direction(), z_direction, 1e-6));
-  Eigen::ParametrizedLine<float, 3>::Scalar divisor =
-      line1.direction()(0) * line2.direction()(1) - line1.direction()(1) * line2.direction()(0);
-  // If magnitude_divisor is zero, the two lines definitely don't
-  // intersect.
-  if (fabs(divisor) < 1e-6) {
-    return false;
-  }
-  // Check if the lines are skew, i.e. if the minimum distance between the two
-  // lines is > 0.
-  double distance;
-  if (!LineToLineDistance(line1, line2, &distance) || distance > 0.001) {
-    return false;
-  }
-  // This formular can be derived from setting the two line equations
-  // equal and solving the resulting equation system.
-  Eigen::ParametrizedLine<float, 3>::Scalar magnitude =
-      (line1.origin()(1) + line2.origin()(0) * line2.direction()(1)
-       - line2.origin()(1) * line2.direction()(0)
-       - line1.origin()(0) * line2.direction()(1))
-      / divisor;
-  *intersection_point = line1.origin() + line1.direction() * magnitude;
-  return true;
-}
-
-bool FloorFilter::LineToLineDistance(
-    const Eigen::ParametrizedLine<float, 3> &line1, const Eigen::ParametrizedLine<float, 3> &line2,
-    double *distance) {
-  Eigen::ParametrizedLine<float, 3>::VectorType normal = line1.direction().cross(line2.direction());
-  if (normal.norm() < 1e-6) {
-    return false;
-  }
-  *distance = (normal / normal.norm()).dot(line2.origin() - line1.origin());
-  return true;
-}
-
-bool FloorFilter::IntersectPlanes(
-    const Eigen::Hyperplane<float, 3> &plane1,
-    const Eigen::Hyperplane<float, 3> &plane2,
-    Eigen::ParametrizedLine<float, 3> *intersection) {
-  Eigen::ParametrizedLine<float, 3>::VectorType direction =
-      plane1.normal().cross(plane2.normal());
-  // When planes are parallel, i.e. the cross product is close to 0,
-  // return false.
-  if (direction.norm() < 1e-6) {
-    return false;
-  }
-
-  // Calculate the intersection of two planes using the formulas as,
-  // for instance, found at http://paulbourke.net/geometry/planeplane/.
-  Eigen::Hyperplane<float, 3>::Scalar n1_n1  = plane1.normal().dot(plane1.normal());
-  Eigen::Hyperplane<float, 3>::Scalar n2_n2  = plane2.normal().dot(plane2.normal());
-  Eigen::Hyperplane<float, 3>::Scalar n1_n2  = plane1.normal().dot(plane2.normal());
-  Eigen::Hyperplane<float, 3>::Scalar determinant =
-      n1_n1 * n2_n2 - (n1_n2 * n1_n2);
-  Eigen::Hyperplane<float, 3>::Scalar c1 =
-      (plane1.offset() * n2_n2 - plane2.offset() * n1_n2) / determinant;
-  Eigen::Hyperplane<float, 3>::Scalar c2 =
-      (plane2.offset() * n1_n1 - plane1.offset() * n1_n2) / determinant;
-  Eigen::ParametrizedLine<float, 3>::VectorType origin =
-    c1 * plane1.normal() + c2 * plane2.normal() + direction / direction.norm();
-  *intersection = Eigen::ParametrizedLine<float, 3>(origin, direction);
-  return true;
 }
 
 }  // namespace parsec_perception
