@@ -18,17 +18,21 @@
 
 #include <vector>
 
+#include <nodelet/nodelet.h>
 #include <ros/ros.h>
+#include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl_ros/pcl_nodelet.h>
 #include <sensor_msgs/LaserScan.h>
+#include <tf/transform_listener.h>
+
+#include <pcl/ModelCoefficients.h>
 
 namespace parsec_perception {
 
-class FloorFilter : public pcl_ros::PCLNodelet {
+class FloorFilter : public nodelet::Nodelet {
  public:
   FloorFilter()
-    : PCLNodelet() {}
+    : Nodelet() {}
 
   /**
    * Generates the indices of all points that are not in indices.
@@ -42,9 +46,6 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   void GetIndicesDifference(size_t cloud_size, const std::vector<int> &indices,
                             std::vector<int> *difference);
 
- protected:
-  virtual void onInit();
-  
  private:
   static const double kDefaultFloorZDistance = 0.05;
   static const double kDefaultMaxFloorYRotation = 0.035;  // 2 degrees
@@ -58,6 +59,9 @@ class FloorFilter : public pcl_ros::PCLNodelet {
   ros::Publisher filtered_cloud_publisher_;
   ros::Publisher cliff_cloud_publisher_;
   ros::Publisher cliff_generating_cloud_publisher_;
+  tf::TransformListener tf_listener_;
+
+  virtual void onInit();
   
   /**
    * The maximal distance from the x-y-planes points can have to be

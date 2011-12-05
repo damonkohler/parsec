@@ -22,11 +22,13 @@
 namespace parsec_perception {
 
 void LaserToPointCloudConverter::onInit() {
-  PCLNodelet::onInit();
-  input_scan_subscriber_ = pnh_->subscribe<sensor_msgs::LaserScan>(
-      "input", 100, boost::bind(&LaserToPointCloudConverter::ScanCallback, this, _1));
-  output_cloud_publisher_ = pnh_->advertise<sensor_msgs::PointCloud2>(
-      "output", 100);
+  input_scan_subscriber_ =
+      getPrivateNodeHandle().subscribe<sensor_msgs::LaserScan>(
+          "input", 100, boost::bind(
+              &LaserToPointCloudConverter::ScanCallback, this, _1));
+  output_cloud_publisher_ =
+      getPrivateNodeHandle().advertise<sensor_msgs::PointCloud2>(
+          "output", 100);
 }
 
 void LaserToPointCloudConverter::ScanCallback(const sensor_msgs::LaserScan::ConstPtr &scan) {

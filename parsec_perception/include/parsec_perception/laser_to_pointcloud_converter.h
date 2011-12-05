@@ -16,24 +16,23 @@
 #ifndef PARSEC_PERCEPTION_LASER_TO_POINTCLOUD_H
 #define PARSEC_PERCEPTION_LASER_TO_POINTCLOUD_H
 
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <ros/ros.h>
+
 #include <sensor_msgs/LaserScan.h>
 
 namespace parsec_perception {
 
-class LaserToPointCloudConverter : public pcl_ros::PCLNodelet {
+class LaserToPointCloudConverter : public nodelet::Nodelet {
  public:
   LaserToPointCloudConverter()
-    : PCLNodelet() {}
+    : Nodelet() {}
 
- protected:
-  virtual void onInit();
-  
  private:
   ros::Subscriber input_scan_subscriber_;
   ros::Publisher output_cloud_publisher_;
 
+  virtual void onInit();
   void ScanCallback(const sensor_msgs::LaserScan::ConstPtr &cloud);
 };
 
