@@ -4,6 +4,7 @@
     <remap from="~scaled_map" to="/android/map_view/map" />
     <rosparam>
       width: 1024
+      height: 1024
     </rosparam>
   </node>
   <node name="robot_map_pose_publisher" type="tf_frame_map_pose_publisher"
