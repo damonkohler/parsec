@@ -1,0 +1,24 @@
+<robot>
+  <!-- Units used are meters and radians, according to REP 103
+       (http://www.ros.org/reps/rep-0103.html).-->
+
+  <!-- Hand measured values. -->
+  <property name="robot_radius" value="0.21" />
+  <property name="wheel_radius" value="0.0762" />
+  <property name="mast_height" value="1.65" />
+
+  <property name="base_laser_origin">
+    <origin xyz="0.06 -0.015 0.18" />
+  </property>
+
+  <!-- Calibrated values. See scripts parsec_calibration.-->
+  <property name="tilting_laser_origin">
+    <origin xyz="0.065 -0.045 0.803" rpy="0.02 0.00 0.00" />    
+  </property>
+
+  <property name="fixed_angle_laser_origin">
+    <!-- The laser is mounted at an angle of 40 degrees -->
+    <origin xyz="0.09 0 0.717" rpy="0 0.698 0"/>
+  </property>
+</robot>
+
