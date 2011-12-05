@@ -100,30 +100,25 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
   FilterFloorCandidates(floor_z_distance_, tan(max_floor_y_rotation_), *transformed_cloud,
                         &floor_candidate_indices);
 
-  Eigen::ParametrizedLine<float, 3> line;
+  Eigen::ParametrizedLine<float, 3> floor_line;
   std::vector<int> line_inlier_indices;
-  if (!GetFloorLine(transformed_cloud, floor_candidate_indices, &line, &line_inlier_indices)) {
-    // If the sensor plane and the floor plane happen to be
-    // parallel, just re-publish the input cloud because we cannot
-    // see the floor anyway.
-    filtered_cloud_publisher_.publish(transformed_cloud);
-    return;
-  }
-
   std::vector<int> indices_without_floor;
-  GetIndicesDifference(transformed_cloud->size(), line_inlier_indices, &indices_without_floor);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cliff_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   std::vector<int> cliff_indices;
-  GenerateCliffCloud(line, *transformed_cloud, indices_without_floor,
-                     cliff_cloud.get(), &cliff_indices);
-
-
+  if (GetFloorLine(transformed_cloud, floor_candidate_indices, &floor_line, &line_inlier_indices)) {
+    GetIndicesDifference(transformed_cloud->size(), line_inlier_indices, &indices_without_floor);
+    GenerateCliffCloud(floor_line, *transformed_cloud, indices_without_floor,
+                       cliff_cloud.get(), &cliff_indices);
+  }
+  else {
+    cliff_cloud->header = transformed_cloud->header;
+  }
+  // Always publish clouds even if they are empty to signal that
+  // perception is still alive.
   PublishCloudFromIndices(*transformed_cloud, line_inlier_indices, floor_cloud_publisher_);
   PublishCloudFromIndices(*transformed_cloud, indices_without_floor, filtered_cloud_publisher_);
   PublishCloudFromIndices(*transformed_cloud, cliff_indices, cliff_generating_cloud_publisher_);
-  if (cliff_cloud->points.size() > 0) {
-    cliff_cloud_publisher_.publish(cliff_cloud);
-  }
+  cliff_cloud_publisher_.publish(cliff_cloud);
   
   ros::Duration message_age = ros::Time::now() - cloud->header.stamp;
   // This is just a hint. Throw a warning to make the user know
