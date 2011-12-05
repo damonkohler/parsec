@@ -14,7 +14,8 @@ navigation_waypoints_server/msg/ExecutePathActionResult.msg
 navigation_waypoints_server/msg/ExecutePathFeedback.msg
 navigation_waypoints_server/msg/ExecutePathGoal.msg
 navigation_waypoints_server/msg/ExecutePathResult.msg
-navigation_waypoints_server/src/navigation_waypoints_server/*
+navigation_waypoints_server/src/navigation_waypoints_server/msg/*
+navigation_waypoints_server/src/navigation_waypoints_server/srv/*
 .classpath
 .project
 default.properties
