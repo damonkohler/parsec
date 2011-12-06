@@ -29,7 +29,7 @@
   <property name="fixed_angle_laser_origin">
     <!-- The laser is mounted at an angle of 40 degrees -->
     <origin xyz="0.09 0 ${0.851 - base_height / 2 - wheel_radius}"
-            rpy="0 0.698 0"/>
+            rpy="-0.04 0.698 0"/>
   </property>
 </robot>
 
