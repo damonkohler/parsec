@@ -29,6 +29,8 @@ import sensor_msgs.msg as sensor_msgs
 import parsec_msgs.msg as parsec_msgs
 
 
+# The distance from the axis of rotation to the origin of the tilting
+# laser sensor. See also parsec_description/urdf/parameters.xacro.
 _LASER_DISTANCE_FROM_ROTATION_AXIS = 0.033
 
 
