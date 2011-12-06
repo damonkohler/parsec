@@ -52,12 +52,12 @@
     <visual>
       <material name="Black" />
       <geometry>
-        <cylinder radius="${robot_radius}" length="0.01" />
+        <cylinder radius="${base_radius}" length="${base_height}" />
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <cylinder radius="${robot_radius}" length="0.01" />
+        <cylinder radius="${base_radius}" length="${base_height}" />
       </geometry>
     </collision>
   </link>
@@ -164,6 +164,7 @@
 
   <laser-link name="base_laser" />
 
+  <dummy-link name="tilt_laser_base_link" />
   <laser-link name="tilt_laser" />
 
   <laser-link name="fixed_angle_laser" />
@@ -216,13 +217,19 @@
 
   <joint name="tilt_laser_joint" type="revolute">
     <parent link="mast_link" />
-    <child link="tilt_laser" />
-    <insert_block name="tilting_laser_origin" />    
+    <child link="tilt_laser_base_link" />
+    <insert_block name="servo_axis_origin" />    
     <axis xyz="0 1 0" />
     <!-- Using dummy effort and velocity values here. They are not
-         used on the parsec -->
+         used by the controller. -->
     <limit lower="-1.5707963268" upper="1.5707963268"
            effort="1.0" velocity="10.0" />
+  </joint>
+
+  <joint name="tilt_laser_sensor_joint" type="fixed">
+    <parent link="tilt_laser_base_link" />
+    <child link="tilt_laser" />
+    <insert_block name="tilting_laser_offset" />
   </joint>
 
   <joint name="fixed_angle_laser_joint" type="fixed">
