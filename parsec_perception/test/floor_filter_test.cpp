@@ -182,22 +182,30 @@ TEST_F(FloorFilterTest, GenerateCliffCloud) {
   input_cloud.points.push_back(pcl::PointXYZ(1, 0, 0));
   input_cloud.points.push_back(pcl::PointXYZ(0.5, 0, 0.5));
   input_cloud.points.push_back(pcl::PointXYZ(2, 2, -1));
+  input_cloud.points.push_back(pcl::PointXYZ(2, -2, -1));  
   std::vector<int> input_indices;
   input_indices.push_back(0);
   input_indices.push_back(1);
-  input_indices.push_back(2);  
+  input_indices.push_back(2);
+  input_indices.push_back(3);
   pcl::PointCloud<pcl::PointXYZ> cliff_cloud;
   std::vector<int> cliff_indices;
   EXPECT_TRUE(
       floor_filter_->GenerateCliffCloud(
           floor_line, input_cloud, input_indices,
           &cliff_cloud, &cliff_indices));
-  EXPECT_EQ(cliff_indices.size(), 1);
-  EXPECT_EQ(cliff_indices[0], 2);
-  EXPECT_EQ(cliff_cloud.points.size(), 1);
+  EXPECT_EQ(cliff_indices.size(), 2);
+  EXPECT_TRUE(find(cliff_indices.begin(), cliff_indices.end(), 2) !=
+              cliff_indices.end());
+  EXPECT_TRUE(find(cliff_indices.begin(), cliff_indices.end(), 3) !=
+              cliff_indices.end());
+  EXPECT_EQ(cliff_cloud.points.size(), 2);
   EXPECT_DOUBLE_EQ(cliff_cloud[0].x, 1.0);
   EXPECT_DOUBLE_EQ(cliff_cloud[0].y, 1.0);
   EXPECT_DOUBLE_EQ(cliff_cloud[0].z, 0.0);
+  EXPECT_DOUBLE_EQ(cliff_cloud[1].x, 1.0);
+  EXPECT_DOUBLE_EQ(cliff_cloud[1].y, -1.0);
+  EXPECT_DOUBLE_EQ(cliff_cloud[1].z, 0.0);
 }
 
 int main(int argc, char *argv[]) {
