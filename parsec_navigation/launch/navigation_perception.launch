@@ -53,13 +53,13 @@
     <remap from="~output" to="floor_filter/output" />
     <remap from="~cliff_cloud" to="floor_filter/cliff_cloud" />
     <rosparam>
-      line_distance_threshold: 0.07
+      line_distance_threshold: 0.5
       sensor_frame: tilt_laser
       reference_frame: base_footprint
-      max_floor_y_rotation: 0.05  # ~2.35 degrees
-      max_floor_x_rotation: 0.175  # ~10 degrees
-      floor_z_distance: 0.03
-      cliff_distance_threshold: 0.07
+      max_floor_y_rotation: 0.02
+      max_floor_x_rotation: 0.2
+      floor_z_distance: 0.04
+      cliff_distance_threshold: 0.04
     </rosparam>
   </node>
 
@@ -94,12 +94,12 @@
     <remap from="~output" to="floor_filter/output" />
     <remap from="~cliff_cloud" to="floor_filter/cliff_cloud" />
     <rosparam>
-      line_distance_threshold: 0.04
+      line_distance_threshold: 0.05
       sensor_frame: fixed_angle_laser
       reference_frame: base_footprint
       max_floor_y_rotation: 0.02  # ~1.1 degrees
       max_floor_x_rotation: 0.0875  # ~5 degrees
-      floor_z_distance: 0.02
+      floor_z_distance: 0.04
       cliff_distance_threshold: 0.04
     </rosparam>
   </node>
@@ -111,5 +111,5 @@
     <remap from="points2_in" to="floor_filter/cliff_cloud" />
     <remap from="points_out" to="floor_filter/cliff_cloud_points1" />
   </node>
-  
+
 </launch>
