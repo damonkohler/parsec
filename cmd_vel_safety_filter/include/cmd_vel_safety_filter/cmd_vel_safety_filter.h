@@ -16,6 +16,7 @@
 #ifndef CMD_VEL_SAFETY_FILTER_CMD_VEL_SAFETY_FILTER_H
 #define CMD_VEL_SAFETY_FILTER_CMD_VEL_SAFETY_FILTER_H
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -92,6 +93,11 @@ class CmdVelSafetyFilter {
     point->x = point_in.x();
     point->y = point_in.y();
     point->z = point_in.z();
+  }
+  double DistanceXY(const tf::Point &point_1, const tf::Point &point_2) {
+    double x = point_1.x() - point_2.x();
+    double y = point_1.y() - point_2.y();
+    return sqrt(x * x + y * y);
   }
 };
 
