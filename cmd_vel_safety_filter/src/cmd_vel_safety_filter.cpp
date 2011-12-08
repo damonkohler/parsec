@@ -18,6 +18,8 @@
 #include <cmath>
 
 #include <laser_geometry/laser_geometry.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 #include <ros_check/ros_check.h>
 
 #include <sensor_msgs/PointCloud.h>
@@ -49,6 +51,8 @@ CmdVelSafetyFilter::CmdVelSafetyFilter(const ros::NodeHandle &node_handle)
       "cmd_vel", 10, boost::bind(&CmdVelSafetyFilter::CmdVelCallback, this, _1));
   scan_subscriber_ = node_handle_.subscribe<sensor_msgs::LaserScan>(
       "scan", 10,  boost::bind(&CmdVelSafetyFilter::ScanCallback, this, _1));
+  cloud_subscriber_ = node_handle_.subscribe<pcl::PointCloud<pcl::PointXYZ> >(
+      "cloud", 10, boost::bind(&CmdVelSafetyFilter::CloudCallback, this, _1));
   cmd_vel_publisher_ = node_handle_.advertise<geometry_msgs::Twist>(
       "cmd_vel_filtered", 10);
 }
@@ -79,6 +83,15 @@ void CmdVelSafetyFilter::ScanCallback(
   }
 }
 
+void CmdVelSafetyFilter::CloudCallback(
+    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud) {
+  std::vector<tf::Point> tf_cloud;
+  if (ConvertPointCloud(*cloud, base_frame_, &tf_cloud)) {
+    last_cloud_.swap(tf_cloud);
+    last_scan_reception_time_ = cloud->header.stamp;
+  }
+}
+
 bool CmdVelSafetyFilter::ConvertLaserScan(
     const sensor_msgs::LaserScan &scan, const std::string &base_frame,
     std::vector<tf::Point> *cloud) {
@@ -96,6 +109,25 @@ bool CmdVelSafetyFilter::ConvertLaserScan(
     tf::Point point;
     ToPoint(transformed_cloud.points[i], &point);
     cloud->push_back(point);
+  }
+  return true;
+}
+
+bool CmdVelSafetyFilter::ConvertPointCloud(
+    const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::string &base_frame,
+    std::vector<tf::Point> *tf_cloud) {
+  pcl::PointCloud<pcl::PointXYZ> transformed_cloud;
+  try {
+    pcl_ros::transformPointCloud(base_frame, cloud, transformed_cloud, tf_);
+  } catch (tf::TransformException e) {
+    ROS_WARN("Unable to transform point cloud from %s to %s",
+             cloud.header.frame_id.c_str(), base_frame.c_str());
+    return false;
+  }
+  for (size_t i = 0; i < transformed_cloud.points.size(); i++) {
+    tf::Point point;
+    ToPoint(transformed_cloud.points[i], &point);
+    tf_cloud->push_back(point);
   }
   return true;
 }

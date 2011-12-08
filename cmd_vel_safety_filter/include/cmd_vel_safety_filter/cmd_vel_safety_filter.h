@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 
@@ -50,6 +52,7 @@ class CmdVelSafetyFilter {
   void FindPointsInDirection(
       btVector3 direction, double radius, std::vector<tf::Point> points,
       std::vector<tf::Point> *filtered_points);
+
  private:
   static const double kDefaultScanTimeout;
   static const std::string kDefaultBaseFrame;
@@ -63,15 +66,20 @@ class CmdVelSafetyFilter {
   std::string base_frame_;
   ros::Subscriber cmd_vel_subscriber_;
   ros::Subscriber scan_subscriber_;
+  ros::Subscriber cloud_subscriber_;  
   ros::Publisher cmd_vel_publisher_;
   ros::Time last_scan_reception_time_;
   std::vector<tf::Point> last_cloud_;
 
   void CmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd_vel);
   void ScanCallback(const sensor_msgs::LaserScan::ConstPtr &scan);
+  void CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);  
   bool ConvertLaserScan(
       const sensor_msgs::LaserScan &scan, const std::string &base_frame,
       std::vector<tf::Point> *cloud);
+  bool ConvertPointCloud(
+      const pcl::PointCloud<pcl::PointXYZ> &cloud, const std::string &base_frame,
+      std::vector<tf::Point> *tf_cloud);
   bool FindClosestDistance(
       const tf::Point &point, const std::vector<tf::Point> &cloud, double *distance);
 
