@@ -15,7 +15,7 @@
 
   <!-- Measured from the base -->
   <property name="servo_axis_origin">
-    <origin xyz="0.065 -0.045 0.625" rpy="0.02 0.00 0.00" />    
+    <origin xyz="0.065 -0.045 0.625" rpy="0.00 0.00 0.00" />
   </property>
 
   <!-- The distance from the axis of rotation to the origin of the
@@ -32,4 +32,3 @@
             rpy="-0.04 0.698 0"/>
   </property>
 </robot>
-
