@@ -19,6 +19,8 @@
 
 bool ServoSweep::attached_ = false;
 const int ServoSweep::kPrescaler = 8;
+const int ServoSweep::kIncreasingPhaseOffset = 0;
+const int ServoSweep::kDecreasingPhaseOffset = 0;
 
 ServoSweep::ServoSweep(OnSignalCallback callback)
   : increasing_duration_(0),
@@ -95,10 +97,10 @@ void ServoSweep::SetProfile(float min_angle, float max_angle,
   }
 }
 
-void ServoSweep::Update() {
+float ServoSweep::Update() {
   // Do nothing if tilting is disabled.
   if (increasing_duration_ == 0 || decreasing_duration_ == 0) {
-    return;
+    return 0.0f;
   }
 
   // Map the current time into the interval [0, period).
@@ -124,6 +126,14 @@ void ServoSweep::Update() {
       min_pwm_period_ + position * pwm_range / current_duration;
 
   UpdateMicroseconds(pwm_period);
+  return static_cast<float>(pwm_period - min_servo_pwm_period_) / pwm_period_per_radian_ + min_servo_angle_;
+}
+
+int ServoSweep::GetPhaseOffset() {
+  if (direction_ == ANGLE_INCREASING) {
+    return kIncreasingPhaseOffset;
+  }
+  return kDecreasingPhaseOffset;
 }
 
 void ServoSweep::SetDirection(ServoDirection new_direction) {

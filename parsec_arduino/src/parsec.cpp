@@ -33,25 +33,12 @@
 #include "ros/node_handle.h"
 #include "ros/publisher.h"
 #include "rosgraph_msgs/Log.h"
+#include "sensor_msgs/JointState.h"
 #include "sensor_msgs/Range.h"
 #include "servo_sweep.h"
 #include "shift_brite.h"
 #include "simple_led.h"
 #include "std_msgs/Time.h"
-
-// Please note that PUBLISH_JOINT_STATES needs to be defined also when
-// defining DEBUG_BASE_CONTROLLER.
-
-//#define PUBLISH_JOINT_STATES
-//#define DEBUG_BASE_CONTROLLER
-
-#ifdef PUBLISH_JOINT_STATES
-#include "sensor_msgs/JointState.h"
-#endif
-
-#ifdef DEBUG_BASE_CONTROLLER
-#include "std_msgs/Float32.h"
-#endif
 
 inline float fminf(float x, float y) {
   return x < y ? x : y;
@@ -257,12 +244,12 @@ class ColorState {
   unsigned long best_before_[10];
 } color_state;
 
-void PingerColorCallback(const parsec_msgs::Colors& color_message) {
+void ColorsCallback(const parsec_msgs::Colors& color_message) {
   color_state.UpdateFromMessage(color_message);
 }
 
-ros::Subscriber<parsec_msgs::Colors> pinger_color_subscriber(
-    "pinger_color", &PingerColorCallback);
+ros::Subscriber<parsec_msgs::Colors> colors_subscriber(
+    "~colors", &ColorsCallback);
 
 // Put an ultrasonic sensor reading in a ROS sensor_msgs::Range message.
 void UltrasonicToMessage(float range, sensor_msgs::Range *range_message) {
@@ -356,24 +343,6 @@ unsigned long last_odometry_update = 0;
 unsigned long last_odometry_message = 0;
 parsec_msgs::Odometry odometry_message;
 ros::Publisher odometry_publisher("~odom_simple", &odometry_message);
-
-#ifdef PUBLISH_JOINT_STATES
-unsigned long last_joint_state_message = 0;
-sensor_msgs::JointState joint_state_message;
-ros::Publisher joint_state_publisher("~joint_states", &joint_state_message);
-#endif
-
-#ifdef DEBUG_BASE_CONTROLLER
-unsigned long last_controller_message = 0;
-std_msgs::Float32 left_velocity_command;
-ros::Publisher left_velocity_cmd_publisher("~base_controller/left_command", &left_velocity_command);
-std_msgs::Float32 left_velocity_error;
-ros::Publisher left_velocity_error_publisher("~base_controller/left_error", &left_velocity_error);
-std_msgs::Float32 right_velocity_command;
-ros::Publisher right_velocity_cmd_publisher("~base_controller/right_command", &right_velocity_command);
-std_msgs::Float32 right_velocity_error;
-ros::Publisher right_velocity_error_publisher("~base_controller/right_error", &right_velocity_error);
-#endif
 
 static bool IsUART1Available() {
   return UCSR1A & (1 << RXC1);
@@ -483,59 +452,20 @@ static void LoopPositionController() {
   UpdateOdometry(-left_odometry, -right_odometry);
 }
 
-static void PublishJointState() {
-  // Note: these names need to match the URDF to have the
-  // robot_state_publisher work correctly.
-  // See parsec_description/robots/parsec.urdf
-#ifdef PUBLISH_JOINT_STATES
-  static char left_name[] = "left_wheel_joint";
-  static char right_name[] = "right_wheel_joint";
-  // We need to solve this 'the ugly way' to prevent a compiler
-  // warning where the compiler complains that we use a deprecated
-  // conversion from const char * to char*.
-  static char *names[] = {left_name, right_name};
-  if (micros() - last_joint_state_message > 80000ul) {
-    float position[] = { left_controller.GetLastPosition(),
-                         right_controller.GetLastPosition() };
-    float velocity[] = { left_controller.GetTargetVelocity(),
-                         right_controller.GetTargetVelocity() };
-    // Note: this is actually not correct. We needed to use the time of
-    // the last position/velocity measurements instead of current time.
-    joint_state_message.header.stamp = node_handle.now();
-    joint_state_message.name_length = 2;
-    joint_state_message.name = names;
-    joint_state_message.position_length = 2;
-    joint_state_message.position = position;
-    joint_state_message.velocity_length = 2;
-    joint_state_message.velocity = velocity;
-    joint_state_publisher.publish(&joint_state_message);
-#ifdef DEBUG_BASE_CONTROLLER
-    left_velocity_command.data = left_controller.GetLastVelocityCmd();
-    left_velocity_cmd_publisher.publish(&left_velocity_command);
-    left_velocity_error.data = left_velocity_pid.error();
-    left_velocity_error_publisher.publish(&left_velocity_error);
-    right_velocity_command.data = right_controller.GetLastVelocityCmd();
-    right_velocity_cmd_publisher.publish(&right_velocity_command);
-    right_velocity_error.data = right_velocity_pid.error();
-    right_velocity_error_publisher.publish(&right_velocity_error);
-#endif
-
-    last_joint_state_message = micros();
-  }
-#endif
-}
-
 // ----------------------------------------------------------------------
 // Tilting servo
 // ----------------------------------------------------------------------
 
 parsec_msgs::LaserTiltSignal tilt_signal;
 ros::Publisher tilt_signal_pub("~signal", &tilt_signal);
+unsigned long last_servo_joint_state_message = 0;
 
 void PublishLaserSignal(int signal) {
   tilt_signal.header.stamp = node_handle.now();
   tilt_signal.signal = signal;
   tilt_signal_pub.publish(&tilt_signal);
+  // HACK(damonkohler): Force a publish of the joint state message.
+  last_servo_joint_state_message = 0;
 }
 
 ServoSweep servo_sweep(&PublishLaserSignal);  // Using pin 11 and timer 1.
@@ -559,9 +489,9 @@ ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
 // kMinAngle and kMaxAngle should correspond to the servo's position at
 // kMinPwmPeriod and kMaxPwmPeriod repsectively.
 static const unsigned int kServoMinPwmPeriod = 800;
-static const float kServoMinAngle = -0.940;
+static const float kServoMinAngle = -0.95;
 static const unsigned int kServoMaxPwmPeriod = 2100;
-static const float kServoMaxAngle = 1.25;
+static const float kServoMaxAngle = 1.2;
 
 void SetupServoSweep() {
   servo_sweep.Attach();
@@ -580,8 +510,38 @@ void SetupServoSweep() {
   node_handle.loginfo(message);
 }
 
+sensor_msgs::JointState servo_joint_state_message;
+ros::Publisher servo_joint_state_publisher("joint_states", &servo_joint_state_message);
+
+void PublishJointState(float servo_position) {
+  static float positions[1];
+  positions[0] = servo_position;
+  // Note: this name need to match the URDF for the
+  // robot_state_publisher work correctly.
+  // See parsec_description/robots/parsec.urdf
+  static char name[] = "tilt_laser_joint";
+  static char *names[] = {name};
+  float zeros[] = {0.0f};
+  servo_joint_state_message.header.stamp =
+      node_handle.now() + ros::Duration::fromMillis(servo_sweep.GetPhaseOffset());
+  servo_joint_state_message.name_length = 1;
+  servo_joint_state_message.name = names;
+  servo_joint_state_message.position_length = 1;
+  servo_joint_state_message.position = positions;
+  servo_joint_state_message.velocity_length = 1;
+  servo_joint_state_message.velocity = zeros;
+  servo_joint_state_message.effort_length = 1;
+  servo_joint_state_message.effort = zeros;
+  servo_joint_state_publisher.publish(&servo_joint_state_message);
+}
+
 void LoopServoSweep() {
-  servo_sweep.Update();
+  float position = servo_sweep.Update();
+  unsigned long servo_micros = micros();
+  if (servo_micros - last_servo_joint_state_message > 70000ul) {
+    PublishJointState(position);
+    last_servo_joint_state_message = servo_micros;
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -600,18 +560,10 @@ ros::Subscriber<geometry_msgs::Twist> velocity_subscriber(
 static void SetupROSSerial() {
   node_handle.subscribe(velocity_subscriber);
   node_handle.subscribe(tilt_profile_subscriber);
-  node_handle.subscribe(pinger_color_subscriber);
+  node_handle.subscribe(colors_subscriber);
   node_handle.advertise(tilt_signal_pub);
   node_handle.advertise(odometry_publisher);
-#ifdef PUBLISH_JOINT_STATES
-  node_handle.advertise(joint_state_publisher);
-#endif
-#ifdef DEBUG_BASE_CONTROLLER
-  node_handle.advertise(left_velocity_cmd_publisher);
-  node_handle.advertise(left_velocity_error_publisher);
-  node_handle.advertise(right_velocity_cmd_publisher);
-  node_handle.advertise(right_velocity_error_publisher);
-#endif
+  node_handle.advertise(servo_joint_state_publisher);
 }
 
 static void LoopROSSerial() {
@@ -703,7 +655,6 @@ void loop() {
   LoopServoSweep();
   LoopPositionController();
   LoopServoSweep();
-  PublishJointState();
   LoopUltrasonic();
   LoopShiftBrite();
   LoopServoSweep();
