@@ -19,14 +19,14 @@ __author__ = 'damonkohler@google.com (Damon Kohler)'
 import threading
 
 
-_SCAN_SAMPLE_SIZE = 10
+_SCAN_SAMPLE_SIZE = 30
 
 
 def calculate_laser_scan_range(data):
   center_index = len(data.ranges) / 2
   start_index = center_index - _SCAN_SAMPLE_SIZE / 2
   end_index = center_index + _SCAN_SAMPLE_SIZE / 2
-  ranges = data.ranges[start_index:end_index]
+  ranges = data.ranges[start_index:end_index + 1]
   return sum(ranges) / len(ranges)
 
 
