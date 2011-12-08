@@ -57,10 +57,10 @@ FloorFilter::FloorFilter(const ros::NodeHandle &node_handle)
       "line_distance_threshold", line_distance_threshold_, kDefaultLineDistanceThreshold);
   node_handle_.param(
       "cliff_distance_threshold", cliff_distance_threshold_, kDefaultCliffDistanceThreshold);
-      
+
   input_cloud_subscriber_ =
       node_handle_.subscribe<pcl::PointCloud<pcl::PointXYZ> >(
-          "input", 100, boost::bind(&FloorFilter::CloudCallback, this, _1));
+          "input", 1, boost::bind(&FloorFilter::CloudCallback, this, _1));
   filtered_cloud_publisher_ =
       node_handle_.advertise<pcl::PointCloud<pcl::PointXYZ> >(
           "output", 10);
@@ -95,7 +95,7 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
     ROS_WARN("The input cloud is empty. No obstacles in range?");
     return;
   }
-  
+
   std::vector<int> floor_candidate_indices;
   FilterFloorCandidates(floor_z_distance_, tan(max_floor_y_rotation_), *transformed_cloud,
                         &floor_candidate_indices);
@@ -119,7 +119,7 @@ void FloorFilter::CloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &
   PublishCloudFromIndices(*transformed_cloud, indices_without_floor, filtered_cloud_publisher_);
   PublishCloudFromIndices(*transformed_cloud, cliff_indices, cliff_generating_cloud_publisher_);
   cliff_cloud_publisher_.publish(cliff_cloud);
-  
+
   ros::Duration message_age = ros::Time::now() - cloud->header.stamp;
   // This is just a hint. Throw a warning to make the user know
   // about something being fishy with the current configuration
@@ -149,7 +149,7 @@ bool FloorFilter::FindLine(
     return false;
   }
   pcl::SACSegmentation<pcl::PointXYZ> ransac_line_finder;
-  
+
   ransac_line_finder.setOptimizeCoefficients(true);
   ransac_line_finder.setModelType(pcl::SACMODEL_LINE);
   ransac_line_finder.setMethodType(pcl::SAC_RANSAC);
@@ -217,7 +217,7 @@ bool FloorFilter::FindSensorPlaneIntersection(
   if (sensor_plane.normal()(0) < 0) {
     ROS_DEBUG("The sensor plane intersects the floor plane behind the robot.");
     return false;
-  }  
+  }
   // Use intersection of the x-y-plane and the sensor plane to
   // generate an artificial floor line.
   Eigen::Hyperplane<float, 3> floor_plane(Eigen::Hyperplane<float, 3>::VectorType(0, 0, 1), 0.0);

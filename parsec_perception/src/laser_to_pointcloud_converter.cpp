@@ -16,26 +16,31 @@
 #include "parsec_perception/laser_to_pointcloud_converter.h"
 
 #include <laser_geometry/laser_geometry.h>
-#include <sensor_msgs/LaserScan.h>
+#include <pcl/point_types.h>
+#include <pcl/ros/conversions.h>
+#include <pcl_ros/point_cloud.h>
 #include <pluginlib/class_list_macros.h>
+#include <sensor_msgs/LaserScan.h>
 
 namespace parsec_perception {
 
 void LaserToPointCloudConverter::onInit() {
   input_scan_subscriber_ =
       getPrivateNodeHandle().subscribe<sensor_msgs::LaserScan>(
-          "input", 100, boost::bind(
+          "input", 1, boost::bind(
               &LaserToPointCloudConverter::ScanCallback, this, _1));
   output_cloud_publisher_ =
-      getPrivateNodeHandle().advertise<sensor_msgs::PointCloud2>(
+      getPrivateNodeHandle().advertise<pcl::PointCloud<pcl::PointXYZ> >(
           "output", 100);
 }
 
 void LaserToPointCloudConverter::ScanCallback(const sensor_msgs::LaserScan::ConstPtr &scan) {
   laser_geometry::LaserProjection laser_projection;
-  sensor_msgs::PointCloud2::Ptr cloud_msg(new sensor_msgs::PointCloud2);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+  sensor_msgs::PointCloud2::Ptr cloud_msg(new sensor_msgs::PointCloud2());
   laser_projection.projectLaser(*scan, *cloud_msg);
-  output_cloud_publisher_.publish(cloud_msg);
+  pcl::fromROSMsg(*cloud_msg, *cloud);
+  output_cloud_publisher_.publish(cloud);
 }
 
 }  // namespace parsec_perception
