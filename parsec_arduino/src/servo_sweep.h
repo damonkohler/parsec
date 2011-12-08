@@ -52,15 +52,20 @@ class ServoSweep {
                   float increasing_duration, float decreasing_duration);
 
   /**
-   * Update the servo's position in accordance with the configured profile.
+   * Update the servo's position in accordance with the configured profile and
+   * return the current position in radians.
    */
-  void Update();
+  float Update();
+
+  int GetPhaseOffset();
 
  private:
   // Set values in the enum here to match the signal in the
   // corresponding ROS message parsec_msgs/LaserTiltSignal.
   typedef enum {ANGLE_DECREASING=0, ANGLE_INCREASING=1} ServoDirection;
   static const int kPrescaler;
+  static const int kIncreasingPhaseOffset;
+  static const int kDecreasingPhaseOffset;
 
   void SetDirection(ServoDirection new_direction);
   void UpdateMicroseconds(unsigned int pulse_width);
