@@ -138,9 +138,9 @@ bool CmdVelSafetyFilter::FindClosestDistance(
   if (cloud.size() == 0) {
     return false;
   }
-  *distance = point.distance(cloud[0]);
+  *distance = DistanceXY(point, cloud[0]);
   for (size_t i = 1; i < cloud.size(); i++) {
-    double current_distance = point.distance(cloud[i]);
+    double current_distance = DistanceXY(point, cloud[i]);
     if (current_distance < *distance) {
       *distance = current_distance;
     }
@@ -201,8 +201,7 @@ void CmdVelSafetyFilter::FindPointsInDirection(
   double angle = direction.angle(x_axis);
   for (size_t i = 0; i < points.size(); i++) {
     tf::Point rotated_point = points[i].rotate(axis, angle);
-    if (fabs(rotated_point.y()) <= radius &&
-        fabs(rotated_point.z()) <= radius) {
+    if (fabs(rotated_point.y()) <= radius) {
       filtered_points->push_back(points[i]);
     }
   }
