@@ -18,9 +18,10 @@
 
 __author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
 
+import copy
 import threading
 
-import roslib; roslib.load_manifest("interactive_waypoint_markers")
+import roslib; roslib.load_manifest('interactive_waypoint_markers')
 import rospy
 import actionlib
 
@@ -192,7 +193,8 @@ class InteractiveWaypointMarkers(object):
     waypoint_int_marker.header.frame_id = pose.header.frame_id
     waypoint_int_marker.name = name
     waypoint_int_marker.description = description
-    waypoint_int_marker.pose = pose.pose
+    waypoint_int_marker.pose = copy.deepcopy(pose.pose)
+    waypoint_int_marker.pose.position.z += 0.01
 
     waypoint_marker = interactive_marker_server.Marker()
     waypoint_marker.type = interactive_marker_server.Marker.ARROW
@@ -306,9 +308,9 @@ class InteractiveWaypointMarkers(object):
       feedback_cb=self._NavigationFeedbackCallback)
 
   def _UpdateCurrentNavGoal(self):
-    """Updates all waypoints on the server that are not active at the moment"""
+    """Updates all waypoints on the server that are not active at the moment."""
     self.update_waypoints_srv(waypoints=[wp.pose for wp in self._waypoints.GetWaypoints() if not wp.active])
-  
+
   def _NavigationDoneCallback(self, state, result):
     if state != actionlib.GoalStatus.PREEMPTED:
       for wp in self._waypoints.GetWaypoints():
