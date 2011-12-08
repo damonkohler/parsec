@@ -27,13 +27,13 @@ from parsec_calibration import servo_calibration_routine
 
 
 def main():
-  if len(rospy.myargv()) < 4:
-    sys.stdout.write('Usage: %s <minimum angle> <maximum angle> <tilt period>' %
+  if len(rospy.myargv()) < 5:
+    sys.stdout.write('Usage: %s <minimum angle> <maximum angle> <increasing duration> <decreasing duration>\n' %
                      rospy.myargv()[0])
     return
-  rospy.init_node('calibrate_tiltinig_servo')
+  rospy.init_node('calibrate_tilting_servo')
   calibration_routine = servo_calibration_routine.ServoCalibrationRoutine(
-      float(rospy.myargv()[1]), float(rospy.myargv()[2]), float(rospy.myargv()[3]))
+      float(rospy.myargv()[1]), float(rospy.myargv()[2]), float(rospy.myargv()[3]), float(rospy.myargv()[4]))
   calibration_routine.run()
 
 

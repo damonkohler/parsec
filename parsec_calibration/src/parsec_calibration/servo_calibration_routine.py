@@ -20,6 +20,7 @@ import math
 import sys
 import threading
 
+import roslib; roslib.load_manifest('parsec_calibration')
 import rospy
 
 from parsec_calibration import laser_scans
@@ -47,32 +48,16 @@ class CalibrationError(Exception):
   pass
 
 
-class CalibrationResult(object):
-
-  def __init__(self, low_angle, low_multiplier, high_angle, high_multiplier, phase_offset):
-    self.low_angle = low_angle
-    self.high_angle = high_angle
-    self.low_multiplier = low_multiplier
-    self.high_multiplier = high_multiplier
-    self.phase_offset = phase_offset
-
-  def write(self, stream):
-    stream.write(
-      'Calculated low angle %r, %r degrees, multiplier %r\n' % (
-          self.low_angle, _radians_to_degrees(self.low_angle), self.low_multiplier) +
-      'Calculated high angle %r, %r degrees, multiplier %r\n' % (
-          self.high_angle, _radians_to_degrees(self.high_angle), self.high_multiplier) +
-      'Phase offset %r\n' % self.phase_offset)
-
-
 class ServoCalibrationRoutine(object):
   """Calculates the minimal and maximal angles of the tilting servo"""
 
-  def __init__(self, minimum_angle, maximum_angle, tilt_period):
+  def __init__(self, minimum_angle, maximum_angle, increasing_duration, decreasing_duration):
     self._lock = threading.Lock()
     self._minimum_angle = minimum_angle
     self._maximum_angle = maximum_angle
-    self._tilt_period = tilt_period
+    self._increasing_duration = increasing_duration
+    self._decreasing_duration = decreasing_duration
+    self._tilt_period = increasing_duration + decreasing_duration
     self._tilt_signals = []
     self._scans = laser_scans.LaserScanQueue()
     self._last_calibration_time = None
@@ -88,13 +73,13 @@ class ServoCalibrationRoutine(object):
         '~scan', sensor_msgs.LaserScan, self._on_laser_scan)
     self._tilt_profile_publisher.publish(parsec_msgs.LaserTiltProfile(
           min_angle=self._minimum_angle, max_angle=self._maximum_angle,
-          increasing_duration=self._tilt_period/2,
-          decreasing_duration=self._tilt_period/2))
+          increasing_duration=self._increasing_duration,
+          decreasing_duration=self._decreasing_duration))
     rospy.spin()
 
   def _on_tilt_signal(self, signal):
     with self._lock:
-      # ignore the first signal if it is ANGLE_DECREASING because we
+      # Ignore the first signal if it is ANGLE_DECREASING because we
       # always want to start with an ANGLE_INCREASING signal to get
       # the phase offset parameter of the optimization right.
       if (not self._tilt_signals and
@@ -103,7 +88,7 @@ class ServoCalibrationRoutine(object):
       # Don't accept the signal if we didn't receive a laser scan that
       # is older than the signal yet.
       oldest_scan = self._scans.get_oldest_scan()
-      if oldest_scan and oldest_scan.header.stamp > signal.header.stamp:
+      if oldest_scan is not None and oldest_scan.header.stamp > signal.header.stamp:
         return
       self._tilt_signals.append(signal)
 
@@ -126,27 +111,22 @@ class ServoCalibrationRoutine(object):
       if self._scans.get_oldest_scan().header.stamp > self._tilt_signals[0].header.stamp:
         raise CalibrationError(
             'Oldest scan is newer than oldest signal.')
-      start_time = self._scans.find_oldest_scan_after_time(
-          self._tilt_signals[0].header.stamp).header.stamp
+      first_signal_time = self._tilt_signals[0].header.stamp
+      start_time = self._scans.find_oldest_scan_after_time(first_signal_time).header.stamp
       end_time = self._scans.find_oldest_scan_after_time(
           self._tilt_signals[-1].header.stamp).header.stamp
       scans = self._scans.get_scans_in_interval(start_time, end_time)
       scan_parameter_finder = find_scan_parameters.FindScanParameters(
-          sensor_distance_from_rotation_axis=_LASER_DISTANCE_FROM_ROTATION_AXIS)
+          sensor_distance_from_rotation_axis=_LASER_DISTANCE_FROM_ROTATION_AXIS,
+          initial_low_angle=self._minimum_angle, initial_high_angle=self._maximum_angle)
       parameters = scan_parameter_finder.find_scan_parameters(
-          [(scan.ranges[int(len(scan.ranges) / 2)],
-            (scan.header.stamp - start_time).to_sec())
-           for scan in scans],
-          self._tilt_period)
-      current_result = CalibrationResult(
-          parameters.low_angle, parameters.low_angle / self._minimum_angle,
-          parameters.high_angle, parameters.high_angle / self._maximum_angle,
-          phase_offset = parameters.phase_offset * self._tilt_period)
+          [(laser_scans.calculate_laser_scan_range(scan),
+            (scan.header.stamp - start_time).to_sec() / self._tilt_period)
+           for scan in scans])
       if self._stream:
-        current_result.write(self._stream)
+        parameters.write(self._stream)
         self._stream.write('\n')
       self._last_calibration_time = end_time
-      return current_result
 
   def _maybe_calculate_calibration(self):
     with self._lock:
