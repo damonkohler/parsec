@@ -489,9 +489,9 @@ ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
 // kMinAngle and kMaxAngle should correspond to the servo's position at
 // kMinPwmPeriod and kMaxPwmPeriod repsectively.
 static const unsigned int kServoMinPwmPeriod = 800;
-static const float kServoMinAngle = -0.95;
+static const float kServoMinAngle = -0.9751983479341374;
 static const unsigned int kServoMaxPwmPeriod = 2100;
-static const float kServoMaxAngle = 1.2;
+static const float kServoMaxAngle = 1.1697234410063797;
 
 void SetupServoSweep() {
   servo_sweep.Attach();

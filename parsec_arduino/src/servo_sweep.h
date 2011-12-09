@@ -80,7 +80,7 @@ class ServoSweep {
   unsigned int max_pwm_period_;  // maximal period in microseconds
   unsigned int min_servo_pwm_period_;  // minimum servo PWM period in microseconds
   unsigned int max_servo_pwm_period_;  // maximum servo PWM period in microseconds
-  unsigned int pwm_period_per_radian_;  // PWM period microseconds per radian
+  float pwm_period_per_radian_;  // PWM period microseconds per radian
   float min_servo_angle_;  // minimum servo angle in radians
   float max_servo_angle_;  // maximum servo angle in radians
   ServoDirection direction_;
