@@ -1,0 +1,28 @@
+<launch>
+  <include file="$(find parsec_description)/launch/upload_parsec.launch" />
+  <include file="$(find parsec_bringup)/launch/cmd_vel_mux.launch" />
+  <include file="$(find parsec_bringup)/launch/robust_relay_parsec.launch" />
+  <include file="$(find lightweight_navigation_visualization)/launch/navigation_visualization.launch" />
+
+  <rosparam>
+    anonymous_1:
+      laser_frame: base_laser
+      laser_topic: parsec/base_scan
+    anonymous_2:
+      laser_frame: fixed_angle_laser
+      laser_topic: parsec/fixed_angle_scan
+    anonymous_3:
+      laser_frame: tilt_laser
+      laser_topic: parsec/tilt_scan
+  </rosparam>
+
+  <node name="parsec_odometry" type="parsec_odometry" pkg="parsec_odometry" output="screen">
+    <remap from="~odom_simple" to="/odom_simple" />
+    <remap from="~odom" to="/odom" />
+    <remap from="~scan" to="/base_scan" />
+    <rosparam>
+      base_frame: base_footprint
+    </rosparam>
+  </node>
+  <node name="parsec_state_publisher" type="state_publisher" pkg="robot_state_publisher" />
+</launch>

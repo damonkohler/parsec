@@ -1,0 +1,9 @@
+<robot>
+  <material name="Black">
+    <color rgba="0 0 0 1" />
+  </material>
+
+  <material name="Grey">
+    <color rgba="0.5 0.5 0.5 1" />
+  </material>
+</robot>

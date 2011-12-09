@@ -1,0 +1,19 @@
+<package>
+  <description brief="rcconsole">
+
+     rcconsole
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes="" />
+  <url>http://ros.org/wiki/rcconsole</url>
+  <depend package="roscpp" />
+  <depend package="rosgraph_msgs" />
+  <depend package="ros_check" />
+  <depend package="nodelet" />
+
+  <export>
+    <nodelet plugin="${prefix}/nodelets.xml" />
+  </export>
+</package>

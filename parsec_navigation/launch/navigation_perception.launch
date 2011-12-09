@@ -1,0 +1,115 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="parsec_perception_nodelet_manager" args="manager" output="screen"/>
+
+  <!-- base scan -->
+  <node pkg="nodelet" type="nodelet" name="base_scan_converter"
+        args="load parsec_perception/LaserToPointCloudConverter parsec_perception_nodelet_manager">
+    <remap from="~input" to="base_scan" />
+  </node>
+  <!-- Filter out points that are immediately surrounding the laser (e.g. the laser mount). -->
+  <node pkg="nodelet" type="nodelet" name="base_outlier_removal_filter"
+        args="load pcl/StatisticalOutlierRemoval parsec_perception_nodelet_manager">
+    <remap from="~input" to="base_scan_converter/output" />
+    <remap from="~output" to="base_cloud2" />
+    <rosparam>
+      mean_k: 5
+      stddev: 1
+      negative: false
+    </rosparam>
+  </node>
+  <node name="base_cloud_converter" type="point_cloud_converter" pkg="point_cloud_converter">
+    <remap from="points2_in" to="base_cloud2" />
+    <remap from="points_out" to="base_cloud" />
+  </node>
+
+  <!-- tilt scan -->
+  <node pkg="nodelet" type="nodelet" name="tilt_scan_converter"
+        args="load parsec_perception/LaserToPointCloudConverter parsec_perception_nodelet_manager">
+    <remap from="~input" to="tilt_scan" />
+  </node>
+  <node pkg="nodelet" type="nodelet" name="tilt_outlier_removal_filter"
+        args="load pcl/StatisticalOutlierRemoval parsec_perception_nodelet_manager">
+    <remap from="~input" to="tilt_scan_converter/output" />
+    <rosparam>
+      mean_k: 5
+      stddev: 1
+      negative: false
+    </rosparam>
+  </node>
+  <!-- Filter out points that are immediately surrounding the laser (e.g. the laser mount). -->
+  <node pkg="nodelet" type="nodelet" name="tilt_robot_self_filter"
+        args="load parsec_perception/CircularRobotSelfFilter parsec_perception_nodelet_manager">
+    <remap from="~input" to="tilt_outlier_removal_filter/output" />
+    <rosparam>
+      base_frame: base_footprint
+      radius: 0.23
+      minimal_z_value: 0.0
+      maximal_z_value: 1.77
+    </rosparam>
+  </node>
+  <node type="nodelet" pkg="nodelet" name="tilt_floor_filter"
+        args="load parsec_perception/FloorFilter parsec_perception_nodelet_manager">
+    <remap from="~input" to="tilt_robot_self_filter/output" />
+    <remap from="~output" to="floor_filter/output" />
+    <remap from="~cliff_cloud" to="floor_filter/cliff_cloud" />
+    <rosparam>
+      line_distance_threshold: 0.5
+      sensor_frame: tilt_laser
+      reference_frame: base_footprint
+      max_floor_y_rotation: 0.02
+      max_floor_x_rotation: 0.2
+      floor_z_distance: 0.04
+      cliff_distance_threshold: 0.04
+    </rosparam>
+  </node>
+
+  <!-- fixed angle scan -->
+  <node pkg="nodelet" type="nodelet" name="fixed_angle_scan_converter"
+        args="load parsec_perception/LaserToPointCloudConverter parsec_perception_nodelet_manager">
+    <remap from="~input" to="fixed_angle_scan" />
+  </node>
+  <node pkg="nodelet" type="nodelet" name="fixed_angle_outlier_removal_filter"
+        args="load pcl/StatisticalOutlierRemoval parsec_perception_nodelet_manager">
+    <remap from="~input" to="fixed_angle_scan_converter/output" />
+    <rosparam>
+      mean_k: 5
+      stddev: 1
+      negative: false
+    </rosparam>
+  </node>
+  <!-- Filter out points that are immediately surrounding the laser (e.g. the laser mount). -->
+  <node pkg="nodelet" type="nodelet" name="fixed_angle_robot_self_filter"
+        args="load parsec_perception/CircularRobotSelfFilter parsec_perception_nodelet_manager">
+    <remap from="~input" to="fixed_angle_outlier_removal_filter/output" />
+    <rosparam>
+      base_frame: base_footprint
+      radius: 0.21
+      minimal_z_value: 0.0
+      maximal_z_value: 1.77
+    </rosparam>
+  </node>
+  <node type="nodelet" pkg="nodelet" name="fixed_angle_floor_filter"
+        args="load parsec_perception/FloorFilter parsec_perception_nodelet_manager">
+    <remap from="~input" to="fixed_angle_robot_self_filter/output" />
+    <remap from="~output" to="floor_filter/output" />
+    <remap from="~cliff_cloud" to="floor_filter/cliff_cloud" />
+    <rosparam>
+      line_distance_threshold: 0.05
+      sensor_frame: fixed_angle_laser
+      reference_frame: base_footprint
+      max_floor_y_rotation: 0.02
+      max_floor_x_rotation: 0.2
+      floor_z_distance: 0.03
+      cliff_distance_threshold: 0.03
+    </rosparam>
+  </node>
+  <node name="floor_filter_converter" type="point_cloud_converter" pkg="point_cloud_converter">
+    <remap from="points2_in" to="floor_filter/output" />
+    <remap from="points_out" to="floor_filter/filtered_cloud_points1" />
+  </node>
+  <node name="cliff_converter" type="point_cloud_converter" pkg="point_cloud_converter">
+    <remap from="points2_in" to="floor_filter/cliff_cloud" />
+    <remap from="points_out" to="floor_filter/cliff_cloud_points1" />
+  </node>
+
+</launch>

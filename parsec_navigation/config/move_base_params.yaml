@@ -1,0 +1,81 @@
+# We need to use a lower controller frequency. Otherwise we seem to
+# run into buffering problems in rosserial.
+controller_frequency: 10
+# Give the local planner only 5 seconds time to find a vaid control.
+controller_patience: 5.0
+base_local_planner: dwa_local_planner/DWAPlannerROS
+recovery_behaviors:
+  - name: aggressive_reset
+    type: clear_costmap_recovery/ClearCostmapRecovery
+
+# Configuration for recovery behaviors
+aggressive_reset:
+  # When doing an aggressive reset, remove all voxels from the
+  # costmap.
+  reset_distance: 0.01
+
+# See also costmap_common_params.yaml for additional parameters set
+# for the two costmaps.
+local_costmap:
+   global_frame: /odom
+   robot_base_frame: /base_footprint
+   map_type: voxel
+   update_frequency: 5.0
+   publish_frequency: 5.0
+   static_map: false
+   rolling_window: true
+   width: 4.0
+   height: 4.0
+   resolution: 0.025
+   transform_tolerance: 0.5
+   unknown_cost_value: 100
+
+global_costmap:
+   global_frame: /map
+   robot_base_frame: /base_footprint
+   map_type: costmap
+   update_frequency: 3.0
+   publish_frequency: 0.0
+   static_map: true
+   transform_tolerance: 0.5
+   width: 100
+   height: 100
+   resolution: 0.05
+   origin_x: -50.0
+   origin_y: -50.0
+
+DWAPlannerROS:
+  acc_lim_th: 8.0
+  acc_lim_x: 1.0
+  acc_lim_y: 0.0
+  max_trans_vel: 0.55
+  min_trans_vel: 0.0
+  max_vel_x: 0.55
+  min_vel_x: 0.0
+  max_vel_y: 0.0
+  min_vel_y: 0.0
+  max_rot_vel: 1.5
+  min_rot_vel: 0.0
+  # These are guessed tolerance values. Yaw tolerance should be about
+  # 45 degree and xy tolerance within a foot.
+  yaw_goal_tolerance: 0.40  # radians
+  xy_goal_tolerance: 0.5  # meters We increase the stop_time_buffer
+  # because we have a pretty high latency on the controller. A small
+  # stop_time_buffer would cause the robot to crash into obstacles
+  # more often.
+  stop_time_buffer: 0.8
+  # Lower the path_distance_bias to make the robot not follow the path
+  # too strictly and avoid spinning in place when gmapping causes
+  # jumsp in the robot's pose.
+  path_distance_bias: 12.0
+  vx_samples: 10
+  vy_samples: 1
+  occdist_scale: 0.02
+  
+# We need to kape the min_in_place_rotational_vel since it is used by
+# the rotate recovery.
+TrajectoryPlannerROS:
+  min_in_place_rotational_vel: 0.2
+
+NavfnROS:
+  default_tolerance: 0.5
