@@ -13,6 +13,8 @@
   <depend package="geometry_msgs" />
   <depend package="sensor_msgs" />
   <depend package="ros_check" />
+  <depend package="pcl" />
+  <depend package="pcl_ros" />
 </package>
 
 
