@@ -14,11 +14,15 @@
 
 """Find the angular limits of the tilting servo."""
 
-__author__ = 'moesenle@google.com (Lorenz Moesenlechner)'
+__author__ = ('moesenle@google.com (Lorenz Moesenlechner)'
+              'damonkohler@google.com (Damon Kohler)')
 
+from matplotlib import pyplot
 import math
+import Queue
 import sys
 import threading
+import time
 
 import roslib; roslib.load_manifest('parsec_calibration')
 import rospy
@@ -62,6 +66,7 @@ class ServoCalibrationRoutine(object):
     self._scans = laser_scans.LaserScanQueue()
     self._last_calibration_time = None
     self._stream = None
+    self._plot_queue = Queue.Queue()
 
   def run(self, stream=sys.stdout):
     self._stream = stream
@@ -75,7 +80,16 @@ class ServoCalibrationRoutine(object):
           min_angle=self._minimum_angle, max_angle=self._maximum_angle,
           increasing_duration=self._increasing_duration,
           decreasing_duration=self._decreasing_duration))
-    rospy.spin()
+    pyplot.ion()
+    pyplot.hold(False)
+    while not rospy.is_shutdown():
+      try:
+        pyplot.plot(*self._plot_queue.get(False))
+      except Queue.Empty:
+        pyplot.draw()
+        time.sleep(0.5)
+    sys.stdout.write('Close the plot window to exit.\n')
+    pyplot.show()
 
   def _on_tilt_signal(self, signal):
     with self._lock:
@@ -119,14 +133,17 @@ class ServoCalibrationRoutine(object):
       scan_parameter_finder = find_scan_parameters.FindScanParameters(
           sensor_distance_from_rotation_axis=_LASER_DISTANCE_FROM_ROTATION_AXIS,
           initial_low_angle=self._minimum_angle, initial_high_angle=self._maximum_angle)
-      parameters = scan_parameter_finder.find_scan_parameters(
-          [(laser_scans.calculate_laser_scan_range(scan),
-            (scan.header.stamp - start_time).to_sec() / self._tilt_period)
-           for scan in scans])
-      if self._stream:
-        parameters.write(self._stream)
-        self._stream.write('\n')
-      self._last_calibration_time = end_time
+      distances_and_times = [(laser_scans.calculate_laser_scan_range(scan),
+                             (scan.header.stamp - start_time).to_sec() / self._tilt_period)
+                             for scan in scans]
+      parameters = scan_parameter_finder.find_scan_parameters(distances_and_times)
+      if parameters is not None:
+        distances, times = zip(*distances_and_times)
+        self._plot_queue.put((times, distances, 'b-', times, parameters.predicted_distances, 'r-'))
+        if self._stream:
+          parameters.write(self._stream)
+          self._stream.write('\n')
+        self._last_calibration_time = end_time
 
   def _maybe_calculate_calibration(self):
     with self._lock:

@@ -14,26 +14,35 @@
 
 """Find scan parameters such as minimum angle, maximum angle and phase offset."""
 
-__author__ = ('whess@google.com (Wolfgang Hess),' +
-              'moesenle@google.com (Lorenz Moesenlechner)')
+__author__ = ('whess@google.com (Wolfgang Hess),'
+              'moesenle@google.com (Lorenz Moesenlechner)'
+              'damonkohler@google.com (Damon Kohler)')
 
 import math
 import scipy.optimize
 
-_MINIMUM_DISTANCE = 0.02  # meters
+import roslib; roslib.load_manifest('parsec_calibration')
+import rospy
+
+
+_MINIMUM_DISTANCE = 0  # meters
 _MAXIMUM_DISTANCE = 0.3  # meters
+_MAXIMUM_DISTANCE_DELTA = 0.05 # meters
 
 
 class ScanParameters(object):
   """Represents the scan parameters."""
 
-  def __init__(self, low_angle, high_angle, increasing_phase_offset, decreasing_phase_offset, plane_distance, stretch, error):
+  def __init__(self, low_angle, high_angle,
+      increasing_phase_offset, decreasing_phase_offset, plane_distance,
+      stretch, predicted_distances, error):
     self.low_angle = low_angle
     self.high_angle = high_angle
     self.increasing_phase_offset = increasing_phase_offset
     self.decreasing_phase_offset = decreasing_phase_offset
     self.plane_distance = plane_distance
     self.stretch = stretch
+    self.predicted_distances = predicted_distances
     self.error = error
 
   def write(self, stream):
@@ -78,14 +87,23 @@ class FindScanParameters(object):
                           self._initial_decreasing_phase_offset,
                           1]  # stretch
     function = self._make_laser_error_function(scans)
-    result = scipy.optimize.leastsq(function, initial_parameters)
-    distance_from_plane, low_angle, high_angle, increasing_phase_offset, decreasing_phase_offset, stretch = result[0]
+    result, _, _, error_message, error_code = scipy.optimize.leastsq(function, initial_parameters, full_output=True)
+    if error_code not in (1, 2, 3, 4):
+      rospy.logerr(error_message)
+      return
+    (distance_from_plane, low_angle, high_angle, increasing_phase_offset,
+        decreasing_phase_offset, stretch) = result
+    predicted_angles = [self._angle_at_time(result, time) for _, time in scans]
+    predicted_distances = [
+        self._optimal_laser_distance(distance_from_plane, angle)
+        for angle in predicted_angles]
     return ScanParameters(low_angle, high_angle,
                           increasing_phase_offset,
                           decreasing_phase_offset,
                           distance_from_plane,
                           stretch,
-                          sum(v**2 for v in function(list(result[0]))))
+                          predicted_distances,
+                          sum(v**2 for v in function(result)) / len(result))
 
   def _optimal_laser_distance(self, distance_from_plane, angle):
     """Evaluates the optimal laser function at angle and returns the
@@ -116,12 +134,19 @@ class FindScanParameters(object):
 
     def error_function(parameters):
       distance_from_plane = parameters[0]
-      distances = [distance for distance, _ in scans]
-      angles = [self._angle_at_time(parameters, time) for _, time in scans]
+      angles = []
+      distances = []
+      last_distance = scans[0][0]
+      for distance, time in scans:
+        if abs(distance - last_distance) > _MAXIMUM_DISTANCE_DELTA:
+          continue
+        last_distance = distance
+        distances.append(distance)
+        angles.append(self._angle_at_time(parameters, time))
       errors = [distance - self._optimal_laser_distance(distance_from_plane, angle)
                 for distance, angle in zip(distances, angles)
                 if _MINIMUM_DISTANCE < distance < _MAXIMUM_DISTANCE]
-      errors.append((self._initial_low_angle - parameters[1]))
-      errors.append((self._initial_high_angle - parameters[2]))
+      errors.append((self._initial_low_angle - parameters[1]) * len(errors) * 1e-8)
+      errors.append((self._initial_high_angle - parameters[2]) * len(errors) * 1e-8)
       return errors
     return error_function
