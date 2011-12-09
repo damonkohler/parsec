@@ -1,4 +1,10 @@
 <launch>
+  <include file="$(find parsec_navigation)/launch/perception.launch" />
+
+  <!-- Run the map server (to be changed to use correct map)-->
+  <arg name="map_file" default="$(find parsec_navigation)/maps/google-m-alt-2011-10-13.yaml" />
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
   <node pkg="amcl" type="amcl" name="amcl">
     <rosparam>
       odom_model_type: diff
@@ -35,4 +41,6 @@
 
     <remap from="scan" to="/base_scan" />
   </node>
+  <include file="$(find parsec_navigation)/config/move_base.launch" />
 </launch>
+

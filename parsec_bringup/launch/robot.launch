@@ -1,7 +1,7 @@
 <launch>
-  <include file="$(find parsec_description)/launch/upload_parsec.launch" />
+  <include file="$(find parsec_description)/launch/upload.launch" />
   <include file="$(find parsec_bringup)/launch/cmd_vel_mux.launch" />
-  <include file="$(find parsec_bringup)/launch/robust_relay_parsec.launch" />
+  <include file="$(find parsec_bringup)/launch/robust_relay.launch" />
   <include file="$(find lightweight_navigation_visualization)/launch/navigation_visualization.launch" />
 
   <rosparam>

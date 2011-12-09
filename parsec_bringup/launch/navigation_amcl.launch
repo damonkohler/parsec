@@ -1,5 +1,5 @@
 <launch>
-  <include file="$(find parsec_navigation)/launch/amcl_navigation.launch" />
+  <include file="$(find parsec_navigation)/launch/amcl.launch" />
   <include file="$(find interactive_waypoint_markers)/launch/interactive_waypoint_markers.launch" />
   <node name="tilt_profile_publisher" type="rostopic" pkg="rostopic"
         args="pub /rosserial/profile parsec_msgs/LaserTiltProfile '{min_angle: -0.4, max_angle: 1.25, increasing_duration: 1.0, decreasing_duration: 2.5}' -r 1" />
