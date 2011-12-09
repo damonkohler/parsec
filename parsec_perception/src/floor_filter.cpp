@@ -251,16 +251,15 @@ bool FloorFilter::GenerateCliffCloud(
                                 &cliff_point)) {
       continue;
     }
-    double distance_to_input_point = pcl::euclideanDistance(viewpoint, input_cloud.points[i]);
-    double distance_to_cliff_point = pcl::euclideanDistance(viewpoint, cliff_point);
+    double distance_cliff_from_point =
+        pcl::euclideanDistance(cliff_point, input_cloud.points[i]);
     double distance_cliff_from_point_xy =
-      pcl::euclideanDistance(cliff_point,
-                        pcl::PointXYZ(input_cloud.points[i].x,
-                                      input_cloud.points[i].y,
-                                      cliff_point.z));
+      pcl::euclideanDistance(
+          cliff_point, pcl::PointXYZ(
+              input_cloud.points[i].x, input_cloud.points[i].y, cliff_point.z));
+    CHECK_LE(distance_cliff_from_point_xy, distance_cliff_from_point);
     double distance_from_floor =
-      sqrt((distance_to_input_point - distance_to_cliff_point) *
-           (distance_to_input_point - distance_to_cliff_point)
+      sqrt(distance_cliff_from_point * distance_cliff_from_point
            - distance_cliff_from_point_xy * distance_cliff_from_point_xy);
     if (distance_from_floor > cliff_distance_threshold_) {
       cliff_indices->push_back(i);
