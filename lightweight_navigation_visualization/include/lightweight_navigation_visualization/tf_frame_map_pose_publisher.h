@@ -18,12 +18,8 @@
 
 #include <string>
 
-#include <boost/thread/mutex.hpp>
 #include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-
-#include <nav_msgs/OccupancyGrid.h>
 
 namespace lightweight_navigation_visualization {
 
@@ -34,23 +30,17 @@ class TfFrameMapPosePublisher {
   void Run();
 
  private:
-  static const std::string kDefaultFrame;
-  static const std::string kDefaultMapOriginFrame;
+  static const std::string kDefaultFrameId;
+  static const std::string kDefaultReferenceFrameId;
   static const double kDefaultPublishRate = 10;
 
   ros::NodeHandle node_handle_;
   std::string frame_id_;
-  std::string map_origin_frame_id_;
+  std::string reference_frame_id_;
   ros::Rate publish_rate_;
   tf::TransformListener tf_listener_;
-  tf::TransformBroadcaster tf_broadcaster_;
-  ros::Subscriber map_subscriber_;
   ros::Publisher pose_publisher_;
-  nav_msgs::OccupancyGrid::ConstPtr current_map_;
-  boost::mutex mutex_;
 
-  void MapCallback(const nav_msgs::OccupancyGrid::ConstPtr &map);
-  void PublishMapOriginTransform(const ros::Time &time);
   void PublishFramePose(const ros::Time &time);
 };
 
