@@ -10,7 +10,7 @@
 
   <!-- Measured from the base. -->
   <property name="base_laser_origin">
-    <origin xyz="0.06 -0.015 0.12" />
+    <origin xyz="0.06 -0.015 0.13" />
   </property>
 
   <!-- Measured from the base -->
@@ -23,7 +23,7 @@
        parsec_calibration/src/parsec_calibration/servo_calibration_routine.py
        -->
   <property name="tilting_laser_offset">
-    <origin xyz="0 0 0.033" rpy="-0.02 0 0" /> -->
+    <origin xyz="0 0 0.034" rpy="-0.025 0 0" /> -->
   </property>
 
   <property name="fixed_angle_laser_origin">

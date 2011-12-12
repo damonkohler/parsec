@@ -31,6 +31,34 @@ Base\ Scan..IntensityMin\ ColorG=0
 Base\ Scan..IntensityMin\ ColorB=0
 Base\ Scan..IntensityMin\ Intensity=0
 Base\ Scan..IntensityUse\ full\ RGB\ spectrum=0
+Cliff\ Cloud.Alpha=1
+Cliff\ Cloud.Billboard\ Size=0.01
+Cliff\ Cloud.Color\ Transformer=Flat Color
+Cliff\ Cloud.Decay\ Time=5
+Cliff\ Cloud.Enabled=1
+Cliff\ Cloud.Position\ Transformer=XYZ
+Cliff\ Cloud.Selectable=1
+Cliff\ Cloud.Style=0
+Cliff\ Cloud.Topic=/floor_filter/cliff_cloud
+Cliff\ Cloud..AxisAutocompute\ Value\ Bounds=1
+Cliff\ Cloud..AxisAxis=2
+Cliff\ Cloud..AxisMax\ Value=10
+Cliff\ Cloud..AxisMin\ Value=-10
+Cliff\ Cloud..AxisUse\ Fixed\ Frame=1
+Cliff\ Cloud..Flat\ ColorColorR=0.839216
+Cliff\ Cloud..Flat\ ColorColorG=0.141176
+Cliff\ Cloud..Flat\ ColorColorB=0.623529
+Cliff\ Cloud..IntensityAutocompute\ Intensity\ Bounds=1
+Cliff\ Cloud..IntensityChannel\ Name=intensity
+Cliff\ Cloud..IntensityMax\ ColorR=1
+Cliff\ Cloud..IntensityMax\ ColorG=1
+Cliff\ Cloud..IntensityMax\ ColorB=1
+Cliff\ Cloud..IntensityMax\ Intensity=4096
+Cliff\ Cloud..IntensityMin\ ColorR=0
+Cliff\ Cloud..IntensityMin\ ColorG=0
+Cliff\ Cloud..IntensityMin\ ColorB=0
+Cliff\ Cloud..IntensityMin\ Intensity=0
+Cliff\ Cloud..IntensityUse\ full\ RGB\ spectrum=0
 Dynamic\ Global\ Plan.Alpha=1
 Dynamic\ Global\ Plan.ColorR=1
 Dynamic\ Global\ Plan.ColorG=0
@@ -43,6 +71,34 @@ Dynamic\ Local\ Plan.ColorG=1
 Dynamic\ Local\ Plan.ColorB=0.215686
 Dynamic\ Local\ Plan.Enabled=1
 Dynamic\ Local\ Plan.Topic=/move_base_dynamic/DWAPlannerROS/local_plan
+Fixed\ Angle\ Scan.Alpha=1
+Fixed\ Angle\ Scan.Billboard\ Size=0.01
+Fixed\ Angle\ Scan.Color\ Transformer=Intensity
+Fixed\ Angle\ Scan.Decay\ Time=0
+Fixed\ Angle\ Scan.Enabled=0
+Fixed\ Angle\ Scan.Position\ Transformer=XYZ
+Fixed\ Angle\ Scan.Selectable=1
+Fixed\ Angle\ Scan.Style=0
+Fixed\ Angle\ Scan.Topic=/fixed_angle_scan
+Fixed\ Angle\ Scan..AxisAutocompute\ Value\ Bounds=1
+Fixed\ Angle\ Scan..AxisAxis=2
+Fixed\ Angle\ Scan..AxisMax\ Value=10
+Fixed\ Angle\ Scan..AxisMin\ Value=-10
+Fixed\ Angle\ Scan..AxisUse\ Fixed\ Frame=1
+Fixed\ Angle\ Scan..Flat\ ColorColorR=1
+Fixed\ Angle\ Scan..Flat\ ColorColorG=1
+Fixed\ Angle\ Scan..Flat\ ColorColorB=1
+Fixed\ Angle\ Scan..IntensityAutocompute\ Intensity\ Bounds=1
+Fixed\ Angle\ Scan..IntensityChannel\ Name=intensity
+Fixed\ Angle\ Scan..IntensityMax\ ColorR=1
+Fixed\ Angle\ Scan..IntensityMax\ ColorG=1
+Fixed\ Angle\ Scan..IntensityMax\ ColorB=1
+Fixed\ Angle\ Scan..IntensityMax\ Intensity=4096
+Fixed\ Angle\ Scan..IntensityMin\ ColorR=0
+Fixed\ Angle\ Scan..IntensityMin\ ColorG=0
+Fixed\ Angle\ Scan..IntensityMin\ ColorB=0
+Fixed\ Angle\ Scan..IntensityMin\ Intensity=0
+Fixed\ Angle\ Scan..IntensityUse\ full\ RGB\ spectrum=0
 Floor.Alpha=1
 Floor.Billboard\ Size=0.01
 Floor.Color\ Transformer=Flat Color
@@ -107,6 +163,34 @@ Map.Alpha=0.7
 Map.Draw\ Behind=0
 Map.Enabled=1
 Map.Topic=/map
+Obstacle\ Cloud.Alpha=1
+Obstacle\ Cloud.Billboard\ Size=0.01
+Obstacle\ Cloud.Color\ Transformer=Intensity
+Obstacle\ Cloud.Decay\ Time=5
+Obstacle\ Cloud.Enabled=1
+Obstacle\ Cloud.Position\ Transformer=XYZ
+Obstacle\ Cloud.Selectable=1
+Obstacle\ Cloud.Style=0
+Obstacle\ Cloud.Topic=/floor_filter/output
+Obstacle\ Cloud..AxisAutocompute\ Value\ Bounds=1
+Obstacle\ Cloud..AxisAxis=2
+Obstacle\ Cloud..AxisMax\ Value=10
+Obstacle\ Cloud..AxisMin\ Value=-10
+Obstacle\ Cloud..AxisUse\ Fixed\ Frame=1
+Obstacle\ Cloud..Flat\ ColorColorR=1
+Obstacle\ Cloud..Flat\ ColorColorG=1
+Obstacle\ Cloud..Flat\ ColorColorB=1
+Obstacle\ Cloud..IntensityAutocompute\ Intensity\ Bounds=1
+Obstacle\ Cloud..IntensityChannel\ Name=intensity
+Obstacle\ Cloud..IntensityMax\ ColorR=1
+Obstacle\ Cloud..IntensityMax\ ColorG=1
+Obstacle\ Cloud..IntensityMax\ ColorB=1
+Obstacle\ Cloud..IntensityMax\ Intensity=4096
+Obstacle\ Cloud..IntensityMin\ ColorR=0
+Obstacle\ Cloud..IntensityMin\ ColorG=0
+Obstacle\ Cloud..IntensityMin\ ColorB=0
+Obstacle\ Cloud..IntensityMin\ Intensity=0
+Obstacle\ Cloud..IntensityUse\ full\ RGB\ spectrum=0
 Robot\ Model.Alpha=1
 Robot\ Model.Collision\ Enabled=0
 Robot\ Model.Enabled=1
@@ -120,14 +204,14 @@ Robot\:\ Robot\ Model\ Link\ base_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ base_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ fixed_angle_laserShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ fixed_angle_laserShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ front_stabilizer_linkShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ front_stabilizer_linkShow\ Trail=0
+Robot\:\ Robot\ Model\ Link\ front_caster_linkShow\ Axes=0
+Robot\:\ Robot\ Model\ Link\ front_caster_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ left_wheel_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ left_wheel_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ mast_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ mast_linkShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ rear_stabilizer_linkShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ rear_stabilizer_linkShow\ Trail=0
+Robot\:\ Robot\ Model\ Link\ rear_caster_linkShow\ Axes=0
+Robot\:\ Robot\ Model\ Link\ rear_caster_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ right_wheel_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ right_wheel_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ tilt_laserShow\ Axes=0
@@ -154,13 +238,13 @@ TF.Show\ Names=1
 TF.Update\ Interval=0
 Tilt\ Scan.Alpha=1
 Tilt\ Scan.Billboard\ Size=0.01
-Tilt\ Scan.Color\ Transformer=Intensity
+Tilt\ Scan.Color\ Transformer=Flat Color
 Tilt\ Scan.Decay\ Time=0
 Tilt\ Scan.Enabled=1
 Tilt\ Scan.Position\ Transformer=XYZ
 Tilt\ Scan.Selectable=1
 Tilt\ Scan.Style=0
-Tilt\ Scan.Topic=/tilt_scan_converter/output
+Tilt\ Scan.Topic=/tilt_scan
 Tilt\ Scan..AxisAutocompute\ Value\ Bounds=1
 Tilt\ Scan..AxisAxis=2
 Tilt\ Scan..AxisMax\ Value=10
@@ -183,8 +267,8 @@ Tilt\ Scan..IntensityUse\ full\ RGB\ spectrum=0
 Tool\ 2D\ Nav\ GoalTopic=/interactive_waypoint_markers/add_waypoint
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=0.011 1.94858 14.4368 -2.70627 -0.0162095 0.511377
-Property\ Grid\ State=selection=;expanded=.Global Options,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree;scrollpos=0,0;splitterpos=268,552;ispageselected=1
+Camera\ Config=1.721 0.14357 8.29047 -0.297494 1.26017 -3.03815
+Property\ Grid\ State=selection=Tilt Scan.Enabled.Tilt Scan.Color Transformer;expanded=.Global Options,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Tilt Scan.Enabled,Fixed Angle Scan.Enabled.Fixed Angle Scan.StatusTopStatus;scrollpos=0,11;splitterpos=201,403;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
@@ -210,34 +294,46 @@ Name=Base Scan
 Package=rviz
 ClassName=rviz::LaserScanDisplay
 [Display6]
+Name=Tilt Scan
+Package=rviz
+ClassName=rviz::LaserScanDisplay
+[Display7]
+Name=Fixed Angle Scan
+Package=rviz
+ClassName=rviz::LaserScanDisplay
+[Display8]
 Name=Robot Model
 Package=rviz
 ClassName=rviz::RobotModelDisplay
-[Display7]
+[Display9]
 Name=Interactive Markers
 Package=rviz
 ClassName=rviz::InteractiveMarkerDisplay
-[Display8]
-Name=Tilt Scan
+[Display10]
+Name=Obstacle Cloud
 Package=rviz
 ClassName=rviz::PointCloud2Display
-[Display9]
+[Display11]
 Name=Floor
 Package=rviz
 ClassName=rviz::PointCloud2Display
-[Display10]
+[Display12]
 Name=Static Global Plan
 Package=rviz
 ClassName=rviz::PathDisplay
-[Display11]
+[Display13]
 Name=Dynamic Global Plan
 Package=rviz
 ClassName=rviz::PathDisplay
-[Display12]
+[Display14]
 Name=Static Local Plan
 Package=rviz
 ClassName=rviz::PathDisplay
-[Display13]
+[Display15]
 Name=Dynamic Local Plan
 Package=rviz
 ClassName=rviz::PathDisplay
+[Display16]
+Name=Cliff Cloud
+Package=rviz
+ClassName=rviz::PointCloud2Display

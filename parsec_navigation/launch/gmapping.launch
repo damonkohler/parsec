@@ -42,5 +42,5 @@
     </rosparam>
     <remap from="/scan" to="/base_scan" />
   </node>
-  <include file="$(find parsec_navigation)/config/move_base_dynamic.launch" />
+  <include file="$(find parsec_navigation)/launch/move_base_dynamic.launch" />
 </launch>
