@@ -86,3 +86,15 @@
   context menu) or the interactive_waypoint_markers server can execute
   a circular path, i.e. proceed to the first waypoint when reaching
   the last.
+
+* Base station
+
+  Using the latpop as a base station:
+
+  - Disconnect wifi via NetworkManager
+
+  - Start hostapd: sudo hostapd hostapd.conf
+
+  - Bring up the wlan0 interface: sudo ifconfig wlan0 192.168.0.1 up
+
+  - Start dhcpd: sudo dhcpd -f
