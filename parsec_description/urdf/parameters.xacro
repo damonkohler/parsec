@@ -1,0 +1,34 @@
+<robot>
+  <!-- Units used are meters and radians, according to REP 103
+       (http://www.ros.org/reps/rep-0103.html).-->
+
+  <!-- Hand measured values. -->
+  <property name="base_radius" value="0.21" />
+  <property name="base_height" value="0.01" />
+  <property name="wheel_radius" value="0.0762" />
+  <property name="mast_height" value="0.70" />
+
+  <!-- Measured from the base. -->
+  <property name="base_laser_origin">
+    <origin xyz="0.06 -0.015 0.13" />
+  </property>
+
+  <!-- Measured from the base -->
+  <property name="servo_axis_origin">
+    <origin xyz="0.065 -0.045 0.625" rpy="0.00 0.00 0.00" />
+  </property>
+
+  <!-- The distance from the axis of rotation to the origin of the
+       tilting laser sensor. See also
+       parsec_calibration/src/parsec_calibration/servo_calibration_routine.py
+       -->
+  <property name="tilting_laser_offset">
+    <origin xyz="0 0 0.034" rpy="-0.025 0 0" /> -->
+  </property>
+
+  <property name="fixed_angle_laser_origin">
+    <!-- The laser is mounted at an angle of 40 degrees -->
+    <origin xyz="0.09 0 ${0.851 - base_height / 2 - wheel_radius}"
+            rpy="-0.04 0.698 0"/>
+  </property>
+</robot>
