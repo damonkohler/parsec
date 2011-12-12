@@ -19,8 +19,6 @@
 
 bool ServoSweep::attached_ = false;
 const int ServoSweep::kPrescaler = 8;
-const int ServoSweep::kIncreasingPhaseOffset = 0;
-const int ServoSweep::kDecreasingPhaseOffset = 0;
 
 ServoSweep::ServoSweep(OnSignalCallback callback)
   : increasing_duration_(0),
@@ -29,9 +27,11 @@ ServoSweep::ServoSweep(OnSignalCallback callback)
     max_pwm_period_(0),
     min_servo_pwm_period_(0),
     max_servo_pwm_period_(0),
+    pwm_period_per_radian_(0),
     min_servo_angle_(0.0f),
     max_servo_angle_(0.0f),
-    pwm_period_per_radian_(0),
+    increasing_phase_offset_(0),
+    decreasing_phase_offset_(0),
     direction_(ANGLE_INCREASING),
     on_signal_(callback) {}
 
@@ -61,13 +61,16 @@ void ServoSweep::UpdateMicroseconds(unsigned int pulse_width) {
 
 void ServoSweep::SetParameters(
     unsigned int min_pwm_period, unsigned int max_pwm_period,
-    float min_angle, float max_angle) {
+    float min_angle, float max_angle,
+    int increasing_phase_offset, int decreasing_phase_offset) {
   // CHECK(min_angle >= 0);
   // CHECK(max_angle >= min_angle);
   min_servo_pwm_period_ = min_pwm_period;
   max_servo_pwm_period_ = max_pwm_period;
   min_servo_angle_ = min_angle;
   max_servo_angle_ = max_angle;
+  increasing_phase_offset_ = increasing_phase_offset;
+  decreasing_phase_offset_ = decreasing_phase_offset;
   pwm_period_per_radian_ = (max_servo_pwm_period_ - min_servo_pwm_period_) /
       (max_servo_angle_ - min_servo_angle_);
   // Move to the perpendicular position for a visual sanity check of the
@@ -131,9 +134,9 @@ float ServoSweep::Update() {
 
 int ServoSweep::GetPhaseOffset() {
   if (direction_ == ANGLE_INCREASING) {
-    return kIncreasingPhaseOffset;
+    return increasing_phase_offset_;
   }
-  return kDecreasingPhaseOffset;
+  return decreasing_phase_offset_;
 }
 
 void ServoSweep::SetDirection(ServoDirection new_direction) {

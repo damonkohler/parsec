@@ -41,7 +41,8 @@ class ServoSweep {
    */
   void SetParameters(
       unsigned int min_pwm_period, unsigned int max_pwm_period,
-      float min_angle, float max_angle);
+      float min_angle, float max_angle,
+      int increasing_phase_offset, int decreasing_phase_offset);
 
   /**
    * min_angle and max_angle must be between -PI/2 and +PI/2.
@@ -64,8 +65,6 @@ class ServoSweep {
   // corresponding ROS message parsec_msgs/LaserTiltSignal.
   typedef enum {ANGLE_DECREASING=0, ANGLE_INCREASING=1} ServoDirection;
   static const int kPrescaler;
-  static const int kIncreasingPhaseOffset;
-  static const int kDecreasingPhaseOffset;
 
   void SetDirection(ServoDirection new_direction);
   void UpdateMicroseconds(unsigned int pulse_width);
@@ -83,6 +82,8 @@ class ServoSweep {
   float pwm_period_per_radian_;  // PWM period microseconds per radian
   float min_servo_angle_;  // minimum servo angle in radians
   float max_servo_angle_;  // maximum servo angle in radians
+  int increasing_phase_offset_;
+  int decreasing_phase_offset_;
   ServoDirection direction_;
   OnSignalCallback on_signal_;
 };

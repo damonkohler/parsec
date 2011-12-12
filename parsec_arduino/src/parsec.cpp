@@ -489,9 +489,11 @@ ros::Subscriber<parsec_msgs::LaserTiltProfile> tilt_profile_subscriber(
 // kMinAngle and kMaxAngle should correspond to the servo's position at
 // kMinPwmPeriod and kMaxPwmPeriod repsectively.
 static const unsigned int kServoMinPwmPeriod = 800;
-static const float kServoMinAngle = -0.9751983479341374;
+static const float kServoMinAngle = -1.0028632386446623;
 static const unsigned int kServoMaxPwmPeriod = 2100;
-static const float kServoMaxAngle = 1.1697234410063797;
+static const float kServoMaxAngle = 1.2274247888469814;
+static const int kServoIncreasingPhaseOffset = 0;
+static const int kServoDecreasingPhaseOffset = 0;
 
 void SetupServoSweep() {
   servo_sweep.Attach();
@@ -499,14 +501,18 @@ void SetupServoSweep() {
   // The conversion later from signed to unsigned should be safe.
   int pwm_periods[2] = { kServoMinPwmPeriod, kServoMaxPwmPeriod };
   float angles[2] = { kServoMinAngle, kServoMaxAngle };
+  int phase_offsets[2] = { kServoIncreasingPhaseOffset, kServoDecreasingPhaseOffset };
   node_handle.getParam("~servo_pwm_periods", pwm_periods, 2);
   node_handle.getParam("~servo_angles", angles, 2);
-  servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1], angles[0], angles[1]);
+  node_handle.getParam("~servo_phase_offsets", phase_offsets, 2);
+  servo_sweep.SetParameters(pwm_periods[0], pwm_periods[1],
+      angles[0], angles[1], phase_offsets[0], phase_offsets[1]);
 
   char message[40];
-  snprintf(message, 40, "Servo values: %d %d %d %d",
+  snprintf(message, 40, "Servo values: %d %d %d %d %d %d",
            pwm_periods[0], pwm_periods[1],
-           (int) (angles[0] * 100.0f), (int) (angles[1] * 100.0f));
+           (int) (angles[0] * 100.0f), (int) (angles[1] * 100.0f),
+           phase_offsets[0], phase_offsets[1]);
   node_handle.loginfo(message);
 }
 
