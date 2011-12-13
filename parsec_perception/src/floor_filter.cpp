@@ -302,7 +302,7 @@ bool FloorFilter::IntersectWithSightline(
   Eigen::ParametrizedLine<float, 3>::VectorType viewpoint = viewpoint_pcl.getVector3fMap();
   Eigen::ParametrizedLine<float, 3> viewpoint_line(viewpoint, point.getVector3fMap() - viewpoint);
   Eigen::ParametrizedLine<float, 3>::VectorType intersection;
-  if (geometry::IntersectLines(line, viewpoint_line, &intersection)) {
+  if (geometry::IntersectLines(viewpoint_line, line, &intersection)) {
     *intersection_point = pcl::PointXYZ(intersection[0], intersection[1], intersection[2]);
     // If the point is actually closer to the viewpoint than the
     // intersection point we have no real intersection because the
@@ -311,11 +311,14 @@ bool FloorFilter::IntersectWithSightline(
         pcl::euclideanDistance(viewpoint_pcl, point)) {
       return false;
     }
-    return true;
+    // Check if the intersection point and point are on the same side
+    // of viewpoint.
+    if ((intersection - viewpoint).dot(point.getVector3fMap() - viewpoint) < 0) {
+      return false;
+    }
+    return true;      
   }
-  else {
-    return false;
-  }
+  return false;
 }
 
 bool FloorFilter::GetViewpointPoint(const ros::Time &time, pcl::PointXYZ *point) {
