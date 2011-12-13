@@ -1,4 +1,15 @@
 <launch>
+  <node pkg="laser_signal_filter" type="laser_signal_filter" name="decreasing_scans">
+    <remap from="~signal" to="laser_tilt_controller/signal" />
+    <remap from="~profile" to="rosserial/profile" />
+    <remap from="~scan" to="tilt_scan" />
+    <remap from="~filtered_scan" to="tilt_scan_decreasing" />
+    <rosparam>
+      increasing_enabled: false
+      decreasing_enabled: true
+    </rosparam>
+  </node>
+  
   <node pkg="nodelet" type="nodelet" name="parsec_perception_nodelet_manager" args="manager" output="screen"/>
 
   <!-- base scan -->
@@ -25,7 +36,7 @@
   <!-- tilt scan -->
   <node pkg="nodelet" type="nodelet" name="tilt_scan_converter"
         args="load parsec_perception/LaserToPointCloudConverter parsec_perception_nodelet_manager">
-    <remap from="~input" to="tilt_scan" />
+    <remap from="~input" to="tilt_scan_decreasing" />
   </node>
   <node pkg="nodelet" type="nodelet" name="tilt_outlier_removal_filter"
         args="load pcl/StatisticalOutlierRemoval parsec_perception_nodelet_manager">
