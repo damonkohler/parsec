@@ -67,7 +67,7 @@ DWAPlannerROS:
   # Lower the path_distance_bias to make the robot not follow the path
   # too strictly and avoid spinning in place when gmapping causes
   # jumsp in the robot's pose.
-  path_distance_bias: 12.0
+  path_distance_bias: 10.0
   vx_samples: 10
   vy_samples: 1
   occdist_scale: 0.02
