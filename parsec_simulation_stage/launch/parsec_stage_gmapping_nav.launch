@@ -1,8 +1,7 @@
 <launch>
-  <include file="$(find parsec_navigation)/config/gmapping_parsec.launch" />
+  <include file="$(find parsec_navigation)/launch/gmapping.launch" />
 
   <include file="$(find parsec_simulation_stage)/launch/parsec_stage_willow.launch" />
-  <include file="$(find parsec_navigation)/config/move_base_parsec_dynamic.launch" />
 
   <!-- Disable all observation sources but the base laser since a
        tilting laser is not supported by stage. -->
