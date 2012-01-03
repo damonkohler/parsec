@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<robot name="parsec">
+  <!-- Robot definition -->
+  <include filename="$(find parsec_description)/urdf/parsec.xacro" />
+</robot>

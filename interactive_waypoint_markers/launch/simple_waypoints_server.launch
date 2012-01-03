@@ -1,0 +1,5 @@
+<launch>
+  <node name="simple_waypoints_server" type="simple_waypoints_server.py" pkg="navigation_waypoints_server">
+    <remap from="~execute_path" to="navigation_waypoints_server/execute_path" />
+  </node>
+</launch>
