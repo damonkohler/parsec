@@ -2,7 +2,17 @@ pub_rate: 1.0 # Optional
 base_path: '' # Optional, prepended to all diagnostic output
 analyzers:
   sensors: 
-    type: GenericAnalyzer
+    type: diagnostic_aggregator/GenericAnalyzer
     path: 'Sensors'
     timeout: 5.0
     startswith: ['Hokuyo']
+  arduino: 
+    type: diagnostic_aggregator/GenericAnalyzer
+    path: 'Arduino'
+    timeout: 5.0
+    startswith: ['Arduino']
+  tablet: 
+    type: diagnostic_aggregator/GenericAnalyzer
+    path: 'Tablet'
+    timeout: 5.0
+    startswith: ['Tablet']
