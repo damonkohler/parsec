@@ -1,14 +1,13 @@
 <launch>
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" clear_params="true">
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
     <remap from="cmd_vel" to="~cmd_vel" />
     <rosparam file="$(find parsec_navigation)/config/costmap_common.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find parsec_navigation)/config/costmap_common.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find parsec_navigation)/config/move_base.yaml" command="load" />
-
     <param name="global_costmap/static_map" value="true" />
   </node>
 
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base_dynamic" clear_params="true">
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base_dynamic" output="screen" clear_params="true">
     <remap from="/move_base" to="/move_base_dynamic" />
     <remap from="move_base_simple/goal" to="move_base_simple_dynamic/goal" />
     <!-- This should match the above because only one move_base will
