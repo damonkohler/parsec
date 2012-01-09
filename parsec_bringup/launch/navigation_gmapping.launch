@@ -1,4 +1,5 @@
 <launch>
+  <include file="$(find parsec_navigation)/launch/perception.launch" />
   <include file="$(find parsec_navigation)/launch/gmapping.launch" />
   <include file="$(find interactive_waypoint_markers)/launch/interactive_waypoint_markers_exploration.launch" />
   <node name="tilt_profile_publisher" type="rostopic" pkg="rostopic"
