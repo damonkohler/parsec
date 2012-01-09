@@ -1,5 +1,4 @@
 <launch>
-  <include file="$(find parsec_navigation)/launch/perception.launch" />
   <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
     <rosparam>
       odom_frame: odom
