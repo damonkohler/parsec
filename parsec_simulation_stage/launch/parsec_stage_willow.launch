@@ -1,6 +1,5 @@
 <launch>
   <param name="/use_sim_time" value="true" />
-  
   <include file="$(find parsec_description)/launch/upload.launch" />
   <node name="stage" type="stageros" pkg="stage"
         args="$(find parsec_simulation_stage)/worlds/willow-parsec.world">
