@@ -59,19 +59,19 @@ DWAPlannerROS:
   # These are guessed tolerance values. Yaw tolerance should be about
   # 45 degree and xy tolerance within a foot.
   yaw_goal_tolerance: 0.40  # radians
-  xy_goal_tolerance: 0.5  # meters We increase the stop_time_buffer
+  xy_goal_tolerance: 0.5  # meters
+  # We increase the stop_time_buffer
   # because we have a pretty high latency on the controller. A small
   # stop_time_buffer would cause the robot to crash into obstacles
   # more often.
   stop_time_buffer: 0.8
-  # Lower the path_distance_bias to make the robot not follow the path
-  # too strictly and avoid spinning in place when gmapping causes
-  # jumsp in the robot's pose.
-  path_distance_bias: 10.0
+  # Increase the path_distance_bias to make the robot follow the global plan
+  # more closely.
+  path_distance_bias: 25.0
   vx_samples: 10
   vy_samples: 1
-  occdist_scale: 0.02
-  
+  occdist_scale: 0.1
+
 # We need to kape the min_in_place_rotational_vel since it is used by
 # the rotate recovery.
 TrajectoryPlannerROS:

@@ -9,7 +9,7 @@
       decreasing_enabled: true
     </rosparam>
   </node>
-  
+
   <node pkg="nodelet" type="nodelet" name="parsec_perception_nodelet_manager" args="manager" output="screen"/>
 
   <!-- base scan -->
@@ -122,5 +122,4 @@
     <remap from="points2_in" to="floor_filter/cliff_cloud" />
     <remap from="points_out" to="floor_filter/cliff_cloud_points1" />
   </node>
-
 </launch>
