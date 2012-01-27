@@ -1,8 +1,6 @@
 <package>
   <description brief="parsec_dashboard">
-
-     parsec_dashboard
-
+    A simple dashboard for monitoring Parsec. Includes topic_monitor, a tool for monitoring the frequency and delays of arbitrary topics.
   </description>
   <author>Charles DuHadway</author>
   <license>BSD</license>

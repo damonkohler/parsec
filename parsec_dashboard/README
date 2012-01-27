@@ -1,0 +1,10 @@
+
+* Starting up parsec_dashboard
+  - rosrun parsec_dashboard parsec_dashboard
+
+* Click on the wrench to see current diagnostics. Click on the dialog cloud to see rosout.
+
+* Starting up topic monitor diagnostics
+  - roslaunch parsec_dashboard diagnostics.launch
+
+* The details on what topics to monitor are in launch/diagnostics.launch.
