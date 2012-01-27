@@ -2,12 +2,21 @@
   <node name="topic_monitor" type="topic_monitor" pkg="parsec_dashboard" output="screen">
     <rosparam>
       topics:
-        - name: /babble
+        - name: /parsec/base_scan
           min_frequency: 12.0 
           max_frequency: 20.0
-        - name: /parsec/laser_scan
-          min_frequency: 8.0 
+        - name: /parsec/fixed_angle_scan
+          min_frequency: 12.0 
           max_frequency: 20.0
+        - name: /parsec/tilt_scan
+          min_frequency: 12.0 
+          max_frequency: 20.0
+        - name: /parsec/simple_odom
+          min_frequency: 8.0 
+          max_frequency: 15.0
+        - name: /parsec/joint_states
+          min_frequency: 8.0 
+          max_frequency: 15.0
     </rosparam>
   </node>
   <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
