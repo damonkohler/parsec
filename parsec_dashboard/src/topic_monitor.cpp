@@ -28,6 +28,7 @@ using diagnostic_updater::TopicDiagnostic;
 
 TopicMonitor::TopicMonitor(const ros::NodeHandle &node_handle)
   : node_handle_(node_handle), diagnostic_updater_() {
+  diagnostic_updater_.setHardwareID("none");
 }
 
 TopicMonitor::~TopicMonitor() {
@@ -49,7 +50,7 @@ void TopicMonitor::AddTopic(
       topic_name, 
       diagnostic_updater_,
       FrequencyStatusParam(&topic->min_frequency, &topic->max_frequency),
-      TimeStampStatusParam());
+      TimeStampStatusParam(-1, 1.0));
   topic->subscriber = node_handle_.subscribe<topic_tools::ShapeShifter>(
       topic_name, 10, boost::bind(&TopicMonitor::MessageCallback, this, topic, _1));
 
@@ -63,7 +64,10 @@ void TopicMonitor::MessageCallback(MonitoredTopic *topic,
 }
 
 void TopicMonitor::Run() {
-  ros::spin();
+  while (node_handle_.ok()) {  
+    diagnostic_updater_.update();
+    ros::WallDuration(0.1).sleep();
+  }
 }
 
 }  // namespace topic_monitor
