@@ -1,4 +1,13 @@
 <launch>
+  <node name="topic_monitor" type="topic_monitor" pkg="parsec_dashboard" output="screen">
+    <rosparam>
+      topics:
+        - name: /parsec/base_scan
+          min_frequency: 8.0 
+          max_frequency: 20.0
+    </rosparam>
+  </node>
+ 
   <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
     <rosparam command="load" file="$(find parsec_dashboard)/config/diagnostics.yaml" />
   </node>
