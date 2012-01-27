@@ -2,7 +2,7 @@ Background\ ColorR=0
 Background\ ColorG=0
 Background\ ColorB=0
 Fixed\ Frame=/map
-Target\ Frame=<Fixed Frame>
+Target\ Frame=/base_footprint
 Base\ Scan.Alpha=1
 Base\ Scan.Billboard\ Size=0.03
 Base\ Scan.Color\ Transformer=Intensity
@@ -266,9 +266,9 @@ Tilt\ Scan..IntensityMin\ Intensity=0
 Tilt\ Scan..IntensityUse\ full\ RGB\ spectrum=0
 Tool\ 2D\ Nav\ GoalTopic=/interactive_waypoint_markers/add_waypoint
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
-Camera\ Type=rviz::OrbitViewController
-Camera\ Config=1.721 0.14357 8.29047 -0.297494 1.26017 -3.03815
-Property\ Grid\ State=selection=Tilt Scan.Enabled.Tilt Scan.Color Transformer;expanded=.Global Options,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Tilt Scan.Enabled,Fixed Angle Scan.Enabled.Fixed Angle Scan.StatusTopStatus;scrollpos=0,11;splitterpos=201,403;ispageselected=1
+Camera\ Type=rviz::FixedOrientationOrthoViewController
+Camera\ Config=34.7855 4.05133 7.07107 3.39013 -0.707107 -0 -0 0.707107
+Property\ Grid\ State=selection=Target Frame;expanded=.Global Options,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Fixed Angle Scan.Enabled.Fixed Angle Scan.StatusTopStatus;scrollpos=0,2;splitterpos=201,403;ispageselected=1
 [Display0]
 Name=Grid
 Package=rviz
