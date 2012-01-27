@@ -1,0 +1,20 @@
+<library path="lib/libparsec_perception_nodelet">
+  <class name="parsec_perception/LaserToPointCloudConverter" type="parsec_perception::LaserToPointCloudConverter" base_class_type="nodelet::Nodelet">
+    <description>
+      Converts a laser scan to a PointCloud2
+    </description>
+  </class>
+  <class name="parsec_perception/CircularRobotSelfFilter" type="parsec_perception::CircularRobotSelfFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      Filters points that are inside a cylinder. This is useful to
+      build up a self filter for circular robots that are
+      approximately cylindric.
+    </description>
+  </class>
+  <class name="parsec_perception/FloorFilter" type="parsec_perception::FloorFilterNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      FloorFilter removes the floor from point clouds and generates
+      cliff points.
+    </description>
+  </class>
+</library>

@@ -1,0 +1,15 @@
+Compiling for the Arduino Mega 2560 requires patching libm to fix a bug.
+Currently, libm uses all relative calls and jumps in their assembler code. This
+causes linker failures for large Arduino programs (e.g. parsec).
+
+1. Download the avr-libc source.
+2. In libm/fplib replace all rcall and rjmp calls with call and jmp respectively.
+3. In the avr-libc source root directory, run ./configure and follow the instructions.
+4. Run make in the avr/lib/avr6 directory.
+5. Copy the compiled libm.a library to /usr/lib/avr/lib/avr6 directory.
+
+In addition, the current implementation of rosserial is tested against arduino-0022.
+However, for recent versions of Ubuntu, a patch to the Arduino libraries is also required.
+
+1. vim /usr/share/arduino-0022/hardware/arduino/cores/arduino/wiring.h
+2. Comment out the "#define round ..." line.

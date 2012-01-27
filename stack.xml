@@ -1,0 +1,9 @@
+<stack>
+  <description brief="parsec">parsec</description>
+  <author>Maintained by Damon Kohler</author>
+  <license></license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec</url>
+  <depend stack="ros" />
+
+</stack>

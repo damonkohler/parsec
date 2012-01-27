@@ -1,0 +1,16 @@
+<package>
+  <description brief="parsec_arduino_tests">
+
+     parsec_arduino_tests
+
+  </description>
+  <author>Wolfgang Hess</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_arduino_tests</url>
+
+  <depend package="parsec_arduino" />
+
+</package>
+
+

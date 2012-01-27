@@ -1,0 +1,27 @@
+<library path="lib/librcconsole_nodelets">
+  <class name="rcconsole/IncludeNameFilter" type="rcconsole::IncludeNameFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      Only include logger names that match the filter regex.
+    </description>
+  </class>
+  <class name="rcconsole/IncludeMessageFilter" type="rcconsole::IncludeMessageFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      Only include logger messages that match the filter regex.
+    </description>
+  </class>
+  <class name="rcconsole/ExcludeNameFilter" type="rcconsole::ExcludeNameFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      Exclude logger names that match the filter regex.
+    </description>
+  </class>
+  <class name="rcconsole/ExcludeMessageFilter" type="rcconsole::ExcludeMessageFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      Exclude logger messages that match the filter regex.
+    </description>
+  </class>
+  <class name="rcconsole/LogFilePrinter" type="rcconsole::LogFilePrinter" base_class_type="nodelet::Nodelet">
+    <description>
+      Print all matching logs to a file.
+    </description>
+  </class>  
+</library>
