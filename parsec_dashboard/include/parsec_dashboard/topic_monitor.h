@@ -20,6 +20,8 @@
 #include <map>
 #include <boost/thread/mutex.hpp>
 
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
 #include <ros/ros.h>
 #include <topic_tools/shape_shifter.h>
 
@@ -28,34 +30,27 @@ namespace topic_monitor {
 class TopicMonitor {
  public:
   TopicMonitor(const ros::NodeHandle &node_handle);
-  void AddTopic(
-      const std::string &input_topic_name, double expected_frequency);
+  virtual ~TopicMonitor();
+  void AddTopic(const std::string &topic_name, 
+                double min_frequency, 
+                double max_frequency);
   void Run();
 
  private:
   struct MonitoredTopic {
-    std::string topic_name;
+    double min_frequency;
+    double max_frequency;
+    diagnostic_updater::TopicDiagnostic *diagnostic;
     ros::Subscriber subscriber;
-    ros::Time expiration_time;
-    ros::Duration expected_delay;
-    bool connected;
-
-    MonitoredTopic() {}
-    MonitoredTopic(const std::string &input_topic_name,
-                   const ros::Duration &expected_delay)
-      : input_topic_name(input_topic_name),
-        expected_delay(expected_delay),
-        connected(false) {}
   };
 
   ros::NodeHandle node_handle_;
-  std::map<std::string, MonitoredTopic> topics_;
-  std::map<ros::Time, std::string> expiring_topics_;
-  boost::mutex mutex_;
-  
-  void MessageCallback(
-      const std::string topic_name, const topic_tools::ShapeShifter::ConstPtr &message);
-  bool FindNextExpirationDuration(ros::Duration *expire_duration);
+  diagnostic_updater::Updater diagnostic_updater_;
+  std::vector<MonitoredTopic* > topics_;
+  boost::mutex topics_mutex_;
+ 
+  void MessageCallback(MonitoredTopic *topic,
+                       const topic_tools::ShapeShifter::ConstPtr &message);
   void ConnectTopic(const std::string &topic_name);
 };
 
