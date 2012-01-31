@@ -1,0 +1,26 @@
+<launch>
+  <node name="parsec_dashboard" type="parsec_dashboard" pkg="parsec_dashboard" />
+  <node name="topic_monitor" type="topic_monitor" pkg="parsec_dashboard" output="screen">
+    <rosparam>
+      topics:
+        - name: /base_scan
+          min_frequency: 8.0
+          max_frequency: 11.0
+        - name: /fixed_angle_scan
+          min_frequency: 8.0
+          max_frequency: 11.0
+        - name: /tilt_scan
+          min_frequency: 8.0
+          max_frequency: 11.0
+        - name: /rosserial/odom_simple
+          min_frequency: 10.0
+          max_frequency: 15.0
+        - name: /joint_states
+          min_frequency: 10.0
+          max_frequency: 15.0
+    </rosparam>
+  </node>
+  <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
+    <rosparam command="load" file="$(find parsec_dashboard)/config/diagnostics.yaml" />
+  </node>
+</launch>
