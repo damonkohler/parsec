@@ -1,5 +1,5 @@
-pub_rate: 1.0 # Optional
-base_path: '' # Optional, prepended to all diagnostic output
+pub_rate: 1.0  # Optional
+base_path: ''  # Optional, prepended to all diagnostic output
 analyzers:
   topic_monitor:
     type: diagnostic_aggregator/GenericAnalyzer
