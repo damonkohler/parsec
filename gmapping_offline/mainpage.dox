@@ -1,0 +1,57 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b gmapping_offline is a utility that takes a ROS bag file and builds
+a map using Gmapping
+
+\section codeapi Code API
+
+TO DO
+
+\section rosapi ROS API
+
+Names are very important in ROS because they can be remapped on the
+command-line, so it is VERY IMPORTANT THAT YOU LIST NAMES AS THEY
+APPEAR IN THE CODE. You should list names of every topic, service and
+parameter used in your code.
+
+List of nodes:
+- \b gmapping_offline
+
+<hr>
+
+\subsection gmapping_offline gmapping_offline
+
+gmapping_offline runs GMapping on a ROS bag file and produces a map
+
+\subsubsection Usage
+\verbatim
+$ gmapping_offline BAG MAP
+\endverbatim
+
+\par Example
+
+\verbatim
+$ gmapping_offline 2009-05-11-12-43-12-topic.bag map.pgm
+\endverbatim
+
+
+\subsubsection topics ROS topics
+
+Subscribes to:
+
+Publishes to:
+
+\subsubsection parameters ROS parameters
+
+Reads the following parameters from the parameter server
+- \b "~base_frame" : \b [string] frame id of base frame
+- \b "~laser_frame" : \b [string] frame id of laser frame
+- \b "~odom_frame" : \b [string] frame id of odometry frame
+- \b "~laser_topic" : \b [string] name of the laser topic that will be used to produce map
+
+Gmapping specific parameters are defiened as per the slam_gmapping node.
+
+\section commandline Command-line tools
+
