@@ -1,0 +1,15 @@
+<package>
+  <description brief="laser_signal_filter">
+
+     laser_signal_filter
+
+  </description>
+  <author>Lorenz Moesenlechner</author>
+  <license>Apache 2.0</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/laser_signal_filter</url>
+  <depend package="roscpp" />
+  <depend package="sensor_msgs" />
+  <depend package="parsec_msgs" />
+  <depend package="ros_check" />
+</package>

@@ -1,0 +1,21 @@
+<package>
+  <description brief="parsec_dashboard">
+    A simple dashboard for monitoring Parsec. Includes topic_monitor, a tool for monitoring the frequency and delays of arbitrary topics.
+  </description>
+  <author>Charles DuHadway</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/parsec_dashboard</url>
+  <depend package="diagnostic_updater"/>
+  <depend package="rxtools"/>
+  <depend package="robot_monitor"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="ros_check"/>
+  <depend package="rospy"/>
+  <depend package="roslib"/>
+  <depend package="topic_tools"/>
+
+</package>
+
+

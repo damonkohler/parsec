@@ -1,0 +1,31 @@
+<launch>
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
+    <remap from="cmd_vel" to="~cmd_vel" />
+    <rosparam file="$(find parsec_navigation)/config/costmap_common.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/costmap_common.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/move_base.yaml" command="load" />
+    <param name="global_costmap/static_map" value="true" />
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base_dynamic" output="screen" clear_params="true">
+    <remap from="/move_base" to="/move_base_dynamic" />
+    <remap from="move_base_simple/goal" to="move_base_simple_dynamic/goal" />
+    <!-- This should match the above because only one move_base will
+         be used at a time. Both move_base instances need to publish
+         velocity commands on the same topic.-->
+    <remap from="cmd_vel" to="move_base/cmd_vel" />
+
+    <rosparam file="$(find parsec_navigation)/config/costmap_common.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/costmap_common.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find parsec_navigation)/config/move_base.yaml" command="load" />
+
+    <!-- To be able to plan a path through unknown space we cannot use
+         a static map. The static map published by gmapping has
+         minimal size which makes exploration impossible.
+
+         Note that this can cause a warning about a sensor being outside the
+         bounds of the map. It is safe to ignore this warning. -->
+    <param name="global_costmap/static_map" value="false" />
+  </node>
+</launch>
+

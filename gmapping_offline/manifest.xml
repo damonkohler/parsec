@@ -1,0 +1,17 @@
+<package>
+  <description brief="buildmap">
+     Uses GMapping to build a map given a ROS bag file.
+  </description>
+  <author>Charles DuHadway/ charles.duhadway@us.bosch.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url></url>
+  <depend package="gmapping"/>
+  <depend package="nav_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="rosbag"/>
+  <depend package="std_msgs"/>
+  <depend package="tf"/>
+</package>
+
+
