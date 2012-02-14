@@ -16,7 +16,6 @@
 #include "parsec_dashboard/topic_monitor.h"
 
 #include <diagnostic_updater/update_functions.h>
-#include <ros_check/ros_check.h>
 #include <topic_tools/shape_shifter.h>
 
 namespace topic_monitor {
@@ -47,7 +46,7 @@ void TopicMonitor::AddTopic(
   topic->min_frequency = min_frequency;
   topic->max_frequency = max_frequency;
   topic->diagnostic = new TopicDiagnostic(
-      topic_name, 
+      topic_name,
       diagnostic_updater_,
       FrequencyStatusParam(&topic->min_frequency, &topic->max_frequency),
       TimeStampStatusParam(-1, 1.0));
@@ -58,15 +57,15 @@ void TopicMonitor::AddTopic(
   topics_.push_back(topic);
 }
 
-void TopicMonitor::MessageCallback(MonitoredTopic *topic, 
+void TopicMonitor::MessageCallback(MonitoredTopic *topic,
     const topic_tools::ShapeShifter::ConstPtr &message) {
   topic->diagnostic->tick(ros::Time::now());
 }
 
 void TopicMonitor::Run() {
-  while (node_handle_.ok()) {  
+  while (node_handle_.ok()) {
     diagnostic_updater_.update();
-    ros::WallDuration(0.1).sleep();
+    ros::WallDuration(1.0).sleep();
   }
 }
 

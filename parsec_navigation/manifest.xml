@@ -12,11 +12,10 @@
   <depend package="amcl" />
   <depend package="base_local_planner" />
   <depend package="gmapping" />
+  <depend package="hector_mapping" />
   <depend package="move_base" />
   <depend package="navfn" />
   <depend package="parsec_perception" />
   <depend package="point_cloud_converter" />
   <depend package="rcconsole" />
-
 </package>
-
