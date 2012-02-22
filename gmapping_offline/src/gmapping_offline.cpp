@@ -103,6 +103,7 @@ Initial map dimensions and resolution:
 #include "rosbag/exceptions.h"
 #include "rosbag/query.h"
 #include "rosbag/view.h"
+#include "rosgraph_msgs/Clock.h"
 
 #include "nav_msgs/MapMetaData.h"
 
@@ -118,6 +119,9 @@ GMappingOffline::GMappingOffline():
 {
   // log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME)->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
 
+  tfB_ = new tf::TransformBroadcaster();
+  ROS_ASSERT(tfB_);
+  
   // The library is pretty chatty
   //gsp_ = new GMapping::GridSlamProcessor(std::cerr);
   gsp_ = new GMapping::GridSlamProcessor();
@@ -203,9 +207,13 @@ GMappingOffline::GMappingOffline():
     lasamplerange_ = 0.005;
   if(!private_nh_.getParam("lasamplestep", lasamplestep_))
     lasamplestep_ = 0.005;
+
+  ss_ = node_.advertiseService("dynamic_map", &GMappingOffline::mapCallback, this);
   
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(tf_, odom_frame_, 10);
   scan_filter_->registerCallback(boost::bind(&GMappingOffline::laserCallback, this, _1));
+  
+  time_publisher_ = node_.advertise<rosgraph_msgs::Clock>("clock", 1);
 }
 
 GMappingOffline::~GMappingOffline()
@@ -436,6 +444,7 @@ GMappingOffline::processBag(const std::string& file_path,
         count++;
         ROS_INFO("Processing %d/%d\t%d%%", count, scan_count, (int)(100.0 * count / scan_count));
         
+        // TODO(duhadway): Expose an option to turn intermediate map saving on/off. 
         if ((count % 1000) == 999) {
           std::stringstream out;
           out << map_name << "_" << count / 1000 + 1;
@@ -449,8 +458,13 @@ GMappingOffline::processBag(const std::string& file_path,
           tf::StampedTransform trans;
           tf::transformStampedMsgToTF(transform->transforms[i], trans);
           tf_.setTransform(trans);
+          tfB_->sendTransform(trans);          
         }
-      }      
+      }
+      
+      rosgraph_msgs::Clock clock_msg;
+      clock_msg.clock = m.getTime();
+      time_publisher_.publish(clock_msg);          
     }
     bag.close();
   } catch (rosbag::BagException exception) {
@@ -501,6 +515,8 @@ GMappingOffline::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                  tf::Point(      odom_to_map.getOrigin() ) ).inverse();
     map_to_odom_mutex_.unlock();
+    
+    tfB_->sendTransform( tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
 
     if(!got_map_ || (scan->header.stamp - last_map_update) > map_update_interval_)
     {
@@ -702,6 +718,21 @@ GMappingOffline::saveMap(const std::string& file_name)
   return true;
 }
 
+bool 
+GMappingOffline::mapCallback(nav_msgs::GetMap::Request  &req,
+                             nav_msgs::GetMap::Response &res)
+{
+  boost::mutex::scoped_lock(map_mutex_);
+  if(got_map_ && map_.map.info.width && map_.map.info.height)
+  {
+    res = map_;
+    return true;
+  }
+  else
+    return false;
+}
+
+
 int main(int argc, char** argv){
   if (argc < 3) {
     printf("USAGE: gmapping_offline BAG_FILE MAP_NAME\n");
@@ -711,7 +742,7 @@ int main(int argc, char** argv){
   std::string map_name = argv[2];
   
   ros::init(argc, argv, "gmapping_offline");
-  GMappingOffline gmapping;  ;
+  GMappingOffline gmapping;
   if (!gmapping.processBag(bag_file_path, map_name)) {
     return(1);
   }
@@ -719,6 +750,8 @@ int main(int argc, char** argv){
   if (!gmapping.saveMap(map_name)) {
     return(1);
   }
+  
+  ros::spin();
 
   return(0);
 }

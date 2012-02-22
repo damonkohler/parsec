@@ -33,15 +33,22 @@ class GMappingOffline
   public:
     GMappingOffline();
     ~GMappingOffline();
-
+    
+    bool mapCallback(nav_msgs::GetMap::Request  &req,
+                     nav_msgs::GetMap::Response &res);
+    
     bool processBag(const std::string& bag_file_path,
                     const std::string& map_name);
+    
     bool saveMap(const std::string& file_name);
-        
+    
   private:
-    ros::NodeHandle node_;    
+    ros::NodeHandle node_;
+    ros::ServiceServer ss_;
     tf::Transformer tf_;
     tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
+    tf::TransformBroadcaster* tfB_;
+    ros::Publisher time_publisher_;        
 
     GMapping::GridSlamProcessor* gsp_;
     GMapping::RangeSensor* gsp_laser_;
