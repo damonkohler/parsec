@@ -8,8 +8,8 @@
       # usage. However, map updates are single-CPU bound.
       map_update_interval: 1.0
 
-      maxUrange: 4.5
-      maxRange: 5.0
+      maxUrange: 30.0
+      maxRange: 60.0
       sigma: 0.05
       kernelSize: 1
       lstep: 0.05
@@ -41,5 +41,4 @@
     </rosparam>
     <remap from="/scan" to="/base_scan" />
   </node>
-  <include file="$(find parsec_navigation)/launch/move_base_dynamic.launch" />
 </launch>
