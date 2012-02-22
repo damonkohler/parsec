@@ -3,7 +3,7 @@
     <rosparam>
       map_frame: map
       base_frame: base_footprint
-      odom_frame: odom
+      odom_frame: base_footprint
       use_tf_scan_transformation: true
       use_tf_pose_start_estimate: false
       pub_map_odom_transform: true
@@ -17,10 +17,8 @@
       map_update_distance_thresh: 0.4
       map_update_angle_thresh: 0.06
       advertise_map_service: true
-      laser_max_dist: 5.0
+      laser_max_dist: 30.0
     </rosparam>
     <remap from="/scan" to="/base_scan" />
   </node>
-  <include file="$(find parsec_navigation)/launch/move_base_dynamic.launch" />
 </launch>
-
