@@ -4,6 +4,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init(gmapping_offline)
 
 rosbuild_invoke_rospack(gmapping GMAP PING find)
+include_directories(${GMAP_PING}/include)
 include_directories(${GMAP_PING}/include/gmapping)
 link_directories(${GMAP_PING}/lib)
 
