@@ -6,7 +6,7 @@
       # Time between updates in the map. We keep it small for better
       # user feedback during mapping. Increasing this will decrease CPU
       # usage. However, map updates are single-CPU bound.
-      map_update_interval: 1.0
+      map_update_interval: 5.0
 
       maxUrange: 4.5
       maxRange: 5.0
@@ -22,7 +22,7 @@
       angularUpdate: 0.436
       temporalUpdate: -1.0
       resampleThreshold: 0.5
-      particles: 80
+      particles: 200
       xmin: -1.0
       ymin: -1.0
       xmax: 1.0
@@ -30,7 +30,7 @@
 
       # The resolution of the map, i.e. the length of the edge of
       # one pixel in meters.
-      delta: 0.025
+      delta: 0.05
 
       llsamplerange: 0.01
       llsamplestep: 0.01
@@ -41,5 +41,5 @@
     </rosparam>
     <remap from="/scan" to="/base_scan" />
   </node>
-  <include file="$(find parsec_navigation)/launch/move_base_dynamic.launch" />
+  <!--include file="$(find parsec_navigation)/launch/move_base_dynamic.launch" /-->
 </launch>
