@@ -1,5 +1,5 @@
 <launch>
-  <node name="parsec_dashboard" type="parsec_dashboard" pkg="parsec_dashboard" />
+  <node name="robot_monitor" type="robot_monitor" pkg="robot_monitor" />
   <node name="topic_monitor" type="topic_monitor" pkg="parsec_dashboard" output="screen">
     <rosparam>
       topics:
@@ -18,6 +18,9 @@
         - name: /joint_states
           min_frequency: 10.0
           max_frequency: 15.0
+        - name: /tilt_floor_filter/floor_cloud
+          min_frequency: 8.0
+          max_frequency: 11.0
     </rosparam>
   </node>
   <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >

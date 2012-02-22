@@ -108,7 +108,7 @@
       line_distance_threshold: 0.07
       sensor_frame: fixed_angle_laser
       reference_frame: base_footprint
-      max_floor_y_rotation: 0.00
+      max_floor_y_rotation: 0.0
       max_floor_x_rotation: 0.175
       floor_z_distance: 0.06
       cliff_distance_threshold: 0.07
