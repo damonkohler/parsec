@@ -94,7 +94,7 @@ Initial map dimensions and resolution:
 #include "gmapping_offline/gmapping_offline.h"
 
 #include <iostream>
-
+#include <sstream>
 #include <time.h>
 
 #include "ros/ros.h"
@@ -418,7 +418,8 @@ GMappingOffline::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedP
 }
 
 bool
-GMappingOffline::processBag(const std::string& file_path)
+GMappingOffline::processBag(const std::string& file_path,
+                            const std::string& map_name)
 {
   try {
     rosbag::Bag bag(file_path);
@@ -426,7 +427,7 @@ GMappingOffline::processBag(const std::string& file_path)
     int scan_count = view.size();
     view.addQuery(bag, rosbag::TopicQuery("/tf"));
     
-    int count = 0;
+    int count = 0;   
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
     {
       sensor_msgs::LaserScan::ConstPtr scan = m.instantiate<sensor_msgs::LaserScan>();
@@ -434,6 +435,12 @@ GMappingOffline::processBag(const std::string& file_path)
         scan_filter_->add(scan);
         count++;
         ROS_INFO("Processing %d/%d\t%d%%", count, scan_count, (int)(100.0 * count / scan_count));
+        
+        if ((count % 1000) == 999) {
+          std::stringstream out;
+          out << map_name << "_" << count / 1000 + 1;
+          saveMap(out.str());
+        }
       }
 
       tf::tfMessage::ConstPtr transform = m.instantiate<tf::tfMessage>();
@@ -442,7 +449,7 @@ GMappingOffline::processBag(const std::string& file_path)
           tf::StampedTransform trans;
           tf::transformStampedMsgToTF(transform->transforms[i], trans);
           tf_.setTransform(trans);
-        }        
+        }
       }      
     }
     bag.close();
@@ -700,15 +707,16 @@ int main(int argc, char** argv){
     printf("USAGE: gmapping_offline BAG_FILE MAP_NAME\n");
     return(1);
   }
-
+  std::string bag_file_path = argv[1];
+  std::string map_name = argv[2];
+  
   ros::init(argc, argv, "gmapping_offline");
-  GMappingOffline gmapping;
-
-  if (! gmapping.processBag(argv[1])) {
+  GMappingOffline gmapping;  ;
+  if (!gmapping.processBag(bag_file_path, map_name)) {
     return(1);
   }
 
-  if (!gmapping.saveMap(argv[2])) {
+  if (!gmapping.saveMap(map_name)) {
     return(1);
   }
 
