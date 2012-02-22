@@ -49,7 +49,7 @@ void TopicMonitor::AddTopic(
       topic_name,
       diagnostic_updater_,
       FrequencyStatusParam(&topic->min_frequency, &topic->max_frequency),
-      TimeStampStatusParam(-1, 1.0));
+      TimeStampStatusParam(-1, 0.2));
   topic->subscriber = node_handle_.subscribe<topic_tools::ShapeShifter>(
       topic_name, 10, boost::bind(&TopicMonitor::MessageCallback, this, topic, _1));
 
