@@ -34,7 +34,8 @@ class GMappingOffline
     GMappingOffline();
     ~GMappingOffline();
 
-    bool processBag(const std::string& bag_file_path);
+    bool processBag(const std::string& bag_file_path,
+                    const std::string& map_name);
     bool saveMap(const std::string& file_name);
         
   private:
