@@ -36,11 +36,8 @@ class GMappingOffline
     
     bool mapCallback(nav_msgs::GetMap::Request  &req,
                      nav_msgs::GetMap::Response &res);
-    
-    bool processBag(const std::string& bag_file_path,
-                    const std::string& map_name);
-    
-    bool saveMap(const std::string& file_name);
+    bool processBag();
+    bool saveMap();
     
   private:
     ros::NodeHandle node_;
@@ -68,6 +65,10 @@ class GMappingOffline
 
     int laser_count_;
 
+    std::string bag_file_path_;
+    std::string map_file_directory_;
+    std::string map_file_base_name_;
+    
     std::string base_frame_;
     std::string laser_frame_;
     std::string map_frame_;
@@ -81,6 +82,7 @@ class GMappingOffline
     bool initMapper(const sensor_msgs::LaserScan& scan);
     bool addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose);
     double computePoseEntropy();
+    bool saveMap(const std::string& file_name);
     
     // Parameters used by GMapping
     double maxRange_;

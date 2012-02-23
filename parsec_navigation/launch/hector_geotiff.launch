@@ -8,7 +8,7 @@
   </node>
   <node pkg="hector_geotiff" type="geotiff_node" name="hector_geotiff_node" output="screen" launch-prefix="nice -n 15">
     <remap from="map" to="/dynamic_map" />
-    <param name="map_file_path" type="string" value="/home/damonkohler/hector_geotiff" />
+    <param name="map_file_path" type="string" value="/home/duhadway/ikea_maps/geotiff" />
     <param name="map_file_base_name" type="string" value="hector_slam_map" />
     <param name="draw_background_checkerboard" type="bool" value="true" />
     <param name="draw_free_space_grid" type="bool" value="true" />

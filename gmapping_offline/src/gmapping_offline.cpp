@@ -145,7 +145,13 @@ GMappingOffline::GMappingOffline():
     odom_frame_ = "odom";
   if(!private_nh_.getParam("laser_topic", laser_topic_))
     laser_topic_ = "scan";
-
+  if(!private_nh_.getParam("bag_file_path", bag_file_path_))
+    bag_file_path_ = "bag";
+  if(!private_nh_.getParam("map_file_directory", map_file_directory_))
+    map_file_directory_ = "./";
+  if(!private_nh_.getParam("map_file_base_name", map_file_base_name_))
+    map_file_base_name_ = "map";
+  
   double tmp;
   if(!private_nh_.getParam("map_update_interval", tmp))
     tmp = 5.0;
@@ -426,11 +432,11 @@ GMappingOffline::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedP
 }
 
 bool
-GMappingOffline::processBag(const std::string& file_path,
-                            const std::string& map_name)
+GMappingOffline::processBag()
 {
-  try {
-    rosbag::Bag bag(file_path);
+  try {    
+    ROS_INFO("Opening bag: %s", bag_file_path_.c_str());
+    rosbag::Bag bag(bag_file_path_);
     rosbag::View view(bag, rosbag::TopicQuery(laser_topic_));
     int scan_count = view.size();
     view.addQuery(bag, rosbag::TopicQuery("/tf"));
@@ -447,7 +453,7 @@ GMappingOffline::processBag(const std::string& file_path,
         // TODO(duhadway): Expose an option to turn intermediate map saving on/off. 
         if ((count % 1000) == 999) {
           std::stringstream out;
-          out << map_name << "_" << count / 1000 + 1;
+          out << map_file_directory_ << map_file_base_name_ << "_" << count / 1000 + 1;
           saveMap(out.str());
         }
       }
@@ -464,7 +470,9 @@ GMappingOffline::processBag(const std::string& file_path,
       
       rosgraph_msgs::Clock clock_msg;
       clock_msg.clock = m.getTime();
-      time_publisher_.publish(clock_msg);          
+      time_publisher_.publish(clock_msg);    
+      
+      ros::spinOnce();
     }
     bag.close();
   } catch (rosbag::BagException exception) {
@@ -661,6 +669,14 @@ GMappingOffline::updateMap(const sensor_msgs::LaserScan& scan)
 }
 
 bool
+GMappingOffline::saveMap() 
+{
+  std::stringstream out;
+  out << map_file_directory_ << map_file_base_name_;
+  return saveMap(out.str());  
+}
+
+bool
 GMappingOffline::saveMap(const std::string& file_name) 
 {
   const nav_msgs::OccupancyGrid& map = map_.map;
@@ -734,20 +750,14 @@ GMappingOffline::mapCallback(nav_msgs::GetMap::Request  &req,
 
 
 int main(int argc, char** argv){
-  if (argc < 3) {
-    printf("USAGE: gmapping_offline BAG_FILE MAP_NAME\n");
-    return(1);
-  }
-  std::string bag_file_path = argv[1];
-  std::string map_name = argv[2];
-  
   ros::init(argc, argv, "gmapping_offline");
-  GMappingOffline gmapping;
-  if (!gmapping.processBag(bag_file_path, map_name)) {
+  GMappingOffline gmapping;  
+
+  if (!gmapping.processBag()) {
     return(1);
   }
 
-  if (!gmapping.saveMap(map_name)) {
+  if (!gmapping.saveMap()) {
     return(1);
   }
   
