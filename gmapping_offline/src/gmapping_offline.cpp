@@ -151,6 +151,12 @@ GMappingOffline::GMappingOffline():
     map_file_directory_ = "./";
   if(!private_nh_.getParam("map_file_base_name", map_file_base_name_))
     map_file_base_name_ = "map";
+  if(!private_nh_.getParam("save_intermediate_maps", save_maps_))
+    save_maps_ = true;
+  
+  if (map_file_base_name.empty()) {
+    save_maps_ = false;
+  }
   
   double tmp;
   if(!private_nh_.getParam("map_update_interval", tmp))
@@ -451,7 +457,7 @@ GMappingOffline::processBag()
         ROS_INFO("Processing %d/%d\t%d%%", count, scan_count, (int)(100.0 * count / scan_count));
         
         // TODO(duhadway): Expose an option to turn intermediate map saving on/off. 
-        if ((count % 1000) == 999) {
+        if (save_maps_ && (count % 1000) == 999) {
           std::stringstream out;
           out << map_file_directory_ << map_file_base_name_ << "_" << count / 1000 + 1;
           saveMap(out.str());
@@ -671,6 +677,9 @@ GMappingOffline::updateMap(const sensor_msgs::LaserScan& scan)
 bool
 GMappingOffline::saveMap() 
 {
+  if (map_file_base_name.empty()) {
+    return false;
+  }
   std::stringstream out;
   out << map_file_directory_ << map_file_base_name_;
   return saveMap(out.str());  

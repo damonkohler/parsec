@@ -68,6 +68,7 @@ class GMappingOffline
     std::string bag_file_path_;
     std::string map_file_directory_;
     std::string map_file_base_name_;
+    bool save_maps_;
     
     std::string base_frame_;
     std::string laser_frame_;
