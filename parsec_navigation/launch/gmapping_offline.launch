@@ -1,7 +1,7 @@
 <launch>
   <rosparam param="use_sim_time">true</rosparam>
   <include file="$(find parsec_navigation)/launch/hector_geotiff.launch" />
-  <node pkg="gmapping_offline" type="gmapping_offline" name="gmapping_offline" output="log">
+  <node pkg="gmapping_offline" type="gmapping_offline" name="gmapping_offline" output="screen">
     <rosparam>
       map_update_interval: 5.0
 
