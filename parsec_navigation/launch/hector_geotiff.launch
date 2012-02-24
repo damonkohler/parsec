@@ -1,13 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="hector_trajectory_server" output="screen">
-    <rosparam>
-      target_frame_name: /map
-      source_frame_name: /base_link
-      trajectory_update_rate: 4.0
-      trajectory_publish_rate: 0.25
-    </rosparam>
-  </node>
   <node pkg="hector_geotiff" type="geotiff_node" name="hector_geotiff_node" output="screen" launch-prefix="nice -n 15">
     <remap from="map" to="/dynamic_map" />
     <rosparam>
