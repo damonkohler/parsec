@@ -97,9 +97,6 @@ class SlamGMapping
     // Members used when running directly from bag
     std::string bag_file_path_;
     std::string laser_topic_;
-    std::string map_file_directory_;
-    std::string map_file_base_name_;
-    bool save_maps_;
 
     ros::Publisher time_publisher_;
     boost::thread* process_bag_thread_;

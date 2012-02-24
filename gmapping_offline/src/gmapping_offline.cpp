@@ -170,16 +170,6 @@ SlamGMapping::SlamGMapping():
     laser_topic_ = "scan";
   if(!private_nh_.getParam("bag_file_path", bag_file_path_))
     bag_file_path_ = "bag";
-  if(!private_nh_.getParam("map_file_directory", map_file_directory_))
-    map_file_directory_ = "./";
-  if(!private_nh_.getParam("map_file_base_name", map_file_base_name_))
-    map_file_base_name_ = "map";
-  if(!private_nh_.getParam("save_intermediate_maps", save_maps_))
-    save_maps_ = true;
-
-  if (map_file_base_name_.empty()) {
-    save_maps_ = false;
-  }
 
   double tmp;
   if(!private_nh_.getParam("map_update_interval", tmp))
@@ -518,13 +508,6 @@ SlamGMapping::processBag()
         ROS_INFO("Processing %d/%d\t%d%%", count, scan_count, (int)(100.0 * count / scan_count));
         scan_filter_->add(scan);
         count++;
-
-        // TODO(duhadway): Rip out map saving.
-        if (save_maps_ && (count % 1000) == 999) {
-          std::stringstream out;
-          out << map_file_directory_ << map_file_base_name_ << "_" << count / 1000 + 1;
-          saveMap(out.str());
-        }
       }
 
       tf::tfMessage::ConstPtr transform = m.instantiate<tf::tfMessage>();
@@ -747,17 +730,6 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
   sstm_.publish(map_.map.info);
 }
 
-bool
-SlamGMapping::saveMap()
-{
-  if (map_file_base_name_.empty()) {
-    return false;
-  }
-  std::stringstream out;
-  out << map_file_directory_ << map_file_base_name_;
-  return saveMap(out.str());
-}
-
 bool 
 SlamGMapping::mapCallback(nav_msgs::GetMap::Request  &req,
                           nav_msgs::GetMap::Response &res)
@@ -805,64 +777,6 @@ void SlamGMapping::publishTransform()
   ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
   tfB_->sendTransform( tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
   map_to_odom_mutex_.unlock();
-}
-
-bool
-SlamGMapping::saveMap(const std::string& file_name)
-{
-  const nav_msgs::OccupancyGrid& map = map_.map;
-  ROS_INFO("Saving a %d X %d map @ %.3f m/pix",
-           map.info.width,
-           map.info.height,
-           map.info.resolution);
-
-  std::string mapdatafile = file_name + ".pgm";
-  ROS_INFO("Writing map occupancy data to %s", mapdatafile.c_str());
-  FILE* out = fopen(mapdatafile.c_str(), "w");
-  if (!out)
-  {
-    ROS_ERROR("Couldn't save map file to %s", mapdatafile.c_str());
-    return false;
-  }
-
-  fprintf(out, "P5\n# CREATOR: Map_generator.cpp %.3f m/pix\n%d %d\n255\n",
-          map.info.resolution, map.info.width, map.info.height);
-  for(unsigned int y = 0; y < map.info.height; y++) {
-    for(unsigned int x = 0; x < map.info.width; x++) {
-      unsigned int i = x + (map.info.height - y - 1) * map.info.width;
-      if (map.data[i] == 0) { //occ [0,0.1)
-        fputc(254, out);
-      } else if (map.data[i] == +100) { //occ (0.65,1]
-        fputc(000, out);
-      } else { //occ [0.1,0.65]
-        fputc(205, out);
-      }
-    }
-  }
-
-  fclose(out);
-
-  std::string mapmetadatafile = file_name + ".yaml";
-  ROS_INFO("Writing map occupancy data to %s", mapmetadatafile.c_str());
-  FILE* yaml = fopen(mapmetadatafile.c_str(), "w");
-  if (!yaml)
-  {
-    ROS_ERROR("Couldn't save yaml file to %s", mapmetadatafile.c_str());
-    return false;
-  }
-
-  geometry_msgs::Quaternion orientation = map.info.origin.orientation;
-  btMatrix3x3 mat(btQuaternion(orientation.x, orientation.y, orientation.z, orientation.w));
-  double yaw, pitch, roll;
-  mat.getEulerYPR(yaw, pitch, roll);
-
-  fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: 0.196\n\n",
-          mapdatafile.c_str(), map.info.resolution, map.info.origin.position.x, map.info.origin.position.y, yaw);
-
-  fclose(yaml);
-
-  ROS_INFO("Done\n");
-  return true;
 }
 
 int
