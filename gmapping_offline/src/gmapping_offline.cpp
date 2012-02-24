@@ -1,12 +1,12 @@
 /*
- * gmapping_offline
+ * slam_gmapping
  * Copyright (c) 2008, Willow Garage, Inc.
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
  * COPYRIGHT AND/OR OTHER APPLICABLE LAW. ANY USE OF THE WORK OTHER THAN AS
  * AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
- *
+ * 
  * BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED HERE, YOU ACCEPT AND AGREE TO
  * BE BOUND BY THE TERMS OF THIS LICENSE. THE LICENSOR GRANTS YOU THE RIGHTS
  * CONTAINED HERE IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND
@@ -17,25 +17,35 @@
 /* Author: Brian Gerkey */
 /* Modified by: Charles DuHadway */
 
+
 /**
 
-@mainpage gmapping_offline
+@mainpage slam_gmapping
 
 @htmlinclude manifest.html
 
-@b gmapping_offline is a wrapper around the GMapping SLAM library. It reads laser
-scans and odometry from a bag file and outputs a map. This program can be called
-like so:
+@b slam_gmapping is a wrapper around the GMapping SLAM library. It reads laser
+scans and odometry and computes a map. This map can be
+written to a file using e.g.
 
-gmapping_offline <bag> <output_map>
+  "rosrun map_server map_saver static_map:=dynamic_map"
 
 <hr>
 
 @section topic ROS topics
 
-Reads from bag:
-- @b "scan"/<a href="../../sensor_msgs/html/classstd__msgs_1_1LaserScan.html">sensor_msgs/LaserScan</a> : data from a laser range scanner
+Subscribes to (name/type):
+- @b "scan"/<a href="../../sensor_msgs/html/classstd__msgs_1_1LaserScan.html">sensor_msgs/LaserScan</a> : data from a laser range scanner 
 - @b "/tf": odometry from the robot
+
+
+Publishes to (name/type):
+- @b "/tf"/tf/tfMessage: position relative to the map
+
+
+@section services
+ - @b "~dynamic_map" : returns the map
+
 
 @section parameters ROS parameters
 
@@ -43,9 +53,15 @@ Reads the following parameters from the parameter server
 
 Parameters used by our GMapping wrapper:
 
+- @b "~throttle_scans": @b [int] throw away every nth laser scan
 - @b "~base_frame": @b [string] the tf frame_id to use for the robot base pose
 - @b "~map_frame": @b [string] the tf frame_id where the robot pose on the map is published
 - @b "~odom_frame": @b [string] the tf frame_id from which odometry is read
+- @b "~map_update_interval": @b [double] time in seconds between two recalculations of the map
+
+Parameters used when running GMapping directly from a bag file:
+- @b "~bag_file_path": @b [string] the path of the bag file to process
+- @b "~laser_topic": @b [string] the name of the laser topic to process from the bag file
 
 Parameters used by GMapping itself:
 
@@ -113,19 +129,19 @@ Initial map dimensions and resolution:
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-GMappingOffline::GMappingOffline():
+SlamGMapping::SlamGMapping():
   map_to_odom_(tf::Transform(tf::createQuaternionFromRPY( 0, 0, 0 ), tf::Point(0, 0, 0 ))),
-  laser_count_(0)
+  laser_count_(0), transform_thread_(NULL), process_bag_thread_(NULL)
 {
   // log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME)->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
-
-  tfB_ = new tf::TransformBroadcaster();
-  ROS_ASSERT(tfB_);
 
   // The library is pretty chatty
   //gsp_ = new GMapping::GridSlamProcessor(std::cerr);
   gsp_ = new GMapping::GridSlamProcessor();
   ROS_ASSERT(gsp_);
+
+  tfB_ = new tf::TransformBroadcaster();
+  ROS_ASSERT(tfB_);
 
   gsp_laser_ = NULL;
   gsp_laser_angle_increment_ = 0.0;
@@ -136,13 +152,20 @@ GMappingOffline::GMappingOffline():
 
   ros::NodeHandle private_nh_("~");
 
-  // Parameters used by our GMappingOffline wrapper
+  // Parameters used by our GMapping wrapper
+  if(!private_nh_.getParam("throttle_scans", throttle_scans_))
+    throttle_scans_ = 1;
   if(!private_nh_.getParam("base_frame", base_frame_))
     base_frame_ = "base_link";
   if(!private_nh_.getParam("map_frame", map_frame_))
     map_frame_ = "map";
   if(!private_nh_.getParam("odom_frame", odom_frame_))
     odom_frame_ = "odom";
+
+  double transform_publish_period;
+  private_nh_.param("transform_publish_period", transform_publish_period, 0.05);
+
+  // Parameters used when running from a bag.
   if(!private_nh_.getParam("laser_topic", laser_topic_))
     laser_topic_ = "scan";
   if(!private_nh_.getParam("bag_file_path", bag_file_path_))
@@ -220,25 +243,63 @@ GMappingOffline::GMappingOffline():
   if(!private_nh_.getParam("lasamplestep", lasamplestep_))
     lasamplestep_ = 0.005;
 
-  ss_ = node_.advertiseService("dynamic_map", &GMappingOffline::mapCallback, this);
+  entropy_publisher_ = private_nh_.advertise<std_msgs::Float64>("entropy", 1, true);
+  sst_ = node_.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
+  sstm_ = node_.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
+  ss_ = node_.advertiseService("dynamic_map", &SlamGMapping::mapCallback, this);
 
-  scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(tf_, odom_frame_, 10);
-  scan_filter_->registerCallback(boost::bind(&GMappingOffline::laserCallback, this, _1));
+  if (bag_file_path_.empty()) {
+    scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node_, "scan", 5);
+    scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
+  } else {
+    scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(tf_, odom_frame_, 10);
+  }
+  scan_filter_->registerCallback(boost::bind(&SlamGMapping::laserCallback, this, _1));
 
-  time_publisher_ = node_.advertise<rosgraph_msgs::Clock>("clock", 1);
+  if (bag_file_path_.empty()) {
+    transform_thread_ = new boost::thread(boost::bind(&SlamGMapping::publishLoop, this, transform_publish_period));
+  } else {
+    time_publisher_ = node_.advertise<rosgraph_msgs::Clock>("clock", 1);
+    process_bag_thread_ = new boost::thread(boost::bind(&SlamGMapping::processBag, this));
+  }
 }
 
-GMappingOffline::~GMappingOffline()
+void SlamGMapping::publishLoop(double transform_publish_period){
+  if(transform_publish_period == 0)
+    return;
+
+  ros::Rate r(1.0 / transform_publish_period);
+  while(ros::ok()){
+    publishTransform();
+    r.sleep();
+  }
+}
+
+SlamGMapping::~SlamGMapping()
 {
+  if(transform_thread_){
+    transform_thread_->join();
+    delete transform_thread_;
+  }
+
+  if(process_bag_thread_){
+    process_bag_thread_->join();
+    delete process_bag_thread_;
+  }
+
   delete gsp_;
   if(gsp_laser_)
     delete gsp_laser_;
   if(gsp_odom_)
     delete gsp_odom_;
+  if (scan_filter_)
+    delete scan_filter_;
+  if (scan_filter_sub_)
+    delete scan_filter_sub_;
 }
 
 bool
-GMappingOffline::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t)
+SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t)
 {
   // Get the robot's pose
   tf::Stamped<tf::Pose> ident (tf::Transform(tf::createQuaternionFromRPY(0,0,0),
@@ -262,7 +323,7 @@ GMappingOffline::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time
 }
 
 bool
-GMappingOffline::initMapper(const sensor_msgs::LaserScan& scan)
+SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
 {
   // Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
@@ -379,7 +440,7 @@ GMappingOffline::initMapper(const sensor_msgs::LaserScan& scan)
 }
 
 bool
-GMappingOffline::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose)
+SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose)
 {
   if(!getOdomPose(gmap_pose, scan.header.stamp))
      return false;
@@ -403,7 +464,7 @@ GMappingOffline::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedP
       else
         ranges_double[i] = (double)scan.ranges[num_ranges - i - 1];
     }
-  } else
+  } else 
   {
     for(unsigned int i=0; i < scan.ranges.size(); i++)
     {
@@ -438,25 +499,27 @@ GMappingOffline::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedP
 }
 
 bool
-GMappingOffline::processBag()
+SlamGMapping::processBag()
 {
   try {
     ROS_INFO("Opening bag: %s", bag_file_path_.c_str());
     rosbag::Bag bag(bag_file_path_);
+    ROS_INFO("laser: %s", laser_topic_.c_str());
     rosbag::View view(bag, rosbag::TopicQuery(laser_topic_));
     int scan_count = view.size();
     view.addQuery(bag, rosbag::TopicQuery("/tf"));
+    ROS_INFO("2");
 
     int count = 0;
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
     {
       sensor_msgs::LaserScan::ConstPtr scan = m.instantiate<sensor_msgs::LaserScan>();
       if (scan != NULL) {
+        ROS_INFO("Processing %d/%d\t%d%%", count, scan_count, (int)(100.0 * count / scan_count));
         scan_filter_->add(scan);
         count++;
-        ROS_INFO("Processing %d/%d\t%d%%", count, scan_count, (int)(100.0 * count / scan_count));
 
-        // TODO(duhadway): Expose an option to turn intermediate map saving on/off.
+        // TODO(duhadway): Rip out map saving.
         if (save_maps_ && (count % 1000) == 999) {
           std::stringstream out;
           out << map_file_directory_ << map_file_base_name_ << "_" << count / 1000 + 1;
@@ -477,21 +540,24 @@ GMappingOffline::processBag()
       rosgraph_msgs::Clock clock_msg;
       clock_msg.clock = m.getTime();
       time_publisher_.publish(clock_msg);
-
-      ros::spinOnce();
     }
     bag.close();
   } catch (rosbag::BagException exception) {
+    ROS_INFO("Error processing bag.");
     return false;
   }
+
+  ROS_INFO("Finished processing.");
 
   return true;
 }
 
 void
-GMappingOffline::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
+SlamGMapping::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
   laser_count_++;
+  if ((laser_count_ % throttle_scans_) != 0)
+    return;
 
   static ros::Time last_map_update(0,0);
 
@@ -542,7 +608,7 @@ GMappingOffline::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 }
 
 double
-GMappingOffline::computePoseEntropy()
+SlamGMapping::computePoseEntropy()
 {
   double weight_total=0.0;
   for(std::vector<GMapping::GridSlamProcessor::Particle>::const_iterator it = gsp_->getParticles().begin();
@@ -563,7 +629,7 @@ GMappingOffline::computePoseEntropy()
 }
 
 void
-GMappingOffline::updateMap(const sensor_msgs::LaserScan& scan)
+SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
 {
   boost::mutex::scoped_lock(map_mutex_);
   GMapping::ScanMatcher matcher;
@@ -588,6 +654,10 @@ GMappingOffline::updateMap(const sensor_msgs::LaserScan& scan)
 
   GMapping::GridSlamProcessor::Particle best =
           gsp_->getParticles()[gsp_->getBestParticleIndex()];
+  std_msgs::Float64 entropy;
+  entropy.data = computePoseEntropy();
+  if(entropy.data > 0.0)
+    entropy_publisher_.publish(entropy);
 
   if(!got_map_) {
     map_.map.info.resolution = delta_;
@@ -598,13 +668,13 @@ GMappingOffline::updateMap(const sensor_msgs::LaserScan& scan)
     map_.map.info.origin.orientation.y = 0.0;
     map_.map.info.origin.orientation.z = 0.0;
     map_.map.info.origin.orientation.w = 1.0;
-  }
+  } 
 
   GMapping::Point center;
   center.x=(xmin_ + xmax_) / 2.0;
   center.y=(ymin_ + ymax_) / 2.0;
 
-  GMapping::ScanMatcherMap smap(center, xmin_, ymin_, xmax_, ymax_,
+  GMapping::ScanMatcherMap smap(center, xmin_, ymin_, xmax_, ymax_, 
                                 delta_);
 
   ROS_DEBUG("Trajectory tree:");
@@ -672,10 +742,13 @@ GMappingOffline::updateMap(const sensor_msgs::LaserScan& scan)
   //make sure to set the header information on the map
   map_.map.header.stamp = ros::Time::now();
   map_.map.header.frame_id = map_frame_;
+
+  sst_.publish(map_.map);
+  sstm_.publish(map_.map.info);
 }
 
 bool
-GMappingOffline::saveMap()
+SlamGMapping::saveMap()
 {
   if (map_file_base_name_.empty()) {
     return false;
@@ -685,8 +758,30 @@ GMappingOffline::saveMap()
   return saveMap(out.str());
 }
 
+bool 
+SlamGMapping::mapCallback(nav_msgs::GetMap::Request  &req,
+                             nav_msgs::GetMap::Response &res)
+{
+  boost::mutex::scoped_lock(map_mutex_);
+  if(got_map_ && map_.map.info.width && map_.map.info.height)
+  {
+    res = map_;
+    return true;
+  }
+  else
+    return false;
+}
+
+void SlamGMapping::publishTransform()
+{
+  map_to_odom_mutex_.lock();
+  ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
+  tfB_->sendTransform( tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
+  map_to_odom_mutex_.unlock();
+}
+
 bool
-GMappingOffline::saveMap(const std::string& file_name)
+SlamGMapping::saveMap(const std::string& file_name)
 {
   const nav_msgs::OccupancyGrid& map = map_.map;
   ROS_INFO("Saving a %d X %d map @ %.3f m/pix",
@@ -743,32 +838,12 @@ GMappingOffline::saveMap(const std::string& file_name)
   return true;
 }
 
-bool
-GMappingOffline::mapCallback(nav_msgs::GetMap::Request  &req,
-                             nav_msgs::GetMap::Response &res)
+int
+main(int argc, char** argv)
 {
-  boost::mutex::scoped_lock(map_mutex_);
-  if(got_map_ && map_.map.info.width && map_.map.info.height)
-  {
-    res = map_;
-    return true;
-  }
-  else
-    return false;
-}
+  ros::init(argc, argv, "slam_gmapping");
 
-
-int main(int argc, char** argv){
-  ros::init(argc, argv, "gmapping_offline");
-  GMappingOffline gmapping;
-
-  if (!gmapping.processBag()) {
-    return(1);
-  }
-
-  if (!gmapping.saveMap()) {
-    return(1);
-  }
+  SlamGMapping gn;
 
   ros::spin();
 

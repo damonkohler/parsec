@@ -1,5 +1,5 @@
 /*
- * gmapping_offline
+ * slam_gmapping
  * Copyright (c) 2008, Willow Garage, Inc.
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
@@ -28,24 +28,34 @@
 #include "gmapping/gridfastslam/gridslamprocessor.h"
 #include "gmapping/sensor/sensor_base/sensor.h"
 
-class GMappingOffline
+#include <boost/thread.hpp>
+
+class SlamGMapping
 {
   public:
-    GMappingOffline();
-    ~GMappingOffline();
+    SlamGMapping();
+    ~SlamGMapping();
     
+    void publishTransform();
+
+    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     bool mapCallback(nav_msgs::GetMap::Request  &req,
                      nav_msgs::GetMap::Response &res);
+    void publishLoop(double transform_publish_period);
+
     bool processBag();
     bool saveMap();
     
   private:
     ros::NodeHandle node_;
+    ros::Publisher entropy_publisher_;
+    ros::Publisher sst_;
+    ros::Publisher sstm_;
     ros::ServiceServer ss_;
-    tf::Transformer tf_;
+    tf::TransformListener tf_;
+    message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
     tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
     tf::TransformBroadcaster* tfB_;
-    ros::Publisher time_publisher_;        
 
     GMapping::GridSlamProcessor* gsp_;
     GMapping::RangeSensor* gsp_laser_;
@@ -64,25 +74,31 @@ class GMappingOffline
     boost::mutex map_mutex_;
 
     int laser_count_;
+    int throttle_scans_;
 
-    std::string bag_file_path_;
-    std::string map_file_directory_;
-    std::string map_file_base_name_;
-    bool save_maps_;
+    boost::thread* transform_thread_;
     
     std::string base_frame_;
     std::string laser_frame_;
     std::string map_frame_;
     std::string odom_frame_;
-    std::string laser_topic_;
-
-    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     
     void updateMap(const sensor_msgs::LaserScan& scan);
     bool getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t);
     bool initMapper(const sensor_msgs::LaserScan& scan);
     bool addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose);
     double computePoseEntropy();
+
+    // Members used when running directly from bag
+    std::string bag_file_path_;
+    std::string laser_topic_;
+    std::string map_file_directory_;
+    std::string map_file_base_name_;
+    bool save_maps_;
+
+    ros::Publisher time_publisher_;
+    boost::thread* process_bag_thread_;
+
     bool saveMap(const std::string& file_name);
     
     // Parameters used by GMapping
