@@ -169,7 +169,7 @@ SlamGMapping::SlamGMapping():
   if(!private_nh_.getParam("laser_topic", laser_topic_))
     laser_topic_ = "scan";
   if(!private_nh_.getParam("bag_file_path", bag_file_path_))
-    bag_file_path_ = "bag";
+    bag_file_path_ = "";
 
   double tmp;
   if(!private_nh_.getParam("map_update_interval", tmp))
