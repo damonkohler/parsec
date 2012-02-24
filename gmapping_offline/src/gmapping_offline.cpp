@@ -779,29 +779,18 @@ SlamGMapping::pathCallback(hector_nav_msgs::GetRobotTrajectory::Request  &req,
   boost::mutex::scoped_lock(map_mutex_);
 
   nav_msgs::Path path;
+  path.header.frame_id = map_frame_;
+  path.header.stamp = ros::Time::now();
 
   GMapping::GridSlamProcessor::Particle best =
       gsp_->getParticles()[gsp_->getBestParticleIndex()];
   for (GMapping::GridSlamProcessor::TNode *node = best.node; node != NULL; node = node->parent ) {
-    GMapping::OrientedPoint mpose = node->pose;
     geometry_msgs::PoseStamped pose;
-    try
-    {
-      geometry_msgs::PoseStamped odom_pose;
-
-      odom_pose.header.frame_id = odom_frame_;
-      odom_pose.pose.position.x = mpose.x;
-      odom_pose.pose.position.y = mpose.y;
-      odom_pose.pose.position.z = 0.0;
-      odom_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, mpose.theta);
-
-      tf_.transformPose(map_frame_, odom_pose, pose);
-    }
-    catch(tf::TransformException e){
-      ROS_ERROR("Transform from odom to map failed: %s\n", e.what());
-      continue;
-    }
-
+    pose.header.frame_id = map_frame_;
+    pose.pose.position.x = node->pose.x;
+    pose.pose.position.y = node->pose.y;
+    pose.pose.position.z = 0.0;
+    pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, node->pose.theta);
     path.poses.push_back(pose);
   }
 
