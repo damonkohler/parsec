@@ -25,6 +25,8 @@
 #include "message_filters/subscriber.h"
 #include "tf/message_filter.h"
 
+#include "hector_nav_msgs/GetRobotTrajectory.h"
+
 #include "gmapping/gridfastslam/gridslamprocessor.h"
 #include "gmapping/sensor/sensor_base/sensor.h"
 
@@ -41,6 +43,8 @@ class SlamGMapping
     void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     bool mapCallback(nav_msgs::GetMap::Request  &req,
                      nav_msgs::GetMap::Response &res);
+    bool pathCallback(hector_nav_msgs::GetRobotTrajectory::Request  &req,
+                      hector_nav_msgs::GetRobotTrajectory::Response &res);
     void publishLoop(double transform_publish_period);
 
     bool processBag();
@@ -51,6 +55,7 @@ class SlamGMapping
     ros::Publisher entropy_publisher_;
     ros::Publisher sst_;
     ros::Publisher sstm_;
+    ros::ServiceServer sp_;
     ros::ServiceServer ss_;
     tf::TransformListener tf_;
     message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;

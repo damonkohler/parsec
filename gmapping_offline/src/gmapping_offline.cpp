@@ -247,6 +247,7 @@ SlamGMapping::SlamGMapping():
   sst_ = node_.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
   sstm_ = node_.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
   ss_ = node_.advertiseService("dynamic_map", &SlamGMapping::mapCallback, this);
+  sp_ = node_.advertiseService("trajectory", &SlamGMapping::pathCallback, this);
 
   if (bag_file_path_.empty()) {
     scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node_, "scan", 5);
@@ -508,7 +509,6 @@ SlamGMapping::processBag()
     rosbag::View view(bag, rosbag::TopicQuery(laser_topic_));
     int scan_count = view.size();
     view.addQuery(bag, rosbag::TopicQuery("/tf"));
-    ROS_INFO("2");
 
     int count = 0;
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
@@ -760,7 +760,7 @@ SlamGMapping::saveMap()
 
 bool 
 SlamGMapping::mapCallback(nav_msgs::GetMap::Request  &req,
-                             nav_msgs::GetMap::Response &res)
+                          nav_msgs::GetMap::Response &res)
 {
   boost::mutex::scoped_lock(map_mutex_);
   if(got_map_ && map_.map.info.width && map_.map.info.height)
@@ -770,6 +770,44 @@ SlamGMapping::mapCallback(nav_msgs::GetMap::Request  &req,
   }
   else
     return false;
+}
+
+bool
+SlamGMapping::pathCallback(hector_nav_msgs::GetRobotTrajectory::Request  &req,
+                           hector_nav_msgs::GetRobotTrajectory::Response &res)
+{
+  boost::mutex::scoped_lock(map_mutex_);
+
+  nav_msgs::Path path;
+
+  GMapping::GridSlamProcessor::Particle best =
+      gsp_->getParticles()[gsp_->getBestParticleIndex()];
+  for (GMapping::GridSlamProcessor::TNode *node = best.node; node != NULL; node = node->parent ) {
+    GMapping::OrientedPoint mpose = node->pose;
+    geometry_msgs::PoseStamped pose;
+    try
+    {
+      geometry_msgs::PoseStamped odom_pose;
+
+      odom_pose.header.frame_id = odom_frame_;
+      odom_pose.pose.position.x = mpose.x;
+      odom_pose.pose.position.y = mpose.y;
+      odom_pose.pose.position.z = 0.0;
+      odom_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, mpose.theta);
+
+      tf_.transformPose(map_frame_, odom_pose, pose);
+    }
+    catch(tf::TransformException e){
+      ROS_ERROR("Transform from odom to map failed: %s\n", e.what());
+      continue;
+    }
+
+    path.poses.push_back(pose);
+  }
+
+  std::reverse(path.poses.begin(), path.poses.end());
+  res.trajectory = path;
+  return true;
 }
 
 void SlamGMapping::publishTransform()

@@ -7,6 +7,7 @@
   <review status="unreviewed" notes=""/>
   <url></url>
   <depend package="gmapping"/>
+  <depend package="hector_nav_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="roscpp"/>
   <depend package="rosbag"/>
