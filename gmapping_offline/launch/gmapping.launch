@@ -38,9 +38,9 @@
 
       odom_frame: odom
       base_frame: base_footprint
-      laser_topic: /base_scan
+      laser_topic: base_scan
 
-      map_file_base_name: gmapping_offline
+      bag_file_path: ~/holistic.bag
     </rosparam>
     <param name="map_file_directory" type="string" value="$(find gmapping_offline)/maps/" />
   </node>
